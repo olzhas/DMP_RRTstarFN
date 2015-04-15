@@ -1,0 +1,464 @@
+<sdf version='1.4'>
+  <model name='TX90XLHB'>
+    <static>false</static>
+
+    <link name="table">
+      <pose> 0 0 0.4 0 -0 0 </pose>
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>1 0.95 0.8</size>
+          </box>
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        <pose>0 0 0.4 -1.5707 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/table.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <!--
+      <kinematic>1</kinematic>
+      <self_collide>1</self_collide>
+      -->
+    </link>
+
+
+    <joint name="fix to ground" type="revolute">
+      <parent>world</parent>
+      <child>table</child>
+      <axis>
+        <xyz>0.0 0.0 1</xyz>
+        <limit>
+          <lower>0</lower>
+          <upper>0</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <link name='base_link'>
+      <pose>0 0 0.8 0 -0 0</pose>
+      <inertial>
+        <pose>0.00806958 -0.000142981 0.120127 0 -0 0</pose>
+        <mass>11.2578</mass>
+        <inertia>
+          <ixx>0.0992408</ixx>
+          <ixy>0.000276425</ixy>
+          <ixz>-0.000411716</ixz>
+          <iyy>0.0991641</iyy>
+          <iyz>9.67008e-05</iyz>
+          <izz>0.0916741</izz>
+        </inertia>
+      </inertial>
+      <collision name='base_link_collision'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/base_link.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name='base_link_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/base_link.dae</uri>
+          </mesh>
+        </geometry>
+        <material>
+            <script>Gazebo/WoodPallet</script>
+        </material>
+
+      </visual>
+      <velocity_decay>
+        <linear>0</linear>
+        <angular>0</angular>
+      </velocity_decay>
+      <!--
+      <kinematic>1</kinematic>
+      <self_collide>1</self_collide>
+      -->
+
+    </link>
+
+
+    <joint name="fix to table" type="revolute">
+      <parent>table</parent>
+      <child>base_link</child>
+
+    </joint>
+
+    <link name='shoulder_link'>
+      <pose>0 0 1.278 0 -0 0</pose>
+      <inertial>
+        <pose>0.0191425 0.0247638 -0.0645956 0 -0 0</pose>
+        <mass>16.9346</mass>
+        <inertia>
+          <ixx>0.222318</ixx>
+          <ixy>0.0164995</ixy>
+          <ixz>0.0237943</ixz>
+          <iyy>0.208959</iyy>
+          <iyz>0.031663</iyz>
+          <izz>0.157081</izz>
+        </inertia>
+      </inertial>
+      <collision name='shoulder_link_collision'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/shoulder_link.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name='shoulder_link_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/shoulder_link.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <velocity_decay>
+        <linear>0</linear>
+        <angular>0</angular>
+      </velocity_decay>
+      <!--
+      <kinematic>1</kinematic>
+      <self_collide>1</self_collide>
+      -->
+    </link>
+
+    <joint name='joint1' type='revolute'>
+      <child>shoulder_link</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 0 -1</xyz>
+        <limit>
+          <lower>-3.1416</lower>
+          <upper>3.1416</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+
+    <link name='arm_link'>
+      <pose>0.05 0 1.278 0 -0 0</pose>
+      <inertial>
+        <pose>-4.9783e-06 0.219316 0.276936 0 -0 0</pose>
+        <mass>17.7893</mass>
+        <inertia>
+          <ixx>1.07153</ixx>
+          <ixy>4.9278e-06</ixy>
+          <ixz>-1.54101e-05</ixz>
+          <iyy>1.10864</iyy>
+          <iyz>-0.00765188</iyz>
+          <izz>0.0740222</izz>
+        </inertia>
+      </inertial>
+      <collision name='arm_link_collision'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/arm_link.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name='arm_link_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/arm_link.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <velocity_decay>
+        <linear>0</linear>
+        <angular>0</angular>
+      </velocity_decay>
+      <!--
+      <kinematic>1</kinematic>
+      <self_collide>1</self_collide>
+      -->
+    </link>
+
+    <joint name='joint2' type='revolute'>
+      <child>arm_link</child>
+      <parent>shoulder_link</parent>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-2.2689</lower>
+          <upper>2.5744</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+
+    <link name='elbow_link'>
+      <pose>0.05 0.05 1.928 0 -0 0</pose>
+      <inertial>
+        <pose>1.67038e-06 0.0150084 0.00357212 0 -0 0</pose>
+        <mass>7.5015</mass>
+        <inertia>
+          <ixx>0.0589016</ixx>
+          <ixy>6.09678e-08</ixy>
+          <ixz>8.10671e-07</ixz>
+          <iyy>0.0568838</iyy>
+          <iyz>-0.00367171</iyz>
+          <izz>0.0342714</izz>
+        </inertia>
+      </inertial>
+      <collision name='elbow_link_collision'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/elbow_link.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name='elbow_link_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/elbow_link.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <velocity_decay>
+        <linear>0</linear>
+        <angular>0</angular>
+      </velocity_decay>
+      <!--
+      <kinematic>1</kinematic>
+      <self_collide>1</self_collide>
+      -->
+    </link>
+
+    <joint name='joint3' type='revolute'>
+      <child>elbow_link</child>
+      <parent>arm_link</parent>
+      <axis>
+        <xyz>0 -1 0</xyz>
+        <limit>
+          <lower>-2.5307</lower>
+          <upper>2.5307</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+
+    <link name='forearm_link'>
+      <pose>0.05 0.05 1.928 0 -0 0</pose>
+      <inertial>
+        <pose>-0.00174609 6.47694e-06 0.410582 0 -0 0</pose>
+        <mass>7.91679</mass>
+        <inertia>
+          <ixx>0.188254</ixx>
+          <ixy>4.18687e-05</ixy>
+          <ixz>-0.00199749</ixz>
+          <iyy>0.182701</iyy>
+          <iyz>4.70447e-06</iyz>
+          <izz>0.0226841</izz>
+        </inertia>
+      </inertial>
+      <collision name='forearm_link_collision'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/forearm_link.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name='forearm_link_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/forearm_link.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <velocity_decay>
+        <linear>0</linear>
+        <angular>0</angular>
+      </velocity_decay>
+      <!--
+      <kinematic>1</kinematic>
+      <self_collide>1</self_collide>
+      -->
+    </link>
+
+    <joint name='joint4' type='revolute'>
+      <child>forearm_link</child>
+      <parent>elbow_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-4.7124</lower>
+          <upper>4.7124</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+
+    <link name='wrist_link'>
+      <pose>0.05 0.05 2.578 0 -0 0</pose>
+      <inertial>
+        <pose>-6.66073e-07 -6.94402e-05 0.0228231 0 -0 0</pose>
+        <mass>0.56876</mass>
+        <inertia>
+          <ixx>0.00108368</ixx>
+          <ixy>-2.71193e-07</ixy>
+          <ixz>-2.33484e-09</ixz>
+          <iyy>0.00112284</iyy>
+          <iyz>8.99392e-07</iyz>
+          <izz>0.000382707</izz>
+        </inertia>
+      </inertial>
+      <collision name='wrist_link_collision'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/wrist_link.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name='wrist_link_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/wrist_link.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <velocity_decay>
+        <linear>0</linear>
+        <angular>0</angular>
+      </velocity_decay>
+      <!--
+      <kinematic>1</kinematic>
+      <self_collide>1</self_collide>
+      -->
+    </link>
+
+    <joint name='joint5' type='revolute'>
+      <child>wrist_link</child>
+      <parent>forearm_link</parent>
+      <axis>
+        <xyz>-0.0069765 -0.99998 0</xyz>
+        <limit>
+          <lower>-2.0071</lower>
+          <upper>2.4435</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+
+    <link name='toolflange_link'>
+      <pose>0.05 0.05 2.678 0 -0 0</pose>
+      <inertial>
+        <pose>-0.000242737 1.40004e-06 -0.00629326 0 -0 0</pose>
+        <mass>0.0309772</mass>
+        <inertia>
+          <ixx>1.16125e-05</ixx>
+          <ixy>4.20317e-11</ixy>
+          <ixz>-8.09186e-09</ixz>
+          <iyy>1.14243e-05</iyy>
+          <iyz>2.80063e-11</iyz>
+          <izz>2.24828e-05</izz>
+        </inertia>
+      </inertial>
+      <collision name='toolflange_link_collision'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/toolflange_link.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name='toolflange_link_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>meshes/toolflange_link.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <velocity_decay>
+        <linear>0</linear>
+        <angular>0</angular>
+      </velocity_decay>
+      <!--
+      <kinematic>1</kinematic>
+      <self_collide>1</self_collide>
+      -->
+    </link>
+
+    <joint name='joint6' type='revolute'>
+      <child>toolflange_link</child>
+      <parent>wrist_link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-4.7124</lower>
+          <upper>4.7124</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+  </model>
+
+</sdf>
