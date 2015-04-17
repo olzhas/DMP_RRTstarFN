@@ -1,6 +1,8 @@
 #ifndef MYWINDOW_H
 #define MYWINDOW_H
 
+#include <boost/thread.hpp>
+
 #include <dart/config.h>
 #include <dart/collision/collision.h>
 #include <dart/common/common.h>
@@ -31,6 +33,8 @@ public:
 
     // Documentation inherited
     virtual void keyboard(unsigned char _key, int _x, int _y);
+
+    double *jointStates[6];
 };
 
 #endif // MYWINDOW_H

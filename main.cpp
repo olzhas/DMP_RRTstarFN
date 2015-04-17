@@ -1,5 +1,6 @@
 #include <iostream>
 
+
 #include <dart/config.h>
 #include <dart/collision/collision.h>
 #include <dart/common/common.h>
@@ -18,6 +19,7 @@
 #include <random>
 
 #include "mywindow.h"
+#include "Staubli.h"
 
 #define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
 
@@ -49,13 +51,11 @@ int main(int argc, char* argv[])
 
         obstacle[i] = SkelParser::readSkeleton(SAFESPACE_DATA"/obstacles/cube.skel");
 
-
-
         auto x = uni(rng);
         auto y = uni(rng);
         auto z = uni(rng);
-        Eigen::Isometry3d T;
 
+        Eigen::Isometry3d T;
 
         Eigen::Matrix3d m;
         m = Eigen::AngleAxisd((x+y)/1000.0*M_PI, Vector3d::UnitX())
@@ -70,46 +70,40 @@ int main(int argc, char* argv[])
         //obst
     }
 
-
     myWorld->addSkeleton(staubli);
     for (int i = 0; i < 8; ++i) {
         staubli->getJoint(i)->setActuatorType(Joint::LOCKED);
+#ifdef DEBUG
         cout << staubli->getJoint(i)->isKinematic() << endl;
-        if(i>=2){
-            staubli->setPosition(i, 0.6 * DART_PI);
-        }
+#endif
+
     }
 
-    myWorld->setGravity(Vector3d(0.0, 0.0, -9.81));
-    myWorld->getSkeleton(1)->computeForwardKinematics();
-
-    dart::collision::FCLMeshCollisionDetector collisionDetector;
-    //collisionDetector.addSkeleton(myWorld->getSkeleton(1));
-
-    dart::collision::FCLMeshCollisionNode table(myWorld->getSkeleton(1)->getBodyNode("table"));
-    dart::collision::FCLMeshCollisionNode arm(myWorld->getSkeleton(1)->getBodyNode("arm_link"));
-    dart::collision::FCLMeshCollisionNode elbow(myWorld->getSkeleton(1)->getBodyNode("elbow_link"));
-
-    cout << "table<->sholder " << collisionDetector.detectCollision(&table,&elbow,false) << endl;
-    cout << "table<->arm " << collisionDetector.detectCollision(&table,&arm,false) << endl;
-
-    //collisionDetector.detectCollision(true, false);
-    //   collisionDetector.getCollisionNode(myWorld->getSkeleton(1)->getBodyNode("table"));
-    //collisionDetector.
-
-    //    obstacle[0]->
+    //obstacle[0]->set
     for (int i = 0; i < 5; ++i) {
         myWorld->addSkeleton(obstacle[i]);
     }
 
+    myWorld->setGravity(Vector3d(0.0, 0.0, 0.0));
+
+    std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
+
+    Manipulator env(myWorld);
+
+    if (env.plan())
+    {
+        env.recordSolution();
+    }
 
     MyWindow window;
 
     window.setWorld(myWorld);
+    //window.jointStates =
 
     glutInit(&argc, argv);
     window.initWindow(640, 480, "Staubli TX90XL");
     glutMainLoop();
+
 
     return 0;
 }
