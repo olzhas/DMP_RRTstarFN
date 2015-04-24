@@ -2,6 +2,8 @@
 #define MYWINDOW_H
 
 #include <boost/thread.hpp>
+#include <ompl/geometric/PathGeometric.h>
+#include <ompl/base/spaces/RealVectorStateSpace.h>
 
 #include <dart/config.h>
 #include <dart/collision/collision.h>
@@ -17,6 +19,11 @@
 #include <dart/optimizer/optimizer.h>
 #include <dart/planning/planning.h>
 #include <dart/utils/utils.h>
+
+#include "guimisc.h"
+
+namespace og = ompl::geometric;
+namespace ob = ompl::base;
 
 class MyWindow : public dart::gui::SimWindow
 {
@@ -34,7 +41,15 @@ public:
     // Documentation inherited
     virtual void keyboard(unsigned char _key, int _x, int _y);
 
-    double *jointStates[6];
+    void setMotion(og::PathGeometric *motion);
+
+private:
+    og::PathGeometric *motion_;
+    int what;
+    int why;
+
+    double *visuNodes[6];
+    double *visuEdge[2][6];
 };
 
 #endif // MYWINDOW_H

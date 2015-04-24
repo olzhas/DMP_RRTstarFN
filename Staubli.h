@@ -4,6 +4,7 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/RRTstarFN.h>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/config.h>
 
 #include <dart/config.h>
@@ -24,15 +25,18 @@
 #include <boost/filesystem.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/chrono/thread_clock.hpp>
 
 #include <vector>
 #include <iostream>
 #include <fstream>
 
-//#include "dhparameters.h"
+#define NUM_OBSTACLE 7
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
+namespace dc = dart::collision;
+namespace dd = dart::dynamics;
 
 class Manipulator 
 {
@@ -49,6 +53,10 @@ public:
 	void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
 	void recordSolution();
 
+    og::PathGeometric getResultantMotion();
+
+    void setPlanningTime(int time);
+
 private:
 
 	bool isStateValid(const ob::State *state) const;
@@ -56,6 +64,30 @@ private:
 
     void setWorld(dart::simulation::World* world);
 
+  //  dc::FCLMeshCollisionDetector collisionDetector;
+
+    dd::Skeleton *staubli_;
+    dc::FCLMeshCollisionNode *table_;
+    dc::FCLMeshCollisionNode *base_link_;
+    dc::FCLMeshCollisionNode *shoulder_link_;
+    dc::FCLMeshCollisionNode *arm_link_;
+    dc::FCLMeshCollisionNode *elbow_link_;
+    dc::FCLMeshCollisionNode *forearm_link_;
+    dc::FCLMeshCollisionNode *wrist_link_;
+    dc::FCLMeshCollisionNode *toolflange_link_;
+
+    dc::FCLMeshCollisionNode *obstacle_[NUM_OBSTACLE];
+
+    int planningTime_;
 };
+
+
+struct NodePlot_
+{
+double *node[6];
+double *edge[2][6];
+};
+
+typedef NodePlot_ NodePlot;
 
 #endif

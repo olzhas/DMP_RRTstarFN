@@ -6,7 +6,7 @@ find_package(Eigen3 REQUIRED)
 
 include(FindBoost)
 
-find_package(Boost ${MIN_BOOST_VERSTION} REQUIRED system filesystem regex thread)
+find_package(Boost ${MIN_BOOST_VERSTION} REQUIRED system filesystem regex thread chrono)
 
 find_package(OMPL)
 
