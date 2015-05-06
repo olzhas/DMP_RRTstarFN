@@ -1,31 +1,11 @@
 #include "Staubli.h"
 
-
-/*
-// initial
-q[2] = 0.7*DART_PI;
-q[3] = 0.4*DART_PI;
-q[4] = -0.4*DART_PI;
-q[5] = 0;
-q[6] = 0;
-q[7] = 0;
-*/
-/*
-// goal
-q[2] = -0.1*DART_PI;
-q[3] = 0.4*DART_PI;
-q[4] = -0.6*DART_PI;
-q[5] = 0;
-q[6] = 0;
-q[7] = 0;
-*/
-
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 namespace dc = dart::collision;
 namespace dd = dart::dynamics;
 
-
+//==============================================================================
 Manipulator::Manipulator(dart::simulation::World* world)
 {
     setPlanningTime(3);
@@ -68,13 +48,15 @@ Manipulator::Manipulator(dart::simulation::World* world)
     }
 }
 
+//==============================================================================
 bool Manipulator::isStateValid(const ob::State *state) const
 {
     /*
     namespace bc = boost::chrono;
     bc::thread_clock::time_point start = bc::thread_clock::now();
 */
-    double *jointSpace = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
+    double *jointSpace
+            = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
 
     for (int i = 2; i < 8; ++i) {
         staubli_->setPosition(i, jointSpace[i-2]);
@@ -88,7 +70,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
     bool collision = table_->detectCollision(elbow_link_, NULL, 1);
     if (collision){
 #ifdef DEBUG
-            std::cout << "BAD STATE!" << std::endl;
+        std::cout << "BAD STATE!" << std::endl;
 #endif
         return false;
     }
@@ -96,7 +78,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
     collision = table_->detectCollision(forearm_link_, NULL, 1);
     if (collision){
 #ifdef DEBUG
-            std::cout << "BAD STATE!" << std::endl;
+        std::cout << "BAD STATE!" << std::endl;
 #endif
         return false;
     }
@@ -200,14 +182,15 @@ bool Manipulator::isStateValid(const ob::State *state) const
     }
 #endif
 
-
 }
 
+//==============================================================================
 Manipulator::~Manipulator()
 {
     // TODO
 }
 
+//==============================================================================
 bool Manipulator::plan()
 {
 
@@ -244,7 +227,9 @@ bool Manipulator::plan()
     return ss_->haveSolutionPath();
 }
 
-void Manipulator::printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex)
+//==============================================================================
+void Manipulator::printEdge(std::ostream &os, const ob::StateSpacePtr &space,
+                            const ob::PlannerDataVertex &vertex)
 {
     std::vector<double> reals;
     if(vertex!=ob::PlannerData::NO_VERTEX)
@@ -254,10 +239,13 @@ void Manipulator::printEdge(std::ostream &os, const ob::StateSpacePtr &space, co
     }
 }
 
+//==============================================================================
 void Manipulator::recordSolution()
 {
-    if (!ss_ || !ss_->haveSolutionPath())
+    if (!ss_ || !ss_->haveSolutionPath()){
+        OMPL_ERROR("No solution!");
         return;
+    }
 
     // Print the solution path to a file
     std::ofstream ofs("path.dat");
@@ -292,11 +280,13 @@ void Manipulator::recordSolution()
     }
 }
 
+//==============================================================================
 void Manipulator::setWorld(dart::simulation::World *world)
 {
     world_ = world;
 }
 
+//==============================================================================
 og::PathGeometric Manipulator::getResultantMotion()
 {
     if (!ss_ || !ss_->haveSolutionPath())
@@ -305,12 +295,44 @@ og::PathGeometric Manipulator::getResultantMotion()
     }
 
     og::PathGeometric &p = ss_->getSolutionPath();
-    p.interpolate(4000);
+    p.interpolate(2000);
     return p;
 }
 
-
+//==============================================================================
 void Manipulator::setPlanningTime(int time)
 {
     planningTime_ = time;
 }
+
+/*
+//==============================================================================
+NodePlot* Manipulator::TreeInformation()
+{
+    if (!ss_ || !ss_->haveSolutionPath())
+        return NULL;
+
+    // Get the planner data to visualize the vertices and the edges
+    ob::PlannerData pdat(ss_->getSpaceInformation());
+    ss_->getPlannerData(pdat);
+
+    // Print the vertices to file
+
+    //result->node.resize(pdat.numVertices());
+
+    for(unsigned int i(0); i<pdat.numVertices(); ++i)
+    {
+        std::vector<double> reals;
+        if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
+        {
+            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
+
+            for(size_t j(0); j<reals.size(); ++j)
+               std::cout << reals[j] << " ";
+            std::cout << std::endl;
+        }
+    }
+}
+*/
+//==============================================================================
+

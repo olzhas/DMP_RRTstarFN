@@ -3,6 +3,7 @@
 
 #include <boost/thread.hpp>
 #include <ompl/geometric/PathGeometric.h>
+#include <ompl/geometric/SimpleSetup.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
 #include <dart/config.h>
@@ -19,6 +20,8 @@
 #include <dart/optimizer/optimizer.h>
 #include <dart/planning/planning.h>
 #include <dart/utils/utils.h>
+
+#include <boost/chrono/thread_clock.hpp>
 
 #include "guimisc.h"
 
@@ -43,13 +46,19 @@ public:
 
     void setMotion(og::PathGeometric *motion);
 
+    void initDrawTree();
+    void drawTree();
+
+
+    og::SimpleSetupPtr ss_;
+
 private:
     og::PathGeometric *motion_;
+
     int what;
     int why;
 
-    double *visuNodes[6];
-    double *visuEdge[2][6];
+    std::vector<Eigen::Vector3d> endEffectorPosition;
 };
 
 #endif // MYWINDOW_H

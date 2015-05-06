@@ -8,6 +8,7 @@ MyWindow::MyWindow()
 {
     what = 0;
     why = 0;
+    mZoom = 0.20;
 
 
 }
@@ -19,7 +20,7 @@ MyWindow::~MyWindow()
 }
 
 //==============================================================================
-    /*
+/*
 MyWindow::readResults()
 {
     // read the nodes information
@@ -73,29 +74,38 @@ void MyWindow::timeStepping()
                 = (double*)motion_->getState(why)
                 ->as<ob::RealVectorStateSpace::StateType>()->values;
 
-        if(what < 10){
-            for (int i = 2; i < 8; ++i) {
-                staubli->setPosition(i, jointSpace[i-2]);
-            }
-            staubli->computeForwardKinematics();
-        }else {why++; what =0;}
-        what++;
+        for (int i = 2; i < 8; ++i) {
+            staubli->setPosition(i, jointSpace[i-2]);
+        }
+        staubli->computeForwardKinematics();
+        why++;
     } else {
         mSimulating = false;
     }
 
-    //std::cout << motion_->getStateCount() << std::endl;
 }
 
 //==============================================================================
 void MyWindow::drawSkels()
 {
-    //glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
         mWorld->getSkeleton(i)->draw(mRI);
 
+    // draw the tree
+    //if(why == 0)
+    //drawTree();
+
+}
+
+//==============================================================================
+void MyWindow::drawTree()
+{
+    for (int i = 0; i < endEffectorPosition.size(); ++i) {
+        dart::gui::drawNode(endEffectorPosition.at(i));
+    }
 }
 
 //==============================================================================
@@ -144,4 +154,53 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
     // Keyboard control for Controller
 
     glutPostRedisplay();
+}
+
+//==============================================================================
+void MyWindow::initDrawTree()
+{
+    namespace bc = boost::chrono;
+    bc::thread_clock::time_point start = bc::thread_clock::now();
+
+
+    if (!ss_ || !ss_->haveSolutionPath()){
+        std::cerr << "No solution =(" << std::endl;
+       // return;
+    }
+
+
+    // Get the planner data to visualize the vertices and the edges
+    ob::PlannerData pdat(ss_->getSpaceInformation());
+    ss_->getPlannerData(pdat);
+
+    // Print the vertices to file
+
+    //result->node.resize(pdat.numVertices());
+    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+
+    endEffectorPosition.reserve(pdat.numVertices());
+
+    for(unsigned int i(0); i<pdat.numVertices(); ++i)
+    {
+        std::vector<double> reals;
+        if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
+        {
+            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
+
+            for(size_t j(0); j<reals.size(); ++j){
+                staubli->setPosition(j+2, reals[j]);
+
+                staubli->computeForwardKinematics();
+                Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+                //Eigen::Vector3d
+                //std::cout << transform.translation()<< std::endl;
+                endEffectorPosition.push_back(transform.translation());
+            }
+        }
+    }
+
+    bc::thread_clock::time_point stop = bc::thread_clock::now();
+    std::cout << "duration: "
+              << bc::duration_cast<bc::milliseconds>(stop - start).count()
+              << " ms\n";
 }

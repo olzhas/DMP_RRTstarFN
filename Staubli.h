@@ -42,29 +42,25 @@ class Manipulator
 {
 public:
 
-	og::SimpleSetupPtr ss_;
-
+    og::SimpleSetupPtr ss_;
 
     Manipulator(dart::simulation::World* world);
 
-	virtual ~Manipulator();
-	bool plan();
+    virtual ~Manipulator();
+    bool plan();
 
-	void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
-	void recordSolution();
+    void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
+    void recordSolution();
 
     og::PathGeometric getResultantMotion();
-
     void setPlanningTime(int time);
 
 private:
 
-	bool isStateValid(const ob::State *state) const;
+    bool isStateValid(const ob::State *state) const;
     dart::simulation::World* world_;
 
     void setWorld(dart::simulation::World* world);
-
-  //  dc::FCLMeshCollisionDetector collisionDetector;
 
     dd::Skeleton *staubli_;
     dc::FCLMeshCollisionNode *table_;
@@ -81,13 +77,5 @@ private:
     int planningTime_;
 };
 
-
-struct NodePlot_
-{
-double *node[6];
-double *edge[2][6];
-};
-
-typedef NodePlot_ NodePlot;
 
 #endif

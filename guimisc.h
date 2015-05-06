@@ -4,14 +4,14 @@
 #include <dart/math/math.h>
 
 #if WIN32
-  #include <cstdlib> // To disable glut::exit() function
-  #include <GL/glut.h>
+#include <cstdlib> // To disable glut::exit() function
+#include <GL/glut.h>
 #elif defined(__linux__)
-  #include <GL/glut.h>
+#include <GL/glut.h>
 #elif defined(__APPLE__)
-  #include <Glut/glut.h>
+#include <Glut/glut.h>
 #else
-  #error "Load OpenGL Error: What's your operating system?"
+#error "Load OpenGL Error: What's your operating system?"
 #endif
 
 namespace dart

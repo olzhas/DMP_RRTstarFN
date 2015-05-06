@@ -57,9 +57,9 @@ int main(int argc, char* argv[])
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
 
-        if ( i < 2){
+        if ( i < 2) {
             myObstacle[i] = SkelParser::readSkeleton(SAFESPACE_DATA"/obstacles/wall.skel");
-        } else if (i < 4) {
+        } else if (i < 3) {
             myObstacle[i] = SkelParser::readSkeleton(SAFESPACE_DATA"/obstacles/human_box.skel");
         } else {
             myObstacle[i] = SkelParser::readSkeleton(SAFESPACE_DATA"/obstacles/cube.skel");
@@ -112,11 +112,15 @@ int main(int argc, char* argv[])
 
     Manipulator env(myWorld);
 
-    env.setPlanningTime(1200);
+
+    env.setPlanningTime(600);
 
     if (env.plan()) {
         env.recordSolution();
     }
+
+    //NodePlot *np;
+    //np = env.TreeInformation();
 /*
     ifstream fin("vertices.dat");
     double visuState[6];
@@ -146,10 +150,10 @@ int main(int argc, char* argv[])
 
     window.setWorld(myWorld);
     og::PathGeometric resultantMotion = env.getResultantMotion();
+
     window.setMotion(&resultantMotion);
-    //window.jointStates =
-
-
+    window.ss_ = env.ss_;
+    window.initDrawTree();
 
     glutInit(&argc, argv);
     window.initWindow(800, 600, "Staubli TX90XL");
