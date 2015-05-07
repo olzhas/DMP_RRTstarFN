@@ -26,12 +26,14 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/chrono/thread_clock.hpp>
+#include <boost/asio/deadline_timer.hpp>
 
 #include <vector>
 #include <iostream>
 #include <fstream>
 
-#define NUM_OBSTACLE 7
+
+#define NUM_OBSTACLE 5
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -54,6 +56,7 @@ public:
 
     og::PathGeometric getResultantMotion();
     void setPlanningTime(int time);
+    void setMaxNodes(int nodeNum);
 
 private:
 
@@ -75,6 +78,8 @@ private:
     dc::FCLMeshCollisionNode *obstacle_[NUM_OBSTACLE];
 
     int planningTime_;
+
+    //boost::asio::deadline_
 };
 
 

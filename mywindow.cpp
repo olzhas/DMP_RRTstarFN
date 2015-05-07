@@ -10,7 +10,6 @@ MyWindow::MyWindow()
     why = 0;
     mZoom = 0.20;
 
-
 }
 
 //==============================================================================
@@ -19,38 +18,6 @@ MyWindow::~MyWindow()
 
 }
 
-//==============================================================================
-/*
-MyWindow::readResults()
-{
-    // read the nodes information
-
-    std::ifstream fin("vertices.dat");
-    size_t lines;
-    std::string line;
-    while(fin.eof()){
-        std::getline(fin, line);
-        lines++;
-    }
-    fin.clear();
-    fin.seekg(0, std::ios::beg);
-    visuNodes = malloc(lines*sizeof(double[2][6]));
-    double visuState[6];
-    for (int j = 0; j < lines; ++j) {
-        for (int i = 0; i < 6; ++i) {
-            fin >> visuState[i];
-            staubli->setPosition(i+2, visuState[i]);
-        }
-        staubli->computeForwardKinematics();
-        Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-        //Eigen::Vector3d
-        //std::cout << transform.translation()<< std::endl;
-        dart::gui::drawNode(transform.translation());
-    }
-    fin.close();
-
-}
-*/
 //==============================================================================
 
 void MyWindow::setMotion(og::PathGeometric *motion)
@@ -68,6 +35,7 @@ void MyWindow::timeStepping()
     mWorld->step();
     dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
 
+
     if(why < motion_->getStateCount()){
         //std::cout<<motion_ ->getStateCount() << std::endl;
         double *jointSpace
@@ -79,6 +47,8 @@ void MyWindow::timeStepping()
         }
         staubli->computeForwardKinematics();
         why++;
+
+
     } else {
         mSimulating = false;
     }
@@ -94,10 +64,7 @@ void MyWindow::drawSkels()
     for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
         mWorld->getSkeleton(i)->draw(mRI);
 
-    // draw the tree
-    //if(why == 0)
     //drawTree();
-
 }
 
 //==============================================================================
@@ -165,7 +132,7 @@ void MyWindow::initDrawTree()
 
     if (!ss_ || !ss_->haveSolutionPath()){
         std::cerr << "No solution =(" << std::endl;
-       // return;
+        // return;
     }
 
 

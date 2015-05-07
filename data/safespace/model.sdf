@@ -140,7 +140,7 @@
       <child>shoulder_link</child>
       <parent>base_link</parent>
       <axis>
-        <xyz>0 0 -1</xyz>
+        <xyz>0 0 1</xyz>
         <limit>
           <lower>-3.1416</lower>
           <upper>3.1416</upper>
@@ -262,7 +262,7 @@
       <child>elbow_link</child>
       <parent>arm_link</parent>
       <axis>
-        <xyz>0 -1 0</xyz>
+        <xyz>0 1 0</xyz>
         <limit>
           <lower>-2.5307</lower>
           <upper>2.5307</upper>
@@ -384,7 +384,7 @@
       <child>wrist_link</child>
       <parent>forearm_link</parent>
       <axis>
-        <xyz>-0.0069765 -0.99998 0</xyz>
+        <xyz>-0.0069765 +0.99998 0</xyz>
         <limit>
           <lower>-2.0071</lower>
           <upper>2.4435</upper>

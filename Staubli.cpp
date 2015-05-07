@@ -8,8 +8,6 @@ namespace dd = dart::dynamics;
 //==============================================================================
 Manipulator::Manipulator(dart::simulation::World* world)
 {
-    setPlanningTime(3);
-
     setWorld(world);
     ob::RealVectorStateSpace *jointSpace = new ob::RealVectorStateSpace();
 
@@ -26,11 +24,9 @@ Manipulator::Manipulator(dart::simulation::World* world)
     jointSpace->setup();
     ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
     ss_->setPlanner(ob::PlannerPtr(new og::RRTstarFN(ss_->getSpaceInformation())));
-    //ss_->getPlanner()->
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
-
 
     table_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("table"));
     base_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("base_link"));
@@ -47,6 +43,8 @@ Manipulator::Manipulator(dart::simulation::World* world)
         obstacle_[i] = new dc::FCLMeshCollisionNode(world_->getSkeleton(name)->getBodyNode(0));
     }
 }
+
+
 
 //==============================================================================
 bool Manipulator::isStateValid(const ob::State *state) const
@@ -193,22 +191,21 @@ Manipulator::~Manipulator()
 //==============================================================================
 bool Manipulator::plan()
 {
-
     if (!ss_)
         return false;
     ob::ScopedState<> start(ss_->getStateSpace());
-    start[0] = 0.7*DART_PI;
-    start[1] = 0.4*DART_PI;
-    start[2] = -0.4*DART_PI;
-    start[3] = 0;
-    start[4] = 0;
+    start[0] = 62.5/180.0*DART_PI;
+    start[1] = 49.5/180.0*DART_PI;
+    start[2] = 92.8/180.0*DART_PI;
+    start[3] = 0.0/180.0*DART_PI;
+    start[4] = 0.0/180.0*DART_PI;
     start[5] = 0;
     ob::ScopedState<> goal(ss_->getStateSpace());
-    goal[0] = -0.1*DART_PI;
-    goal[1] = 0.4*DART_PI;
-    goal[2] = -0.6*DART_PI;
+    goal[0] = -52.2/180.0*DART_PI;
+    goal[1] = 60.8/180.0*DART_PI;
+    goal[2] = 63.0/180.0*DART_PI;
     goal[3] = 0;
-    goal[4] = 0;
+    goal[4] = 53.3/180.0*DART_PI;
     goal[5] = 0;
     ss_->setStartAndGoalStates(start, goal);
     // generate a few solutions; all will be added to the goal;
@@ -305,34 +302,16 @@ void Manipulator::setPlanningTime(int time)
     planningTime_ = time;
 }
 
-/*
 //==============================================================================
-NodePlot* Manipulator::TreeInformation()
+void Manipulator::setMaxNodes(int nodeNum)
 {
-    if (!ss_ || !ss_->haveSolutionPath())
-        return NULL;
+#ifdef DEBUG
+    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
+#endif
 
-    // Get the planner data to visualize the vertices and the edges
-    ob::PlannerData pdat(ss_->getSpaceInformation());
-    ss_->getPlannerData(pdat);
+    ss_->getPlanner()->as<og::RRTstarFN>()->setMaxNodes(nodeNum);
 
-    // Print the vertices to file
-
-    //result->node.resize(pdat.numVertices());
-
-    for(unsigned int i(0); i<pdat.numVertices(); ++i)
-    {
-        std::vector<double> reals;
-        if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
-        {
-            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
-
-            for(size_t j(0); j<reals.size(); ++j)
-               std::cout << reals[j] << " ";
-            std::cout << std::endl;
-        }
-    }
+#ifdef DEBUG
+    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
+#endif
 }
-*/
-//==============================================================================
-

@@ -57,19 +57,14 @@ int main(int argc, char* argv[])
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
 
-        if ( i < 2) {
+        if ( i < 1) {
             myObstacle[i] = SkelParser::readSkeleton(SAFESPACE_DATA"/obstacles/wall.skel");
-        } else if (i < 3) {
+        } else if (i < 2) {
             myObstacle[i] = SkelParser::readSkeleton(SAFESPACE_DATA"/obstacles/human_box.skel");
         } else {
             myObstacle[i] = SkelParser::readSkeleton(SAFESPACE_DATA"/obstacles/cube.skel");
         }
 
-        /*
-        auto x = uni(rng);
-        auto y = uni(rng);
-        auto z = uni(rng);
-        */
         Eigen::Isometry3d T;
 
         Eigen::Matrix3d m;
@@ -85,8 +80,8 @@ int main(int argc, char* argv[])
 
         myObstacle[i]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
         name[3] = i+'0';
-        myObstacle[i]->setName(name);
 
+        myObstacle[i]->setName(name);
     }
 
     myWorld->addSkeleton(staubli);
@@ -98,10 +93,6 @@ int main(int argc, char* argv[])
 
     }
 
-    //Shape *obs;
-    //obs = myObstacle[4]->getBodyNode(0)->getVisualizationShape(0);
-    //obs->setColor(Vector3d(0.9,0.1,0.01));
-    //obstacle[1]->getBod
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
         myWorld->addSkeleton(myObstacle[i]);
     }
@@ -113,39 +104,39 @@ int main(int argc, char* argv[])
     Manipulator env(myWorld);
 
 
-    env.setPlanningTime(600);
+    env.setPlanningTime(120);
+
+    env.setMaxNodes(40000);
 
     if (env.plan()) {
         env.recordSolution();
     }
 
-    //NodePlot *np;
-    //np = env.TreeInformation();
-/*
-    ifstream fin("vertices.dat");
-    double visuState[6];
-    while(!fin.eof()){
-        for (int i = 0; i < 6; ++i) {
-            fin >> visuState[i];
-            staubli->setPosition(i+2, visuState[i]);
-        }
-        staubli->computeForwardKinematics();
+    /*
+         dart::dynamics::Skeleton *humanBox  = mWorld->getSkeleton("box1");
+            Eigen::Isometry3d T;
+            T = humanBox->getBodyNode("box")->getTransform();
 
-        std::cout << staubli->getJoint("toolflange_link")->getLocalTransform()<< std::endl;
-    }
-    */
-    //std::cout << "BV " << staubli->getBodyNode("table")->getNumCollisionShapes() << std::endl;
+            T.translation()(0) -= 0.0005;
+            T.translation()(1) -= 0.00025;
 
+            humanBox->getJoint("joint 1")->setTransformFromParentBodyNode(T);
+     */
+
+    /*
     VectorXd q = staubli->getPositions() * 0;
-    q[2] = -0.01*DART_PI;
-    q[3] = 0.4*DART_PI;
-    q[4] = -0.6*DART_PI;
+
+    q[2] =  0.7*DART_PI;
+    q[3] =  0.4*DART_PI;
+    q[4] = -0.4*DART_PI;
     q[5] = 0;
     q[6] = 0;
     q[7] = 0;
 
     staubli->setPositions(q);
     staubli->computeForwardKinematics();
+*/
+
     MyWindow window;
 
     window.setWorld(myWorld);

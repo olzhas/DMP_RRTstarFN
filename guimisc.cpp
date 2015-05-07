@@ -59,7 +59,7 @@ void drawNode(const Eigen::Vector3d center)
     glPushMatrix();
     glColor3d(165.0/255.0, 225.0/255.0, 43.0/255.0);
     glTranslatef(center[0], center[1], center[2]);
-    glutSolidCube(0.005);
+    glutSolidCube(0.01);
     glPopMatrix();
     gluDeleteQuadric(c);
 }
