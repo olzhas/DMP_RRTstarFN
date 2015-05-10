@@ -21,9 +21,10 @@ Manipulator::Manipulator(dart::simulation::World* world)
     ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(jointSpace)));
     // set state validity checking for this space
     ss_->setStateValidityChecker(boost::bind(&Manipulator::isStateValid, this, _1));
+    //ss_->setMotionValidator(new ManipulatorMotionValidator(si_));
     jointSpace->setup();
     ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
-    ss_->setPlanner(ob::PlannerPtr(new og::RRTstarFN(ss_->getSpaceInformation())));
+    ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
@@ -210,15 +211,15 @@ bool Manipulator::plan()
     ss_->setStartAndGoalStates(start, goal);
     // generate a few solutions; all will be added to the goal;
 
-    for (int i = 0 ; i < 1 ; ++i)
-    {
-        if (ss_->getPlanner()){
-            ss_->getPlanner()->clear();
-            ss_->getPlanner()->as<og::RRTstarFN>()->setRange(0.5/180.0*M_PI);
-            //ss_->getPlanner()->as<og::RRTstarFN>()->rng_.setLocalSeed(32);
-        }
-        ss_->solve(planningTime_);
+
+    if (ss_->getPlanner()){
+        ss_->getPlanner()->clear();
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(1/180.0*M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0001);
+        //ss_->getPlanner()->as<og::RRTstarFN>()->rng_.setLocalSeed(32);
     }
+    ss_->solve(planningTime_);
+
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
     OMPL_INFORM("Found %d solutions", (int)ns);
     return ss_->haveSolutionPath();
@@ -292,7 +293,7 @@ og::PathGeometric Manipulator::getResultantMotion()
     }
 
     og::PathGeometric &p = ss_->getSolutionPath();
-    p.interpolate(2000);
+    p.interpolate(25);
     return p;
 }
 
@@ -309,9 +310,47 @@ void Manipulator::setMaxNodes(int nodeNum)
     std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
 #endif
 
-    ss_->getPlanner()->as<og::RRTstarFN>()->setMaxNodes(nodeNum);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(nodeNum);
 
 #ifdef DEBUG
     std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
 #endif
+}
+
+//==============================================================================
+bool Manipulator::replan()
+{
+    if (!ss_)
+        return false;
+    // generate a few solutions; all will be added to the goal;
+
+    for (int i = 0 ; i < 1 ; ++i)
+    {
+        if (ss_->getPlanner()) {
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(1/180.0*M_PI);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0);
+            //ss_->getPlanner()->as<og::RRTstarFN>()->rng_.setLocalSeed(32);
+        }
+        ss_->solve(1);
+    }
+    const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
+    OMPL_INFORM("Found %d solutions", (int)ns);
+    return ss_->haveSolutionPath();
+}
+
+
+//==============================================================================
+// TODO implement motion validator
+bool ManipulatorMotionValidator::checkMotion(const ob::State *s1, const ob::State *s2) const
+{
+    return true;
+}
+
+//==============================================================================
+// TODO implement motion validator
+bool ManipulatorMotionValidator::checkMotion(const ob::State *s1,
+                                             const ob::State *s2,
+                                             std::pair<ob::State*, double> &lastValid) const
+{
+    return true;
 }

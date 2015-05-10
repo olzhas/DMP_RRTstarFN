@@ -103,13 +103,23 @@ int main(int argc, char* argv[])
 
     Manipulator env(myWorld);
 
+    env.setPlanningTime(90);
 
-    env.setPlanningTime(120);
-
-    env.setMaxNodes(40000);
+    env.setMaxNodes(4000);
 
     if (env.plan()) {
         env.recordSolution();
+    }
+
+    for(int j=0;j<15;j++){
+        Eigen::Isometry3d T;
+        T = myObstacle[1]->getBodyNode("box")->getTransform();
+
+        T.translation()(0) -= 0.1;
+
+        myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
+        myObstacle[1]->computeForwardKinematics();
+        env.replan();
     }
 
     /*

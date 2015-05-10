@@ -9,7 +9,6 @@ MyWindow::MyWindow()
     what = 0;
     why = 0;
     mZoom = 0.20;
-
 }
 
 //==============================================================================
@@ -31,7 +30,6 @@ void MyWindow::timeStepping()
     // TODO implement draw visualization of the generated path
     // TODO draw the three, using markers?
 
-    // simulate one step
     mWorld->step();
     dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
 
@@ -47,8 +45,6 @@ void MyWindow::timeStepping()
         }
         staubli->computeForwardKinematics();
         why++;
-
-
     } else {
         mSimulating = false;
     }
@@ -59,12 +55,12 @@ void MyWindow::timeStepping()
 void MyWindow::drawSkels()
 {
     glEnable(GL_LIGHTING);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
         mWorld->getSkeleton(i)->draw(mRI);
 
-    //drawTree();
+    drawTree();
 }
 
 //==============================================================================

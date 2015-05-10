@@ -3,7 +3,7 @@
 
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/SimpleSetup.h>
-#include <ompl/geometric/planners/rrt/RRTstarFN.h>
+#include <ompl/geometric/planners/rrt/DRRTstarFN.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/config.h>
 
@@ -26,7 +26,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/chrono/thread_clock.hpp>
-#include <boost/asio/deadline_timer.hpp>
+
 
 #include <vector>
 #include <iostream>
@@ -50,6 +50,7 @@ public:
 
     virtual ~Manipulator();
     bool plan();
+    bool replan();
 
     void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
     void recordSolution();
@@ -82,5 +83,25 @@ private:
     //boost::asio::deadline_
 };
 
+class ManipulatorMotionValidator : public ob::MotionValidator
+{
+public:
+    ManipulatorMotionValidator(ob::SpaceInformation *si) : MotionValidator(si)
+    {
+        defaultSettings();
+    }
+    ManipulatorMotionValidator(const ob::SpaceInformationPtr &si) : MotionValidator(si)
+    {
+        defaultSettings();
+    }
+    virtual ~ManipulatorMotionValidator()
+    {
+    }
+    virtual bool checkMotion(const ob::State *s1, const ob::State *s2) const;
+    virtual bool checkMotion(const ob::State *s1, const ob::State *s2, std::pair<ob::State*, double> &lastValid) const;
+private:
+    ob::StateSpacePtr stateSpace_;
+    void defaultSettings();
+};
 
 #endif
