@@ -5,6 +5,15 @@ namespace og = ompl::geometric;
 namespace dc = dart::collision;
 namespace dd = dart::dynamics;
 
+/** Returns a structure representing the optimization objective to use
+    for optimal motion planning. This method returns an objective
+    which attempts to minimize the length in configuration space of
+    computed paths. */
+ob::OptimizationObjectivePtr getPathLengthObjective(const ob::SpaceInformationPtr& si)
+{
+    return ob::OptimizationObjectivePtr(new ob::PathLengthOptimizationObjective(si));
+}
+
 //==============================================================================
 Manipulator::Manipulator(dart::simulation::World* world)
 {
@@ -21,10 +30,23 @@ Manipulator::Manipulator(dart::simulation::World* world)
     ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(jointSpace)));
     // set state validity checking for this space
     ss_->setStateValidityChecker(boost::bind(&Manipulator::isStateValid, this, _1));
-    //ss_->setMotionValidator(new ManipulatorMotionValidator(si_));
-    jointSpace->setup();
-    ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
+
+    ss_->getSpaceInformation()
+            ->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
+
+    ss_->getSpaceInformation()
+            ->setMotionValidator(
+                ob::MotionValidatorPtr(
+                    new ManipulatorMotionValidator(ss_->getSpaceInformation())
+                    ));
+
     ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
+
+    ss_->getProblemDefinition()
+            ->setOptimizationObjective(
+                getPathLengthObjective(ss_->getSpaceInformation()));;
+
+    jointSpace->setup();
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
@@ -45,8 +67,6 @@ Manipulator::Manipulator(dart::simulation::World* world)
     }
 }
 
-
-
 //==============================================================================
 bool Manipulator::isStateValid(const ob::State *state) const
 {
@@ -54,19 +74,17 @@ bool Manipulator::isStateValid(const ob::State *state) const
     namespace bc = boost::chrono;
     bc::thread_clock::time_point start = bc::thread_clock::now();
 */
+
+    int num_max_contact = 5;
     double *jointSpace
             = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
 
-    for (int i = 2; i < 8; ++i) {
+    for (int i = 2; i < 8; ++i)
         staubli_->setPosition(i, jointSpace[i-2]);
-    }
 
-
-    //size_t a = sizeof(dc::FCLMeshCollisionNode);
     staubli_->computeForwardKinematics();
-    //dc::FCLMeshCollisionNode elbow_link_new(staubli_->getBodyNode("elbow_link"));
 
-    bool collision = table_->detectCollision(elbow_link_, NULL, 1);
+    bool collision = table_->detectCollision(elbow_link_, NULL, num_max_contact);
     if (collision){
 #ifdef DEBUG
         std::cout << "BAD STATE!" << std::endl;
@@ -74,7 +92,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
         return false;
     }
 
-    collision = table_->detectCollision(forearm_link_, NULL, 1);
+    collision = table_->detectCollision(forearm_link_, NULL, num_max_contact);
     if (collision){
 #ifdef DEBUG
         std::cout << "BAD STATE!" << std::endl;
@@ -83,7 +101,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
     }
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        collision = forearm_link_->detectCollision(obstacle_[i], NULL, 1);
+        collision = forearm_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -91,7 +109,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #endif
             return false;
         }
-        collision = arm_link_->detectCollision(obstacle_[i], NULL, 1);
+        collision = arm_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -99,7 +117,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #endif
             return false;
         }
-        collision = elbow_link_->detectCollision(obstacle_[i], NULL, 1);
+        collision = elbow_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -107,7 +125,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #endif
             return false;
         }
-        collision = shoulder_link_->detectCollision(obstacle_[i], NULL, 1);
+        collision = shoulder_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -115,7 +133,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #endif
             return false;
         }
-        collision = wrist_link_->detectCollision(obstacle_[i], NULL, 1);
+        collision = wrist_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -123,7 +141,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #endif
             return false;
         }
-        collision = toolflange_link_->detectCollision(obstacle_[i], NULL, 1);
+        collision = toolflange_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -131,7 +149,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #endif
             return false;
         }
-        collision = base_link_->detectCollision(obstacle_[i], NULL, 1);
+        collision = base_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -215,7 +233,7 @@ bool Manipulator::plan()
     if (ss_->getPlanner()){
         ss_->getPlanner()->clear();
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(1/180.0*M_PI);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0001);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0);
         //ss_->getPlanner()->as<og::RRTstarFN>()->rng_.setLocalSeed(32);
     }
     ss_->solve(planningTime_);
@@ -293,7 +311,7 @@ og::PathGeometric Manipulator::getResultantMotion()
     }
 
     og::PathGeometric &p = ss_->getSolutionPath();
-    p.interpolate(25);
+    //p.interpolate(50);
     return p;
 }
 
@@ -327,6 +345,7 @@ bool Manipulator::replan()
     for (int i = 0 ; i < 1 ; ++i)
     {
         if (ss_->getPlanner()) {
+            OMPL_WARN("range %f", 1.0/180.0*M_PI);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(1/180.0*M_PI);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0);
             //ss_->getPlanner()->as<og::RRTstarFN>()->rng_.setLocalSeed(32);
@@ -343,6 +362,30 @@ bool Manipulator::replan()
 // TODO implement motion validator
 bool ManipulatorMotionValidator::checkMotion(const ob::State *s1, const ob::State *s2) const
 {
+    ob::State *s3;
+    if (si_->isValid(s1) == false || si_->isValid(s2) == false ){
+        OMPL_WARN("Hey intermediate state is invalid");
+        return false;
+    }
+
+    stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, 0.25, s3);
+    if (si_->isValid(s3) == false ){
+        OMPL_WARN("Hey intermediate state1 is invalid");
+        return false;
+    }
+
+    stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, 0.50, s3);
+    if (si_->isValid(s3) == false ){
+        OMPL_WARN("Hey intermediate state2 is invalid");
+        return false;
+    }
+
+    stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, 0.75, s3);
+    if (si_->isValid(s3) == false ){
+        OMPL_WARN("Hey intermediate state3 is invalid");
+        return false;
+    }
+
     return true;
 }
 
@@ -352,5 +395,33 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State *s1,
                                              const ob::State *s2,
                                              std::pair<ob::State*, double> &lastValid) const
 {
+    /*
+    ob::State *s3;
+    if (ss_->getSpaceInformation()->isValid(s1) == false
+            || ss_->getSpaceInformation()->isValid(s2) == false )
+        return false;
+
+
+    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.25, s3);
+    if (ss_->getSpaceInformation()->isValid(s3) == false )
+        return false;
+
+    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.50, s3);
+    if (ss_->getSpaceInformation()->isValid(s3) == false )
+        return false;
+
+    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.75, s3);
+    if (ss_->getSpaceInformation()->isValid(s3) == false )
+        return false;
+
     return true;
+    */
+    return false;
+}
+
+void ManipulatorMotionValidator::defaultSettings()
+{
+    stateSpace_ = si_->getStateSpace();
+    if (!stateSpace_)
+        throw ompl::Exception("No state space for motion validator");
 }

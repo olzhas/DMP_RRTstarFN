@@ -55,7 +55,7 @@ void MyWindow::timeStepping()
 void MyWindow::drawSkels()
 {
     glEnable(GL_LIGHTING);
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
         mWorld->getSkeleton(i)->draw(mRI);
@@ -66,9 +66,27 @@ void MyWindow::drawSkels()
 //==============================================================================
 void MyWindow::drawTree()
 {
+
+    GLUquadricObj *c;
+    c = gluNewQuadric();
+    gluQuadricDrawStyle(c, GLU_FILL);
+    gluQuadricNormals(c, GLU_SMOOTH);
+    //glPushMatrix();
+    glColor3d(195.0/255.0, 225.0/255.0, 43.0/255.0);
+
+
     for (int i = 0; i < endEffectorPosition.size(); ++i) {
-        dart::gui::drawNode(endEffectorPosition.at(i));
+        Eigen::Vector3d center = endEffectorPosition.at(i);
+        glPushMatrix();
+        glTranslatef(center[0], center[1], center[2]);
+        glutSolidCube(0.01);
+        glPopMatrix();
+        //dart::gui::drawNode(endEffectorPosition.at(i));
     }
+
+    //glutSolidCube(0.05);
+    //glPopMatrix();
+    gluDeleteQuadric(c);
 }
 
 //==============================================================================

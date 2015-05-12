@@ -4,8 +4,14 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/DRRTstarFN.h>
-#include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/util/Exception.h>
 #include <ompl/config.h>
+
+#include <ompl/base/SpaceInformation.h>
+#include <ompl/base/objectives/PathLengthOptimizationObjective.h>
+#include <ompl/base/objectives/StateCostIntegralObjective.h>
+#include <ompl/base/objectives/MaximizeMinClearanceObjective.h>
+#include <ompl/base/spaces/RealVectorStateSpace.h>
 
 #include <dart/config.h>
 #include <dart/collision/collision.h>
@@ -42,9 +48,10 @@ namespace dd = dart::dynamics;
 
 class Manipulator 
 {
-public:
+    public:
 
     og::SimpleSetupPtr ss_;
+    ob::SpaceInformationPtr si_;
 
     Manipulator(dart::simulation::World* world);
 
