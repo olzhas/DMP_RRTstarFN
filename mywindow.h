@@ -55,10 +55,10 @@ public:
 private:
     og::PathGeometric *motion_;
 
-    int what;
-    int why;
+    int motionStep;
 
     std::vector<Eigen::Vector3d> endEffectorPosition;
+    std::vector<Eigen::Vector3d> solutionPositions;
 };
 
 #endif // MYWINDOW_H

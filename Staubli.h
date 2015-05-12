@@ -30,13 +30,13 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/chrono/thread_clock.hpp>
 
 
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <mutex>
 
 
 #define NUM_OBSTACLE 5
@@ -68,7 +68,7 @@ class Manipulator
 
 private:
 
-    bool isStateValid(const ob::State *state) const;
+    bool isStateValid(const ob::State *state);
     dart::simulation::World* world_;
 
     void setWorld(dart::simulation::World* world);
@@ -86,6 +86,9 @@ private:
     dc::FCLMeshCollisionNode *obstacle_[NUM_OBSTACLE];
 
     int planningTime_;
+
+    std::mutex mutex_;
+    std::mutex removalMutex_;
 
     //boost::asio::deadline_
 };

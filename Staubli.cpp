@@ -68,19 +68,22 @@ Manipulator::Manipulator(dart::simulation::World* world)
 }
 
 //==============================================================================
-bool Manipulator::isStateValid(const ob::State *state) const
+bool Manipulator::isStateValid(const ob::State *state)
 {
     /*
     namespace bc = boost::chrono;
     bc::thread_clock::time_point start = bc::thread_clock::now();
 */
-
-    int num_max_contact = 5;
+    //boost::unique_lock<boost::mutex> lock(mutex_);
+    mutex_.lock();
+    int num_max_contact = 10;
     double *jointSpace
             = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
 
-    for (int i = 2; i < 8; ++i)
+    for (int i = 2; i < 8; ++i){
         staubli_->setPosition(i, jointSpace[i-2]);
+        //std::cout << i << "=" <<jointSpace[i-2] << std::endl;
+    }
 
     staubli_->computeForwardKinematics();
 
@@ -89,6 +92,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #ifdef DEBUG
         std::cout << "BAD STATE!" << std::endl;
 #endif
+        mutex_.unlock();
         return false;
     }
 
@@ -97,6 +101,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #ifdef DEBUG
         std::cout << "BAD STATE!" << std::endl;
 #endif
+        mutex_.unlock();
         return false;
     }
 
@@ -107,6 +112,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
+            mutex_.unlock();
             return false;
         }
         collision = arm_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
@@ -115,6 +121,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
+            mutex_.unlock();
             return false;
         }
         collision = elbow_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
@@ -123,6 +130,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
+            mutex_.unlock();
             return false;
         }
         collision = shoulder_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
@@ -131,6 +139,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
+            mutex_.unlock();
             return false;
         }
         collision = wrist_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
@@ -139,6 +148,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
+            mutex_.unlock();
             return false;
         }
         collision = toolflange_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
@@ -147,6 +157,7 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
+            mutex_.unlock();
             return false;
         }
         collision = base_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
@@ -155,9 +166,12 @@ bool Manipulator::isStateValid(const ob::State *state) const
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
+            mutex_.unlock();
             return false;
         }
     }
+
+    mutex_.unlock();
     return true;
 
 
@@ -243,6 +257,111 @@ bool Manipulator::plan()
     return ss_->haveSolutionPath();
 }
 
+
+
+//==============================================================================
+void Manipulator::setPlanningTime(int time)
+{
+    planningTime_ = time;
+}
+
+//==============================================================================
+void Manipulator::setMaxNodes(int nodeNum)
+{
+#ifdef DEBUG
+    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
+#endif
+
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(nodeNum);
+
+#ifdef DEBUG
+    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
+#endif
+}
+
+//==============================================================================
+bool Manipulator::replan()
+{
+    if (!ss_)
+        return false;
+    // generate a few solutions; all will be added to the goal;
+    ss_->getProblemDefinition()->clearSolutionPaths();
+
+    if (ss_->getPlanner()) {
+        OMPL_WARN("range %f", 1.0/180.0*M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(1/180.0*M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0);
+        //ss_->getPlanner()->as<og::RRTstarFN>()->rng_.setLocalSeed(32);
+        ss_->solve(5);
+    }
+
+    //ss_->getProblemDefinition()->clearSolutionPaths();
+    const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
+    OMPL_INFORM("Found %d solutions", (int)ns);
+
+    return ss_->haveSolutionPath();
+}
+
+
+//==============================================================================
+// TODO implement motion validator
+bool ManipulatorMotionValidator::checkMotion(const ob::State *s1, const ob::State *s2) const
+{
+    ob::State *s3;
+    if (si_->isValid(s1) == false || si_->isValid(s2) == false ){
+        //OMPL_WARN("Hey intermediate state is invalid");
+        return false;
+    }
+
+    for(double step = 0.1; step<1; step+=0.1){
+        stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, step, s3);
+        if (si_->isValid(s3) == false ){
+            //OMPL_WARN("Hey intermediate state is invalid");
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//==============================================================================
+// TODO implement motion validator
+bool ManipulatorMotionValidator::checkMotion(const ob::State *s1,
+                                             const ob::State *s2,
+                                             std::pair<ob::State*, double> &lastValid) const
+{
+    /*
+    ob::State *s3;
+    if (ss_->getSpaceInformation()->isValid(s1) == false
+            || ss_->getSpaceInformation()->isValid(s2) == false )
+        return false;
+
+
+    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.25, s3);
+    if (ss_->getSpaceInformation()->isValid(s3) == false )
+        return false;
+
+    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.50, s3);
+    if (ss_->getSpaceInformation()->isValid(s3) == false )
+        return false;
+
+    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.75, s3);
+    if (ss_->getSpaceInformation()->isValid(s3) == false )
+        return false;
+
+    return true;
+    */
+    return false;
+}
+
+void ManipulatorMotionValidator::defaultSettings()
+{
+    stateSpace_ = si_->getStateSpace();
+    if (!stateSpace_)
+        throw ompl::Exception("No state space for motion validator");
+}
+
+
 //==============================================================================
 void Manipulator::printEdge(std::ostream &os, const ob::StateSpacePtr &space,
                             const ob::PlannerDataVertex &vertex)
@@ -307,121 +426,10 @@ og::PathGeometric Manipulator::getResultantMotion()
 {
     if (!ss_ || !ss_->haveSolutionPath())
     {
-        OMPL_ERROR("No solution");
+        OMPL_WARN("No solution");
     }
 
     og::PathGeometric &p = ss_->getSolutionPath();
-    //p.interpolate(50);
+    //p.interpolate(150);
     return p;
-}
-
-//==============================================================================
-void Manipulator::setPlanningTime(int time)
-{
-    planningTime_ = time;
-}
-
-//==============================================================================
-void Manipulator::setMaxNodes(int nodeNum)
-{
-#ifdef DEBUG
-    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
-#endif
-
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(nodeNum);
-
-#ifdef DEBUG
-    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
-#endif
-}
-
-//==============================================================================
-bool Manipulator::replan()
-{
-    if (!ss_)
-        return false;
-    // generate a few solutions; all will be added to the goal;
-
-    for (int i = 0 ; i < 1 ; ++i)
-    {
-        if (ss_->getPlanner()) {
-            OMPL_WARN("range %f", 1.0/180.0*M_PI);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(1/180.0*M_PI);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0);
-            //ss_->getPlanner()->as<og::RRTstarFN>()->rng_.setLocalSeed(32);
-        }
-        ss_->solve(1);
-    }
-    const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
-    OMPL_INFORM("Found %d solutions", (int)ns);
-    return ss_->haveSolutionPath();
-}
-
-
-//==============================================================================
-// TODO implement motion validator
-bool ManipulatorMotionValidator::checkMotion(const ob::State *s1, const ob::State *s2) const
-{
-    ob::State *s3;
-    if (si_->isValid(s1) == false || si_->isValid(s2) == false ){
-        OMPL_WARN("Hey intermediate state is invalid");
-        return false;
-    }
-
-    stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, 0.25, s3);
-    if (si_->isValid(s3) == false ){
-        OMPL_WARN("Hey intermediate state1 is invalid");
-        return false;
-    }
-
-    stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, 0.50, s3);
-    if (si_->isValid(s3) == false ){
-        OMPL_WARN("Hey intermediate state2 is invalid");
-        return false;
-    }
-
-    stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, 0.75, s3);
-    if (si_->isValid(s3) == false ){
-        OMPL_WARN("Hey intermediate state3 is invalid");
-        return false;
-    }
-
-    return true;
-}
-
-//==============================================================================
-// TODO implement motion validator
-bool ManipulatorMotionValidator::checkMotion(const ob::State *s1,
-                                             const ob::State *s2,
-                                             std::pair<ob::State*, double> &lastValid) const
-{
-    /*
-    ob::State *s3;
-    if (ss_->getSpaceInformation()->isValid(s1) == false
-            || ss_->getSpaceInformation()->isValid(s2) == false )
-        return false;
-
-
-    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.25, s3);
-    if (ss_->getSpaceInformation()->isValid(s3) == false )
-        return false;
-
-    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.50, s3);
-    if (ss_->getSpaceInformation()->isValid(s3) == false )
-        return false;
-
-    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.75, s3);
-    if (ss_->getSpaceInformation()->isValid(s3) == false )
-        return false;
-
-    return true;
-    */
-    return false;
-}
-
-void ManipulatorMotionValidator::defaultSettings()
-{
-    stateSpace_ = si_->getStateSpace();
-    if (!stateSpace_)
-        throw ompl::Exception("No state space for motion validator");
 }

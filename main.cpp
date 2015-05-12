@@ -82,6 +82,7 @@ int main(int argc, char* argv[])
         name[3] = i+'0';
 
         myObstacle[i]->setName(name);
+        std::cout << "obstacle name: " << name << std::endl;
     }
 
     myWorld->addSkeleton(staubli);
@@ -103,7 +104,7 @@ int main(int argc, char* argv[])
 
     Manipulator env(myWorld);
 
-    env.setPlanningTime(180);
+    env.setPlanningTime(60);
 
     env.setMaxNodes(5000);
 
@@ -111,18 +112,24 @@ int main(int argc, char* argv[])
         env.recordSolution();
     }
 
+#define DYNAMIC_PLANNING
 
-    for(int j=0;j<15;j++){
+#ifdef DYNAMIC_PLANNING
+
+    for(int j=0;j<14;j++){
         Eigen::Isometry3d T;
         T = myObstacle[1]->getBodyNode("box")->getTransform();
 
-        T.translation()(0) -= 0.05;
+        T.translation()(0) -= 0.075;
 
         myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
         myObstacle[1]->computeForwardKinematics();
-        //env.replan();
+        std::cout << "\nreplanning iteration #" <<j << std::endl;
+        env.replan();
     }
+#endif
 
+//*/
     /*
     Eigen::Isometry3d T;
     T = myObstacle[1]->getBodyNode("box")->getTransform();
