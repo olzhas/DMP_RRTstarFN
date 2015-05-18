@@ -1,5 +1,7 @@
 #include "Staubli.h"
 
+#include <ompl/datastructures/NearestNeighborsFLANN.h>
+
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 namespace dc = dart::collision;
@@ -40,6 +42,7 @@ Manipulator::Manipulator(dart::simulation::World* world)
                     new ManipulatorMotionValidator(ss_->getSpaceInformation())
                     ));
 
+    //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
     ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
 
     ss_->getProblemDefinition()
@@ -47,6 +50,7 @@ Manipulator::Manipulator(dart::simulation::World* world)
                 getPathLengthObjective(ss_->getSpaceInformation()));;
 
     jointSpace->setup();
+    //ss_->getPlanner()->
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
@@ -76,7 +80,8 @@ bool Manipulator::isStateValid(const ob::State *state)
 */
     //boost::unique_lock<boost::mutex> lock(mutex_);
     mutex_.lock();
-    int num_max_contact = 10;
+    std::vector<dc::Contact> contact;
+    int num_max_contact = 1;
     double *jointSpace
             = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
 
@@ -85,9 +90,12 @@ bool Manipulator::isStateValid(const ob::State *state)
         //std::cout << i << "=" <<jointSpace[i-2] << std::endl;
     }
 
-    staubli_->computeForwardKinematics();
+    staubli_->computeForwardKinematics(true, false, false);
+//    return world_->checkCollision();
 
-    bool collision = table_->detectCollision(elbow_link_, NULL, num_max_contact);
+    bool collision;
+
+    collision = table_->detectCollision(elbow_link_, &contact, num_max_contact);
     if (collision){
 #ifdef DEBUG
         std::cout << "BAD STATE!" << std::endl;
@@ -96,7 +104,7 @@ bool Manipulator::isStateValid(const ob::State *state)
         return false;
     }
 
-    collision = table_->detectCollision(forearm_link_, NULL, num_max_contact);
+    collision = table_->detectCollision(forearm_link_, &contact, num_max_contact);
     if (collision){
 #ifdef DEBUG
         std::cout << "BAD STATE!" << std::endl;
@@ -106,7 +114,7 @@ bool Manipulator::isStateValid(const ob::State *state)
     }
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        collision = forearm_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
+        collision = forearm_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -115,7 +123,7 @@ bool Manipulator::isStateValid(const ob::State *state)
             mutex_.unlock();
             return false;
         }
-        collision = arm_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
+        collision = arm_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -124,7 +132,7 @@ bool Manipulator::isStateValid(const ob::State *state)
             mutex_.unlock();
             return false;
         }
-        collision = elbow_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
+        collision = elbow_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -133,7 +141,7 @@ bool Manipulator::isStateValid(const ob::State *state)
             mutex_.unlock();
             return false;
         }
-        collision = shoulder_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
+        collision = toolflange_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -142,7 +150,7 @@ bool Manipulator::isStateValid(const ob::State *state)
             mutex_.unlock();
             return false;
         }
-        collision = wrist_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
+        collision = wrist_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -151,7 +159,10 @@ bool Manipulator::isStateValid(const ob::State *state)
             mutex_.unlock();
             return false;
         }
-        collision = toolflange_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
+    }
+
+    for (int i = 0; i < NUM_OBSTACLE; ++i) {
+        collision = shoulder_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -160,7 +171,8 @@ bool Manipulator::isStateValid(const ob::State *state)
             mutex_.unlock();
             return false;
         }
-        collision = base_link_->detectCollision(obstacle_[i], NULL, num_max_contact);
+
+        collision = base_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
         if (collision)
         {
 #ifdef DEBUG
@@ -246,25 +258,20 @@ bool Manipulator::plan()
 
     if (ss_->getPlanner()){
         ss_->getPlanner()->clear();
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(1/180.0*M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(5.0/180.0*M_PI);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0);
-        //ss_->getPlanner()->as<og::RRTstarFN>()->rng_.setLocalSeed(32);
+        ss_->solve(planningTime_);
     }
-    ss_->solve(planningTime_);
 
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
     OMPL_INFORM("Found %d solutions", (int)ns);
     return ss_->haveSolutionPath();
 }
-
-
-
 //==============================================================================
 void Manipulator::setPlanningTime(int time)
 {
     planningTime_ = time;
 }
-
 //==============================================================================
 void Manipulator::setMaxNodes(int nodeNum)
 {
@@ -288,11 +295,7 @@ bool Manipulator::replan()
     ss_->getProblemDefinition()->clearSolutionPaths();
 
     if (ss_->getPlanner()) {
-        OMPL_WARN("range %f", 1.0/180.0*M_PI);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(1/180.0*M_PI);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0);
-        //ss_->getPlanner()->as<og::RRTstarFN>()->rng_.setLocalSeed(32);
-        ss_->solve(5);
+        ss_->solve(10);
     }
 
     //ss_->getProblemDefinition()->clearSolutionPaths();
@@ -430,6 +433,6 @@ og::PathGeometric Manipulator::getResultantMotion()
     }
 
     og::PathGeometric &p = ss_->getSolutionPath();
-    //p.interpolate(150);
+    p.interpolate(2000);
     return p;
 }

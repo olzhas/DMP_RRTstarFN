@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 
-
 #include <dart/config.h>
 #include <dart/collision/collision.h>
 #include <dart/common/common.h>
@@ -13,8 +12,8 @@
 #include <dart/renderer/renderer.h>
 #include <dart/simulation/simulation.h>
 #include <dart/gui/gui.h>
-#include <dart/optimizer/optimizer.h>
-#include <dart/planning/planning.h>
+//#include <dart/optimizer/optimizer.h>
+//#include <dart/planning/planning.h>
 #include <dart/utils/utils.h>
 
 #include <random>
@@ -27,7 +26,6 @@
 //#include "config/obstacle_config_green.h"
 #include "config/obstacle_config_blue.h"
 
-
 #define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
 
 using namespace std;
@@ -35,8 +33,6 @@ using namespace Eigen;
 using namespace dart::dynamics;
 using namespace dart::simulation;
 using namespace dart::utils;
-
-
 
 int main(int argc, char* argv[])
 {
@@ -100,11 +96,13 @@ int main(int argc, char* argv[])
 
     myWorld->setGravity(Vector3d(0.0, 0.0, 0.0));
 
-    std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
+    //std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
 
     Manipulator env(myWorld);
 
     env.setPlanningTime(60);
+    //env.setPlanningTime(2);
+    //env.setPlanningTime(600);
 
     env.setMaxNodes(5000);
 
@@ -112,18 +110,18 @@ int main(int argc, char* argv[])
         env.recordSolution();
     }
 
-#define DYNAMIC_PLANNING
+//#define DYNAMIC_PLANNING
 
 #ifdef DYNAMIC_PLANNING
 
-    for(int j=0;j<14;j++){
+    for(int j=0;j<3;j++){
         Eigen::Isometry3d T;
         T = myObstacle[1]->getBodyNode("box")->getTransform();
 
-        T.translation()(0) -= 0.075;
+        T.translation()(0) -= 0.3;
 
         myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-        myObstacle[1]->computeForwardKinematics();
+        myObstacle[1]->computeForwardKinematics(true, false, false);
         std::cout << "\nreplanning iteration #" <<j << std::endl;
         env.replan();
     }

@@ -48,6 +48,8 @@ public:
 
     void initDrawTree();
     void drawTree();
+    void drawGhostManipulator();
+    void drawManipulatorState(int state);
 
 
     og::SimpleSetupPtr ss_;
@@ -56,9 +58,12 @@ private:
     og::PathGeometric *motion_;
 
     int motionStep;
+    int treeState;
 
     std::vector<Eigen::Vector3d> endEffectorPosition;
     std::vector<Eigen::Vector3d> solutionPositions;
+
+    bool ghostDrawn;
 };
 
 #endif // MYWINDOW_H

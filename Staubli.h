@@ -2,8 +2,10 @@
 #define STAUBLI_H
 
 #include <ompl/base/spaces/RealVectorStateSpace.h>
+
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/DRRTstarFN.h>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/util/Exception.h>
 #include <ompl/config.h>
 
@@ -31,7 +33,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/chrono/thread_clock.hpp>
-
 
 #include <vector>
 #include <iostream>
