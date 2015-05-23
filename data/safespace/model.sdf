@@ -91,7 +91,13 @@
     <joint name="fix to table" type="revolute">
       <parent>table</parent>
       <child>base_link</child>
-
+      <axis>
+        <xyz>0.0 0.0 1</xyz>
+        <limit>
+          <lower>0</lower>
+          <upper>0</upper>
+        </limit>
+      </axis>
     </joint>
 
     <link name='shoulder_link'>

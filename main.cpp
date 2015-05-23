@@ -36,17 +36,16 @@ using namespace dart::utils;
 
 int main(int argc, char* argv[])
 {
-
-    std::random_device rd;     // only used once to initialise (seed) engine
-    std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
-    std::uniform_real_distribution<double> uni(-1.0, 1.0); // guaranteed unbiased
-
     World* myWorld = SkelParser::readWorld(
                 SAFESPACE_DATA"/ground_plane/ground.skel");
+
+    //myWorld->getConstraintSolver()->setCollisionDetector(
+    //    new dart::collision::BulletCollisionDetector());
+
     Skeleton* staubli
             = SoftSdfParser::readSkeleton(SAFESPACE_DATA"/safespace/model.sdf");
 
-    staubli->disableSelfCollision();
+    //staubli->disableSelfCollision();
 
     Skeleton* myObstacle[NUM_OBSTACLE];
     std::string name = "box ";
@@ -95,30 +94,32 @@ int main(int argc, char* argv[])
     }
 
     myWorld->setGravity(Vector3d(0.0, 0.0, 0.0));
+    myWorld->setTimeStep(0.015);
 
     //std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
 
     Manipulator env(myWorld);
 
-    env.setPlanningTime(60);
+    env.setPlanningTime(600);
     //env.setPlanningTime(2);
     //env.setPlanningTime(600);
 
-    env.setMaxNodes(5000);
+    env.setMaxNodes(20000);
 
     if (env.plan()) {
         env.recordSolution();
     }
-
+    std::cout << myWorld->getTimeStep() << std::endl;
 //#define DYNAMIC_PLANNING
 
 #ifdef DYNAMIC_PLANNING
 
+    double avgSpeed = 0.05;// calculated from the average speed of walking, 5 kph
     for(int j=0;j<3;j++){
         Eigen::Isometry3d T;
         T = myObstacle[1]->getBodyNode("box")->getTransform();
 
-        T.translation()(0) -= 0.3;
+        T.translation()(0) -= avgSpeed;
 
         myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
         myObstacle[1]->computeForwardKinematics(true, false, false);

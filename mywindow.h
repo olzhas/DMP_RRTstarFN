@@ -1,5 +1,5 @@
-#ifndef MYWINDOW_H
-#define MYWINDOW_H
+#ifndef MYWINDOW_H_
+#define MYWINDOW_H_
 
 #include <boost/thread.hpp>
 #include <ompl/geometric/PathGeometric.h>
@@ -51,6 +51,8 @@ public:
     void drawGhostManipulator();
     void drawManipulatorState(int state);
 
+    Eigen::Vector3d getVertex(const ob::PlannerDataVertex &vertex);
+
 
     og::SimpleSetupPtr ss_;
 
@@ -63,7 +65,8 @@ private:
     std::vector<Eigen::Vector3d> endEffectorPosition;
     std::vector<Eigen::Vector3d> solutionPositions;
 
+    std::vector< std::vector<Eigen::Vector3d> > edges;
     bool ghostDrawn;
 };
 
-#endif // MYWINDOW_H
+#endif // MYWINDOW_H_

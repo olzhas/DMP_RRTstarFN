@@ -1,5 +1,5 @@
-#ifndef GUIMISC_H
-#define GUIMISC_H
+#ifndef GUIMISC_H_
+#define GUIMISC_H_
 
 #include <dart/math/math.h>
 
@@ -25,5 +25,5 @@ void drawNode(const Eigen::Vector3d center);
 }
 
 
-#endif // GUIMISC_H
+#endif // GUIMISC_H_
 

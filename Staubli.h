@@ -1,5 +1,5 @@
-#ifndef STAUBLI_H
-#define STAUBLI_H
+#ifndef STAUBLI_H_
+#define STAUBLI_H_
 
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
@@ -33,6 +33,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/chrono/thread_clock.hpp>
+#include <boost/thread.hpp>
 
 #include <vector>
 #include <iostream>
@@ -75,6 +76,7 @@ private:
     void setWorld(dart::simulation::World* world);
 
     dd::Skeleton *staubli_;
+
     dc::FCLMeshCollisionNode *table_;
     dc::FCLMeshCollisionNode *base_link_;
     dc::FCLMeshCollisionNode *shoulder_link_;
@@ -86,12 +88,11 @@ private:
 
     dc::FCLMeshCollisionNode *obstacle_[NUM_OBSTACLE];
 
+
+
     int planningTime_;
 
-    std::mutex mutex_;
-    std::mutex removalMutex_;
-
-    //boost::asio::deadline_
+    boost::mutex mutex_;
 };
 
 class ManipulatorMotionValidator : public ob::MotionValidator
@@ -115,4 +116,4 @@ private:
     void defaultSettings();
 };
 
-#endif
+#endif // STAUBLI_H_

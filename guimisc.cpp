@@ -7,7 +7,7 @@ namespace gui
 //==============================================================================
 void drawLine3D(const Eigen::Vector3d start, const Eigen::Vector3d end)
 {
-    double _thickness = 0.0005;
+    double _thickness = 0.001;
 
     Eigen::Vector3d normDir = end - start;
     double _length = normDir.norm();
@@ -19,7 +19,7 @@ void drawLine3D(const Eigen::Vector3d start, const Eigen::Vector3d end)
     gluQuadricDrawStyle(c, GLU_FILL);
     gluQuadricNormals(c, GLU_SMOOTH);
     //    GLfloat color[4]={0.8, 0.1, 0, 1};
-    glColor3d(239.0/255.0,113.0/255.0,38.0/255.0);
+    glColor3d(255.0/255.0, 102.0/255.0, 0.0/255.0);
 
 
     glPushMatrix();

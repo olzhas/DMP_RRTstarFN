@@ -50,7 +50,6 @@ Manipulator::Manipulator(dart::simulation::World* world)
                 getPathLengthObjective(ss_->getSpaceInformation()));;
 
     jointSpace->setup();
-    //ss_->getPlanner()->
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
@@ -69,6 +68,7 @@ Manipulator::Manipulator(dart::simulation::World* world)
         name[3] = i + '0';
         obstacle_[i] = new dc::FCLMeshCollisionNode(world_->getSkeleton(name)->getBodyNode(0));
     }
+
 }
 
 //==============================================================================
@@ -78,12 +78,13 @@ bool Manipulator::isStateValid(const ob::State *state)
     namespace bc = boost::chrono;
     bc::thread_clock::time_point start = bc::thread_clock::now();
 */
-    //boost::unique_lock<boost::mutex> lock(mutex_);
-    mutex_.lock();
-    std::vector<dc::Contact> contact;
-    int num_max_contact = 1;
+    boost::lock_guard<boost::mutex> guard(mutex_);
+
     double *jointSpace
             = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
+
+    std::vector<dc::Contact> contact;
+    int num_max_contact = 1;
 
     for (int i = 2; i < 8; ++i){
         staubli_->setPosition(i, jointSpace[i-2]);
@@ -91,16 +92,17 @@ bool Manipulator::isStateValid(const ob::State *state)
     }
 
     staubli_->computeForwardKinematics(true, false, false);
-//    return world_->checkCollision();
-
     bool collision;
+/*
+    collision = world_->checkCollision(true);
+    return collision;
+*/
 
     collision = table_->detectCollision(elbow_link_, &contact, num_max_contact);
     if (collision){
 #ifdef DEBUG
         std::cout << "BAD STATE!" << std::endl;
 #endif
-        mutex_.unlock();
         return false;
     }
 
@@ -109,7 +111,6 @@ bool Manipulator::isStateValid(const ob::State *state)
 #ifdef DEBUG
         std::cout << "BAD STATE!" << std::endl;
 #endif
-        mutex_.unlock();
         return false;
     }
 
@@ -120,7 +121,7 @@ bool Manipulator::isStateValid(const ob::State *state)
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
-            mutex_.unlock();
+
             return false;
         }
         collision = arm_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
@@ -129,7 +130,6 @@ bool Manipulator::isStateValid(const ob::State *state)
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
-            mutex_.unlock();
             return false;
         }
         collision = elbow_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
@@ -138,7 +138,6 @@ bool Manipulator::isStateValid(const ob::State *state)
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
-            mutex_.unlock();
             return false;
         }
         collision = toolflange_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
@@ -147,7 +146,6 @@ bool Manipulator::isStateValid(const ob::State *state)
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
-            mutex_.unlock();
             return false;
         }
         collision = wrist_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
@@ -156,7 +154,6 @@ bool Manipulator::isStateValid(const ob::State *state)
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
-            mutex_.unlock();
             return false;
         }
     }
@@ -168,7 +165,6 @@ bool Manipulator::isStateValid(const ob::State *state)
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
-            mutex_.unlock();
             return false;
         }
 
@@ -178,12 +174,10 @@ bool Manipulator::isStateValid(const ob::State *state)
 #ifdef DEBUG
             std::cout << "BAD STATE!" << std::endl;
 #endif
-            mutex_.unlock();
             return false;
         }
     }
 
-    mutex_.unlock();
     return true;
 
 
@@ -255,10 +249,9 @@ bool Manipulator::plan()
     ss_->setStartAndGoalStates(start, goal);
     // generate a few solutions; all will be added to the goal;
 
-
     if (ss_->getPlanner()){
         ss_->getPlanner()->clear();
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(5.0/180.0*M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.0/180.0*M_PI);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0);
         ss_->solve(planningTime_);
     }
@@ -295,7 +288,7 @@ bool Manipulator::replan()
     ss_->getProblemDefinition()->clearSolutionPaths();
 
     if (ss_->getPlanner()) {
-        ss_->solve(10);
+        ss_->solve(0.1);
     }
 
     //ss_->getProblemDefinition()->clearSolutionPaths();
@@ -333,6 +326,7 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State *s1,
                                              const ob::State *s2,
                                              std::pair<ob::State*, double> &lastValid) const
 {
+    OMPL_ERROR("call of the method");
     /*
     ob::State *s3;
     if (ss_->getSpaceInformation()->isValid(s1) == false

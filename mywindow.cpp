@@ -53,13 +53,7 @@ void MyWindow::timeStepping()
             Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
             Eigen::Vector3d mytest = Eigen::Vector3d(transform.translation());
 
-            /*
-            mEye[0] = mytest[0];
-            mUp[0] =  mytest[0]/10.0;
-            mUp[1] =  mytest[1]/10.0;
-            mUp[2] =  mytest[2]/10.0;
-            */
-
+            // camera movement
             mTrans[0] = -mytest[0]*1000.0;
             mTrans[1] = -mytest[1]*1000.0;
             mTrans[2] = mytest[2]*10.0;
@@ -68,8 +62,6 @@ void MyWindow::timeStepping()
             mSimulating = false;
         }
     }
-
-    //std::cout << mEye << std::endl;
 }
 
 //==============================================================================
@@ -94,17 +86,14 @@ void MyWindow::drawTree()
     //glPushMatrix();
 
     glColor3d(215.0/255.0, 225.0/255.0, 43.0/255.0);
-
-
     for (int i = 0; i < endEffectorPosition.size(); ++i) {
         Eigen::Vector3d center = endEffectorPosition.at(i);
         glPushMatrix();
         glTranslatef(center[0], center[1], center[2]);
         glutSolidCube(0.015);
         glPopMatrix();
-        //dart::gui::drawNode(endEffectorPosition.at(i));
     }
-    //*/
+
     glColor3d(215.0/255.0, 25.0/255.0, 43.0/255.0);
     for (int i = 0; i < solutionPositions.size(); ++i) {
         Eigen::Vector3d center = solutionPositions.at(i);
@@ -112,9 +101,14 @@ void MyWindow::drawTree()
         glTranslatef(center[0], center[1], center[2]);
         glutSolidCube(0.025);
         glPopMatrix();
-        //dart::gui::drawNode(endEffectorPosition.at(i));
     }
     gluDeleteQuadric(c);
+
+    for (int i = 0; i < edges.size(); ++i) {
+        Eigen::Vector3d start = edges[i][0];
+        Eigen::Vector3d end = edges[i][1];
+        dart::gui::drawLine3D(start, end);
+    }
 }
 //==============================================================================
 
@@ -213,12 +207,46 @@ void MyWindow::initDrawTree()
         }
     }
 
+    // Print the edges to file
+    std::vector<unsigned int> edge_list;
+    for(unsigned int i(0); i<pdat.numVertices(); ++i)
+    {
+        unsigned int n_edge= pdat.getEdges(i,edge_list);
+        for(unsigned int i2(0); i2<n_edge; ++i2)
+        {
+            std::vector<Eigen::Vector3d> temp;
+            temp.push_back(getVertex(pdat.getVertex(i)));
+            temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
+            edges.push_back(temp);
+            //printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(i));
+            //printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(edge_list[i2]));
+        }
+    }
+
     /*
     bc::thread_clock::time_point stop = bc::thread_clock::now();
     std::cout << "duration: "
               << bc::duration_cast<bc::milliseconds>(stop - start).count()
               << " ms\n";
               */
+}
+
+//==============================================================================
+Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex &vertex)
+{
+    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+    std::vector<double> reals;
+
+    assert (vertex != ob::PlannerData::NO_VERTEX);
+
+    ss_->getStateSpace()->copyToReals(reals, vertex.getState());
+    for(size_t j(0); j<reals.size(); ++j) {
+        staubli->setPosition(j+2, reals[j]);
+    }
+    staubli->computeForwardKinematics(true, false, false);
+
+    Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+    return Eigen::Vector3d(transform.translation());
 }
 //==============================================================================
 void MyWindow::drawManipulatorState(int state)
