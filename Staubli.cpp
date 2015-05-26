@@ -22,12 +22,14 @@ Manipulator::Manipulator(dart::simulation::World* world)
     setWorld(world);
     ob::RealVectorStateSpace *jointSpace = new ob::RealVectorStateSpace();
 
+    // TODO make this configurable through config files
     jointSpace->addDimension(-M_PI, M_PI);
     jointSpace->addDimension(-130.0/180.0*M_PI, 147.5/180.0*M_PI);
     jointSpace->addDimension(-145.0/180.0*M_PI, 145.0/180.0*M_PI);
     jointSpace->addDimension(-270.0/180.0*M_PI, 270.0/180.0*M_PI);
     jointSpace->addDimension(-115.0/180.0*M_PI, 140.0/180.0*M_PI);
     jointSpace->addDimension(-270.0/180.0*M_PI, 270.0/180.0*M_PI);
+    //jointSpace->setMaximumExtent(10);
 
     ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(jointSpace)));
     // set state validity checking for this space
@@ -251,7 +253,8 @@ bool Manipulator::plan()
 
     if (ss_->getPlanner()){
         ss_->getPlanner()->clear();
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.0/180.0*M_PI);
+        //ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.0/180.0*M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(5.0/180.0*M_PI);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0);
         ss_->solve(planningTime_);
     }
@@ -300,7 +303,6 @@ bool Manipulator::replan()
 
 
 //==============================================================================
-// TODO implement motion validator
 bool ManipulatorMotionValidator::checkMotion(const ob::State *s1, const ob::State *s2) const
 {
     ob::State *s3;

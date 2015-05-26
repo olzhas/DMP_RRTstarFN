@@ -1,0 +1,42 @@
+<sdf version='1.4'>
+
+  <model name='box4'>
+  <static>false</static>
+
+  <link name="wall1">
+    <pose>1 0.8 0.1 1.5708 0 -1.5708 </pose>
+    <collision name="collision">
+      <geometry>
+        <mesh>
+        <scale>1 1 1</scale>
+        <uri>meshes/complex_obstacle4.dae</uri>
+        </mesh>
+      </geometry>
+    </collision>
+
+    <visual name="visual">
+    <pose>0 0 0 0 0 0</pose>
+      <geometry>
+        <mesh>
+        <!--<scale>0.001 0.001 0.001</scale>-->
+        <scale>1 1 1</scale>
+        <uri>meshes/complex_obstacle4.dae</uri>
+        </mesh>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="fix to ground wall1" type="revolute">
+    <parent>world</parent>
+    <child>wall1</child>
+    <axis>
+      <xyz>0.0 0.0 1</xyz>
+      <limit>
+        <lower>0</lower>
+        <upper>0</upper>
+      </limit>
+    </axis>
+  </joint>
+
+  </model>
+</sdf>

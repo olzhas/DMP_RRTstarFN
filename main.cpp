@@ -45,12 +45,15 @@ int main(int argc, char* argv[])
     Skeleton* staubli
             = SoftSdfParser::readSkeleton(SAFESPACE_DATA"/safespace/model.sdf");
 
+    Skeleton* complexObstacle
+            = SoftSdfParser::readSkeleton(SAFESPACE_DATA"/obstacles/complex_obstacle.sdf");
+
     //staubli->disableSelfCollision();
 
     Skeleton* myObstacle[NUM_OBSTACLE];
     std::string name = "box ";
 
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
+    for (int i = 0; i < NUM_OBSTACLE-1; ++i) {
 
         if ( i < 1) {
             myObstacle[i] = SkelParser::readSkeleton(SAFESPACE_DATA"/obstacles/wall.skel");
@@ -81,20 +84,23 @@ int main(int argc, char* argv[])
     }
 
     myWorld->addSkeleton(staubli);
+    // TODO make it smarter
+    //complexObstacle->setName("box4");
+    myWorld->addSkeleton(complexObstacle);
+
     for (int i = 0; i < 8; ++i) {
         staubli->getJoint(i)->setActuatorType(Joint::LOCKED);
 #ifdef DEBUG
         cout << staubli->getJoint(i)->isKinematic() << endl;
 #endif
-
     }
 
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
+    for (int i = 0; i < NUM_OBSTACLE-1; ++i) {
         myWorld->addSkeleton(myObstacle[i]);
     }
 
     myWorld->setGravity(Vector3d(0.0, 0.0, 0.0));
-    myWorld->setTimeStep(0.015);
+    //myWorld->setTimeStep(0.005);
 
     //std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
 
@@ -110,7 +116,7 @@ int main(int argc, char* argv[])
         env.recordSolution();
     }
     std::cout << myWorld->getTimeStep() << std::endl;
-//#define DYNAMIC_PLANNING
+    //#define DYNAMIC_PLANNING
 
 #ifdef DYNAMIC_PLANNING
 
@@ -128,7 +134,7 @@ int main(int argc, char* argv[])
     }
 #endif
 
-//*/
+    //*/
     /*
     Eigen::Isometry3d T;
     T = myObstacle[1]->getBodyNode("box")->getTransform();

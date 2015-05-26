@@ -11,8 +11,6 @@ MyWindow::MyWindow()
     mTranslate = true;
     ghostDrawn = false;
     treeState = 0;
-    //mEye = Eigen::Vector3d(1,1,0);
-    //mUp = Eigen::Vector3d(0,0,1);
 }
 
 //==============================================================================
@@ -31,9 +29,6 @@ void MyWindow::setMotion(og::PathGeometric *motion)
 //==============================================================================
 void MyWindow::timeStepping()
 {
-    // TODO implement draw visualization of the generated path
-    // TODO draw the three, using markers?
-
     mWorld->step();
     if (motion_ != NULL){
         dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
