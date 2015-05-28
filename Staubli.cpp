@@ -254,7 +254,7 @@ bool Manipulator::plan()
     if (ss_->getPlanner()){
         ss_->getPlanner()->clear();
         //ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.0/180.0*M_PI);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(5.0/180.0*M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.5/180.0*M_PI);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0);
         ss_->solve(planningTime_);
     }
@@ -423,12 +423,24 @@ void Manipulator::setWorld(dart::simulation::World *world)
 //==============================================================================
 og::PathGeometric Manipulator::getResultantMotion()
 {
-    if (!ss_ || !ss_->haveSolutionPath())
-    {
+
+    if (!ss_ || !ss_->haveSolutionPath()) {
         OMPL_WARN("No solution");
+        og::PathGeometric p(ss_->getSpaceInformation());
+        return p;
     }
 
     og::PathGeometric &p = ss_->getSolutionPath();
-    p.interpolate(2000);
+    p.interpolate(20);
     return p;
+}
+
+void Manipulator::store(const char *filename)
+{
+    // Get the planner data to visualize the vertices and the edges
+    ob::PlannerData pdat(ss_->getSpaceInformation());
+    ss_->getPlannerData(pdat);
+
+    ob::PlannerDataStorage pdstorage;
+    //ss_->getPlanner()->as<og::DRRTstarFN>()->storeTree(filename);
 }

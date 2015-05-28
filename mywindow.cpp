@@ -97,6 +97,15 @@ void MyWindow::drawTree()
         glutSolidCube(0.025);
         glPopMatrix();
     }
+
+    glColor3d(200.0/255.0, 0.0/255.0, 200.0/255.0);
+    for (int i = 0; i < endEffectorPositionDetached.size(); ++i) {
+        Eigen::Vector3d center = endEffectorPositionDetached.at(i);
+        glPushMatrix();
+        glTranslatef(center[0], center[1], center[2]);
+        glutSolidCube(0.025);
+        glPopMatrix();
+    }
     gluDeleteQuadric(c);
 
     for (int i = 0; i < edges.size(); ++i) {
@@ -110,6 +119,7 @@ void MyWindow::drawTree()
 void MyWindow::drawGhostManipulator()
 {
     if (!ss_ || !ss_->haveSolutionPath()){
+
         std::cerr << "No solution =(" << std::endl;
     }
 
@@ -173,6 +183,7 @@ void MyWindow::initDrawTree()
         std::vector<double> reals;
         if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
         {
+
             ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
 
             for(size_t j(0); j<reals.size(); ++j){
@@ -182,7 +193,12 @@ void MyWindow::initDrawTree()
             Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
             //Eigen::Vector3d
             //std::cout << transform.translation()<< std::endl;
-            endEffectorPosition.push_back(transform.translation());
+            if (pdat.getVertex(i).getTag()){
+                std::cout << "endEffectorPositionDetached" << std::endl;
+                endEffectorPositionDetached.push_back(transform.translation());
+            }
+            else
+                endEffectorPosition.push_back(transform.translation());
         }
     }
 

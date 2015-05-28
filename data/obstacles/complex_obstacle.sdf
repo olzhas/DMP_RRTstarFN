@@ -4,7 +4,7 @@
   <static>false</static>
 
   <link name="wall1">
-    <pose>1 0.8 0.1 1.5708 0 -1.5708 </pose>
+    <pose>1 0.6 0.5 1.5708 0 -1.5708 </pose>
     <collision name="collision">
       <geometry>
         <mesh>

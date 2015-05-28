@@ -68,6 +68,8 @@ class Manipulator
     void setPlanningTime(int time);
     void setMaxNodes(int nodeNum);
 
+    void store(const char *filename);
+
 private:
 
     bool isStateValid(const ob::State *state);
@@ -87,8 +89,6 @@ private:
     dc::FCLMeshCollisionNode *toolflange_link_;
 
     dc::FCLMeshCollisionNode *obstacle_[NUM_OBSTACLE];
-
-
 
     int planningTime_;
 

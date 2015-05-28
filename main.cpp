@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 
+// dart
 #include <dart/config.h>
 #include <dart/collision/collision.h>
 #include <dart/common/common.h>
@@ -16,7 +17,9 @@
 //#include <dart/planning/planning.h>
 #include <dart/utils/utils.h>
 
-#include <random>
+// OMPL
+#include <ompl/base/PlannerData.h>
+#include <ompl/base/PlannerDataStorage.h>
 
 #include "mywindow.h"
 #include "Staubli.h"
@@ -53,7 +56,7 @@ int main(int argc, char* argv[])
     Skeleton* myObstacle[NUM_OBSTACLE];
     std::string name = "box ";
 
-    for (int i = 0; i < NUM_OBSTACLE-1; ++i) {
+    for (int i = 0; i < NUM_OBSTACLE; ++i) {
 
         if ( i < 1) {
             myObstacle[i] = SkelParser::readSkeleton(SAFESPACE_DATA"/obstacles/wall.skel");
@@ -86,7 +89,7 @@ int main(int argc, char* argv[])
     myWorld->addSkeleton(staubli);
     // TODO make it smarter
     //complexObstacle->setName("box4");
-    myWorld->addSkeleton(complexObstacle);
+    //myWorld->addSkeleton(complexObstacle);
 
     for (int i = 0; i < 8; ++i) {
         staubli->getJoint(i)->setActuatorType(Joint::LOCKED);
@@ -95,7 +98,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    for (int i = 0; i < NUM_OBSTACLE-1; ++i) {
+    for (int i = 0; i < NUM_OBSTACLE; ++i) {
         myWorld->addSkeleton(myObstacle[i]);
     }
 
@@ -106,7 +109,7 @@ int main(int argc, char* argv[])
 
     Manipulator env(myWorld);
 
-    env.setPlanningTime(600);
+    env.setPlanningTime(120);
     //env.setPlanningTime(2);
     //env.setPlanningTime(600);
 
@@ -116,12 +119,25 @@ int main(int argc, char* argv[])
         env.recordSolution();
     }
     std::cout << myWorld->getTimeStep() << std::endl;
-    //#define DYNAMIC_PLANNING
 
+    std::string fileName = "mys.dump";
+
+    env.store(fileName.c_str());
+    //env.store(fileName.c_str());
+
+/*
+
+    ompl::base::PlannerDataStorage plannerDataStorage;
+    ompl::base::PlannerDataPtr plannerData;
+    plannerDataStorage.store(*plannerData, fileName.c_str());
+*/
+
+#define DYNAMIC_PLANNING
 #ifdef DYNAMIC_PLANNING
 
-    double avgSpeed = 0.05;// calculated from the average speed of walking, 5 kph
-    for(int j=0;j<3;j++){
+    //double avgSpeed = 0.05;// calculated from the average speed of walking, 5 kph
+    double avgSpeed = 0.1;
+    for(int j=0;j<1;j++){
         Eigen::Isometry3d T;
         T = myObstacle[1]->getBodyNode("box")->getTransform();
 
