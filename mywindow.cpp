@@ -191,12 +191,8 @@ void MyWindow::initDrawTree()
             }
             staubli->computeForwardKinematics(true, false, false);
             Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-            //Eigen::Vector3d
-            //std::cout << transform.translation()<< std::endl;
-            if (pdat.getVertex(i).getTag()){
-                std::cout << "endEffectorPositionDetached" << std::endl;
+            if (pdat.getVertex(i).getTag())
                 endEffectorPositionDetached.push_back(transform.translation());
-            }
             else
                 endEffectorPosition.push_back(transform.translation());
         }

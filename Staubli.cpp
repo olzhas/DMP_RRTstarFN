@@ -20,6 +20,11 @@ ob::OptimizationObjectivePtr getPathLengthObjective(const ob::SpaceInformationPt
 Manipulator::Manipulator(dart::simulation::World* world)
 {
     setWorld(world);
+    init();
+}
+
+void Manipulator::init()
+{
     ob::RealVectorStateSpace *jointSpace = new ob::RealVectorStateSpace();
 
     // TODO make this configurable through config files
@@ -70,7 +75,6 @@ Manipulator::Manipulator(dart::simulation::World* world)
         name[3] = i + '0';
         obstacle_[i] = new dc::FCLMeshCollisionNode(world_->getSkeleton(name)->getBodyNode(0));
     }
-
 }
 
 //==============================================================================
@@ -95,7 +99,7 @@ bool Manipulator::isStateValid(const ob::State *state)
 
     staubli_->computeForwardKinematics(true, false, false);
     bool collision;
-/*
+    /*
     collision = world_->checkCollision(true);
     return collision;
 */
@@ -263,24 +267,7 @@ bool Manipulator::plan()
     OMPL_INFORM("Found %d solutions", (int)ns);
     return ss_->haveSolutionPath();
 }
-//==============================================================================
-void Manipulator::setPlanningTime(int time)
-{
-    planningTime_ = time;
-}
-//==============================================================================
-void Manipulator::setMaxNodes(int nodeNum)
-{
-#ifdef DEBUG
-    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
-#endif
 
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(nodeNum);
-
-#ifdef DEBUG
-    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
-#endif
-}
 
 //==============================================================================
 bool Manipulator::replan()
@@ -300,6 +287,91 @@ bool Manipulator::replan()
 
     return ss_->haveSolutionPath();
 }
+
+//==============================================================================
+void Manipulator::store(const char *filename)
+{
+    // Get the planner data to visualize the vertices and the edges
+    ob::PlannerData pdat(ss_->getSpaceInformation());
+    ss_->getPlannerData(pdat);
+
+    ob::PlannerDataStorage pdstorage;
+
+    pdstorage.store(pdat, filename);
+}
+//==============================================================================
+void Manipulator::load(const char *filename)
+{
+    if (ss_->getPlanner()){
+        ss_->getPlanner()->clear();
+    }
+
+    ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(filename);
+
+    ob::ScopedState<> start(ss_->getStateSpace());
+    start[0] = 62.5/180.0*DART_PI;
+    start[1] = 49.5/180.0*DART_PI;
+    start[2] = 92.8/180.0*DART_PI;
+    start[3] = 0.0/180.0*DART_PI;
+    start[4] = 0.0/180.0*DART_PI;
+    start[5] = 0;
+    ob::ScopedState<> goal(ss_->getStateSpace());
+    goal[0] = -52.2/180.0*DART_PI;
+    goal[1] = 60.8/180.0*DART_PI;
+    goal[2] = 63.0/180.0*DART_PI;
+    goal[3] = 0;
+    goal[4] = 53.3/180.0*DART_PI;
+    goal[5] = 0;
+    ss_->setStartAndGoalStates(start, goal);
+
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.5/180.0*M_PI);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0);
+
+    /*
+    ob::PlannerData pdat(ss_->getSpaceInformation());
+    ob::PlannerDataStorage pdstorage;
+    pdstorage.load(filename, pdat);
+
+    std::vector<unsigned int> edgeList;
+    unsigned int test = 0;
+    for (int i = 0; i < pdat.numVertices(); ++i) {
+        if (pdat.isStartVertex(i)) {
+            std::cout << "start vertex " << i << std::endl;
+        }
+
+        pdat.getEdges(i, edgeList);
+        for(int j = 0; j < edgeList.size(); ++j) {
+            std::cout << edgeList[j] << " ";
+        }
+        if(edgeList.size() > 0)
+            std::cout << "\n";
+        test += edgeList.size();
+    }
+    std::cout << test << " = " << pdat.numVertices() << std::endl;
+*/
+
+
+
+    //graph = pdat.toBoostGraph();
+
+    /*
+    std::vector<unsigned int> edgeList;
+    for (int i = 0; i < pdat.numVertices(); ++i) {
+        if (  pdat.getVertex(i) != ob::PlannerData::NO_VERTEX){
+            pdat.getIncomingEdges(i,edgeList);
+            std::cout << edgeList.length() << std::endl;
+           for (int j = 0; j < edgeList.length(); ++j) {
+
+            }
+
+       }
+        else
+            std::cout << "we've got a right node\n";
+    }
+*/
+    //ss_->getPlanner()->as<og::DRRTstarFN>()
+}
+
 
 
 //==============================================================================
@@ -329,27 +401,6 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State *s1,
                                              std::pair<ob::State*, double> &lastValid) const
 {
     OMPL_ERROR("call of the method");
-    /*
-    ob::State *s3;
-    if (ss_->getSpaceInformation()->isValid(s1) == false
-            || ss_->getSpaceInformation()->isValid(s2) == false )
-        return false;
-
-
-    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.25, s3);
-    if (ss_->getSpaceInformation()->isValid(s3) == false )
-        return false;
-
-    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.50, s3);
-    if (ss_->getSpaceInformation()->isValid(s3) == false )
-        return false;
-
-    ss_->getStateSpace()->as<RealVectorStateSpace>()->interpolate(s1, s2, 0.75, s3);
-    if (ss_->getSpaceInformation()->isValid(s3) == false )
-        return false;
-
-    return true;
-    */
     return false;
 }
 
@@ -419,11 +470,27 @@ void Manipulator::setWorld(dart::simulation::World *world)
 {
     world_ = world;
 }
+//==============================================================================
+void Manipulator::setPlanningTime(int time)
+{
+    planningTime_ = time;
+}
+//==============================================================================
+void Manipulator::setMaxNodes(int nodeNum)
+{
+#ifdef DEBUG
+    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
+#endif
 
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(nodeNum);
+
+#ifdef DEBUG
+    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
+#endif
+}
 //==============================================================================
 og::PathGeometric Manipulator::getResultantMotion()
 {
-
     if (!ss_ || !ss_->haveSolutionPath()) {
         OMPL_WARN("No solution");
         og::PathGeometric p(ss_->getSpaceInformation());
@@ -435,12 +502,3 @@ og::PathGeometric Manipulator::getResultantMotion()
     return p;
 }
 
-void Manipulator::store(const char *filename)
-{
-    // Get the planner data to visualize the vertices and the edges
-    ob::PlannerData pdat(ss_->getSpaceInformation());
-    ss_->getPlannerData(pdat);
-
-    ob::PlannerDataStorage pdstorage;
-    //ss_->getPlanner()->as<og::DRRTstarFN>()->storeTree(filename);
-}

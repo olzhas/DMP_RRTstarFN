@@ -14,21 +14,10 @@
 #include <ompl/base/objectives/StateCostIntegralObjective.h>
 #include <ompl/base/objectives/MaximizeMinClearanceObjective.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
+#include <ompl/base/PlannerDataStorage.h>
+#include <ompl/base/PlannerDataGraph.h>
 
-#include <dart/config.h>
-#include <dart/collision/collision.h>
-#include <dart/common/common.h>
-#include <dart/constraint/constraint.h>
-#include <dart/dynamics/dynamics.h>
-#include <dart/integration/integration.h>
-#include <dart/lcpsolver/lcpsolver.h>
-#include <dart/math/math.h>
-#include <dart/renderer/renderer.h>
-#include <dart/simulation/simulation.h>
-#include <dart/gui/gui.h>
-#include <dart/optimizer/optimizer.h>
-#include <dart/planning/planning.h>
-#include <dart/utils/utils.h>
+#include <dart/dart.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/shared_ptr.hpp>
@@ -68,7 +57,10 @@ class Manipulator
     void setPlanningTime(int time);
     void setMaxNodes(int nodeNum);
 
+    void init();
+
     void store(const char *filename);
+    void load(const char *filename);
 
 private:
 
