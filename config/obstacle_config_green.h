@@ -1,5 +1,5 @@
-#ifndef OBSTACLE_CONFIG_H
-#define OBSTACLE_CONFIG_H
+#ifndef OBSTACLE_CONFIG_H_
+#define OBSTACLE_CONFIG_H_
 
 #define NUM_OBSTACLE 7
 

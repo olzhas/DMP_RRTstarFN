@@ -1,5 +1,5 @@
-#ifndef STAUBLI_H_
-#define STAUBLI_H_
+#ifndef MANIPULATOR_H_
+#define MANIPULATOR_H_
 
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
@@ -31,6 +31,7 @@
 
 
 #define NUM_OBSTACLE 5
+#define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -39,12 +40,12 @@ namespace dd = dart::dynamics;
 
 class Manipulator 
 {
-    public:
+public:
 
     og::SimpleSetupPtr ss_;
     ob::SpaceInformationPtr si_;
 
-    Manipulator(dart::simulation::World* world);
+    Manipulator();
 
     virtual ~Manipulator();
     bool plan();
@@ -55,6 +56,7 @@ class Manipulator
 
     og::PathGeometric getResultantMotion();
     void setPlanningTime(int time);
+    int getPlanningTime();
     void setMaxNodes(int nodeNum);
 
     void init();
@@ -62,12 +64,13 @@ class Manipulator
     void store(const char *filename);
     void load(const char *filename);
 
+    dart::simulation::World* getWorld();
+    void setWorld(dart::simulation::World* world);
+
 private:
 
     bool isStateValid(const ob::State *state);
     dart::simulation::World* world_;
-
-    void setWorld(dart::simulation::World* world);
 
     dd::Skeleton *staubli_;
 
@@ -108,4 +111,4 @@ private:
     void defaultSettings();
 };
 
-#endif // STAUBLI_H_
+#endif // MANIPULATOR_H_
