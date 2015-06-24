@@ -37,7 +37,6 @@ void Manipulator::init()
 
     // staubli->disableSelfCollision();
 
-    dd::Skeleton* myObstacle[NUM_OBSTACLE];
     std::string name = "box ";
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
@@ -380,6 +379,21 @@ bool Manipulator::replan()
     OMPL_INFORM("Found %d solutions", (int)ns);
 
     return ss_->haveSolutionPath();
+}
+//==============================================================================
+void Manipulator::updateObstacles()
+{
+    // double avgSpeed = 0.05;// calculated from the average speed of walking, 5
+    // kph
+
+    double avgSpeed = 0.05;
+    Eigen::Isometry3d T;
+    T = myObstacle[1]->getBodyNode("box")->getTransform();
+
+    T.translation()(0) -= avgSpeed;
+
+    myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
+    myObstacle[1]->computeForwardKinematics(true, false, false);
 }
 
 //==============================================================================

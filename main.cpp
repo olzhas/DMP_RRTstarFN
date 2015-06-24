@@ -19,32 +19,25 @@ int main(int argc, char* argv[]) {
     manipulator.setMaxNodes(30000);
     std::string fileName = "mydump";
 
-//#define LOAD_PRECALC_DATA
+#define LOAD_PRECALC_DATA
 #ifndef LOAD_PRECALC_DATA
     if (manipulator.plan()) {
         manipulator.recordSolution();
     }
     manipulator.store(fileName.c_str());
 #else
+    OMPL_INFORM("Loading the tree from file %s", fileName.c_str());
     manipulator.load(fileName.c_str());
 #endif
 
 
-    //#define DYNAMIC_PLANNING
+#define DYNAMIC_PLANNING
 #ifdef DYNAMIC_PLANNING
-    // double avgSpeed = 0.05;// calculated from the average speed of walking, 5
-    // kph
-    double avgSpeed = 0.1;
-    for (int j = 0; j < 1; j++) {
-        Eigen::Isometry3d T;
-        T = myObstacle[1]->getBodyNode("box")->getTransform();
 
-        T.translation()(0) -= avgSpeed;
-
-        myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-        myObstacle[1]->computeForwardKinematics(true, false, false);
+    for(int j = 0; j < 5; j++){
+        manipulator.updateObstacles();
+        manipulator.replan();
         std::cout << "\nreplanning iteration #" << j << std::endl;
-        env.replan();
     }
 #endif
 

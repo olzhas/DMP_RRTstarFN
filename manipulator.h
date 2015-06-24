@@ -50,6 +50,7 @@ public:
     virtual ~Manipulator();
     bool plan();
     bool replan();
+    void updateObstacles();
 
     void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
     void recordSolution();
@@ -88,6 +89,8 @@ private:
     int planningTime_;
 
     boost::mutex mutex_;
+
+    dd::Skeleton* myObstacle[NUM_OBSTACLE];
 };
 
 class ManipulatorMotionValidator : public ob::MotionValidator
