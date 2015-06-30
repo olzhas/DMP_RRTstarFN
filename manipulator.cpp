@@ -21,7 +21,8 @@ ob::OptimizationObjectivePtr getPathLengthObjective(const ob::SpaceInformationPt
 }
 
 //==============================================================================
-Manipulator::Manipulator()
+Manipulator::Manipulator() :
+    pathNodes_(0), goalBias_(0), planningTime_(0)
 {
     init();
 }
@@ -606,7 +607,11 @@ void Manipulator::setGoalBias(double bias)
 {
     goalBias_ = bias;
 }
-
+//==============================================================================
+void Manipulator::setPathNodes(int pathNodes)
+{
+    pathNodes_ = pathNodes;
+}
 //==============================================================================
 og::PathGeometric Manipulator::getResultantMotion()
 {
@@ -617,6 +622,6 @@ og::PathGeometric Manipulator::getResultantMotion()
     }
 
     og::PathGeometric& p = ss_->getSolutionPath();
-    p.interpolate(20);
+    p.interpolate(pathNodes_);
     return p;
 }

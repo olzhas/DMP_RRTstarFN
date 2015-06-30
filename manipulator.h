@@ -60,6 +60,7 @@ public:
     int getPlanningTime();
     void setGoalBias(double bias);
     void setMaxNodes(int nodeNum);
+    void setPathNodes(int pathNodes);
 
     void init();
 
@@ -89,6 +90,7 @@ private:
 
     int planningTime_;
     double goalBias_;
+    int pathNodes_;
 
     boost::mutex mutex_;
 
@@ -115,5 +117,7 @@ private:
     ob::StateSpacePtr stateSpace_;
     void defaultSettings();
 };
+
+typedef std::shared_ptr<Manipulator> ManipulatorPtr;
 
 #endif // MANIPULATOR_H_
