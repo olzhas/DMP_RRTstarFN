@@ -1,11 +1,11 @@
 #include "widget.h"
 
-Widget::Widget(int *argcp, char **argv)
+Widget::Widget()
 {
-    init(argcp, argv);
+;
 }
-
-void Widget::init(int *argcp, char **argv)
+//==============================================================================
+void Widget::init()
 {
     window.setWorld(manipulator->getWorld());
     og::PathGeometric resultantMotion = manipulator->getResultantMotion();
@@ -14,12 +14,16 @@ void Widget::init(int *argcp, char **argv)
     window.ss_ = manipulator->ss_;
     window.initDrawTree();
 
-    glutInit(argcp, argv);
-    window.initWindow(800, 600, "Staubli TX90XL");
-    glutMainLoop();
 }
-
+//==============================================================================
 void Widget::setManipulator(ManipulatorPtr robot)
 {
     manipulator = robot;
+}
+//==============================================================================
+void Widget::exec(int *argcp, char **argv)
+{
+    glutInit(argcp, argv);
+    window.initWindow(800, 600, "Staubli TX90XL");
+    glutMainLoop();
 }

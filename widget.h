@@ -7,8 +7,9 @@
 class Widget
 {
 public:
-    Widget(int *argcp, char **argv);
-    void init(int *argcp, char **argv);
+    Widget();
+    void init();
+    void exec(int *argcp, char **argv);
     void setManipulator(ManipulatorPtr robot);
 
 private:

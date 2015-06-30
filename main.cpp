@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 #endif
 
 
-#define DYNAMIC_PLANNING
+//#define DYNAMIC_PLANNING
 #ifdef DYNAMIC_PLANNING
 
     for(int j = 0; j < 5; j++){
@@ -44,9 +44,10 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-    Widget widget(&argc, argv);
+    Widget widget;
     widget.setManipulator(manipulator);
-
+    widget.init();
+    widget.exec(&argc, argv);
 
     return 0;
 }
