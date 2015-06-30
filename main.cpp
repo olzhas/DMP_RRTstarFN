@@ -1,6 +1,7 @@
 #include <memory>
 #include <iostream>
 #include <boost/thread.hpp>
+#include <boost/bind.hpp>
 
 // DART
 #include <dart/dart.h>
@@ -11,18 +12,23 @@
 
 int main(int argc, char* argv[]) {
 
-    boost::thread guiThread;
-
     ManipulatorPtr manipulator(new Manipulator);
     std::string fileName = "mydump";
     manipulator->setPathNodes(3000);
 
-#define LOAD_PRECALC_DATA
+    Widget widget;
+    widget.setManipulator(manipulator);
+    widget.init();
+
+    boost::thread guiThread(boost::bind(&Widget::exec, widget, &argc, argv));
+    //widget.exec(&argc, argv);
+
+//#define LOAD_PRECALC_DATA
 #ifndef LOAD_PRECALC_DATA
     manipulator->setPlanningTime(60*30);
     manipulator->setGoalBias(0.0);
     manipulator->setMaxNodes(5000);
-    std::cout << "Planning time is set to " << manipulator.getPlanningTime() << "sec\n";
+    std::cout << "Planning time is set to " << manipulator->getPlanningTime() << "sec\n";
 
     if (manipulator->plan()) {
         manipulator->recordSolution();
@@ -43,11 +49,6 @@ int main(int argc, char* argv[]) {
         manipulator->replan();
     }
 #endif
-
-    Widget widget;
-    widget.setManipulator(manipulator);
-    widget.init();
-    widget.exec(&argc, argv);
 
     return 0;
 }

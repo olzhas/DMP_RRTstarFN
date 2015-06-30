@@ -4,13 +4,11 @@
 
 //==============================================================================
 MyWindow::MyWindow()
-    : SimWindow()
+    : SimWindow(),
+      motionStep(0), ghostDrawn(false), treeState(0), motion_(NULL)
 {
-    motionStep = 0;
     mZoom = 0.15;
     mTranslate = true;
-    ghostDrawn = false;
-    treeState = 0;
 }
 
 //==============================================================================
@@ -68,6 +66,7 @@ void MyWindow::drawSkels()
     for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
         mWorld->getSkeleton(i)->draw(mRI);
 
+    updateDrawTree();
     drawTree();
 }
 
@@ -154,8 +153,6 @@ void MyWindow::drawGhostManipulator()
     }
 }
 
-
-
 //==============================================================================
 void MyWindow::initDrawTree()
 {
@@ -237,11 +234,76 @@ void MyWindow::initDrawTree()
               << " ms\n";
               */
 }
+//==============================================================================
 
+void MyWindow::updateDrawTree()
+{
+    /*
+    namespace bc = boost::chrono;
+    bc::thread_clock::time_point start = bc::thread_clock::now();
+    */
+    if (!ss_ || !ss_->haveSolutionPath()){
+        std::cerr << "No solution =(" << std::endl;
+        // return;
+    }
+
+    // Get the planner data to visualize the vertices and the edges
+    ob::PlannerData pdat(ss_->getSpaceInformation());
+    ss_->getPlannerData(pdat);
+
+    // Print the vertices to file
+
+    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+
+    endEffectorPosition.reserve(pdat.numVertices());
+
+    for(unsigned int i(0); i<pdat.numVertices(); ++i)
+    {
+        std::vector<double> reals;
+        if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
+        {
+
+            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
+
+            for(size_t j(0); j<reals.size(); ++j){
+                staubli->setPosition(j+2, reals[j]);
+            }
+            staubli->computeForwardKinematics(true, false, false);
+            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+            if (pdat.getVertex(i).getTag())
+                endEffectorPositionDetached.push_back(transform.translation());
+            else
+                endEffectorPosition.push_back(transform.translation());
+        }
+    }
+
+    // Print the edges to file
+    std::vector<unsigned int> edge_list;
+    for(unsigned int i(0); i<pdat.numVertices(); ++i)
+    {
+        unsigned int n_edge= pdat.getEdges(i,edge_list);
+        for(unsigned int i2(0); i2<n_edge; ++i2)
+        {
+            std::vector<Eigen::Vector3d> temp;
+            temp.push_back(getVertex(pdat.getVertex(i)));
+            temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
+            edges.push_back(temp);
+
+        }
+    }
+
+    /*
+    bc::thread_clock::time_point stop = bc::thread_clock::now();
+    std::cout << "duration: "
+              << bc::duration_cast<bc::milliseconds>(stop - start).count()
+              << " ms\n";
+              */
+}
 //==============================================================================
 Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex &vertex)
 {
-    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+    dart::dynamics::Skeleton *staubli;
+    mWorld->getSkeleton("TX90XLHB");
     std::vector<double> reals;
 
     assert (vertex != ob::PlannerData::NO_VERTEX);

@@ -34,6 +34,7 @@ public:
     void setMotion(og::PathGeometric *motion);
 
     void initDrawTree();
+    void updateDrawTree();
     void drawTree();
     void drawGhostManipulator();
     void drawManipulatorState(int state);
