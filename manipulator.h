@@ -58,6 +58,7 @@ public:
     og::PathGeometric getResultantMotion();
     void setPlanningTime(int time);
     int getPlanningTime();
+    void setGoalBias(double bias);
     void setMaxNodes(int nodeNum);
 
     void init();
@@ -87,6 +88,7 @@ private:
     dc::FCLMeshCollisionNode *obstacle_[NUM_OBSTACLE];
 
     int planningTime_;
+    double goalBias_;
 
     boost::mutex mutex_;
 

@@ -352,8 +352,8 @@ bool Manipulator::plan()
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
         //ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.0/180.0*M_PI);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.5 / 180.0 * M_PI);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(20.0 / 180.0 * M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(goalBias_);
         ss_->solve(planningTime_);
     }
 
@@ -433,7 +433,7 @@ void Manipulator::load(const char* filename)
 
     ss_->setStartAndGoalStates(start, goal);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.5 / 180.0 * M_PI);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(goalBias_);
     ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(filename);
 
     /*
@@ -600,6 +600,11 @@ void Manipulator::setMaxNodes(int nodeNum)
 #ifdef DEBUG
     std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
 #endif
+}
+//==============================================================================
+void Manipulator::setGoalBias(double bias)
+{
+    goalBias_ = bias;
 }
 
 //==============================================================================
