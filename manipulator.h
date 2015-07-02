@@ -67,15 +67,15 @@ public:
     void store(const char *filename);
     void load(const char *filename);
 
-    dart::simulation::World* getWorld();
-    void setWorld(dart::simulation::World* world);
+    dart::simulation::WorldPtr getWorld();
+    void setWorld(dart::simulation::WorldPtr world);
 
 private:
 
     bool isStateValid(const ob::State *state);
-    dart::simulation::World* world_;
+    dart::simulation::WorldPtr world_;
 
-    dd::Skeleton *staubli_;
+    dd::SkeletonPtr staubli_;
 
     dc::FCLMeshCollisionNode *table_;
     dc::FCLMeshCollisionNode *base_link_;
@@ -94,7 +94,7 @@ private:
 
     boost::mutex mutex_;
 
-    dd::Skeleton* myObstacle[NUM_OBSTACLE];
+    dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
 };
 
 class ManipulatorMotionValidator : public ob::MotionValidator

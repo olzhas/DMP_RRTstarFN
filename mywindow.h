@@ -41,7 +41,6 @@ public:
 
     Eigen::Vector3d getVertex(const ob::PlannerDataVertex &vertex);
 
-
     og::SimpleSetupPtr ss_;
 
 private:

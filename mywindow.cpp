@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+namespace dd = dart::dynamics;
+
 //==============================================================================
 MyWindow::MyWindow()
     : SimWindow(),
@@ -29,7 +31,7 @@ void MyWindow::timeStepping()
 {
     mWorld->step();
     if (motion_ != NULL){
-        dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+        dart::dynamics::SkeletonPtr staubli = mWorld->getSkeleton("TX90XLHB");
         if(motionStep < motion_->getStateCount()){
             //std::cout<<motion_ ->getStateCount() << std::endl;
             double *jointSpace
@@ -68,6 +70,7 @@ void MyWindow::drawSkels()
 
     updateDrawTree();
     drawTree();
+    std::cout << "drawn tree\n";
 }
 
 //==============================================================================
@@ -135,8 +138,8 @@ void MyWindow::drawGhostManipulator()
         std::vector<double> reals;
         if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
         {
-            dart::dynamics::Skeleton *staubli = new dart::dynamics::Skeleton();
-            memmove(staubli, mWorld->getSkeleton("TX90XLHB"), sizeof(dart::dynamics::Skeleton));
+            dart::dynamics::SkeletonPtr staubli;
+            //memmove(staubli, mWorld->getSkeleton("TX90XLHB"), sizeof(dart::dynamics::Skeleton));
             ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
 
             std::stringstream ss;
@@ -171,7 +174,8 @@ void MyWindow::initDrawTree()
 
     // Print the vertices to file
 
-    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+    dart::dynamics::SkeletonPtr staubli;
+    //mWorld->getSkeleton("TX90XLHB")->cloen;
 
     endEffectorPosition.reserve(pdat.numVertices());
 
@@ -253,8 +257,9 @@ void MyWindow::updateDrawTree()
 
     // Print the vertices to file
 
-    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+    dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
+    endEffectorPosition.clear();
     endEffectorPosition.reserve(pdat.numVertices());
 
     for(unsigned int i(0); i<pdat.numVertices(); ++i)
@@ -262,7 +267,6 @@ void MyWindow::updateDrawTree()
         std::vector<double> reals;
         if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
         {
-
             ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
 
             for(size_t j(0); j<reals.size(); ++j){
@@ -302,8 +306,7 @@ void MyWindow::updateDrawTree()
 //==============================================================================
 Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex &vertex)
 {
-    dart::dynamics::Skeleton *staubli;
-    mWorld->getSkeleton("TX90XLHB");
+    dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
     std::vector<double> reals;
 
     assert (vertex != ob::PlannerData::NO_VERTEX);
@@ -331,7 +334,7 @@ void MyWindow::drawManipulatorState(int state)
 
     // Print the vertices to file
 
-    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+    dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB"));
     std::vector<double> reals;
     ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(state).getState());
 
