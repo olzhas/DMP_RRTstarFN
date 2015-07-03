@@ -7,7 +7,7 @@ namespace dd = dart::dynamics;
 //==============================================================================
 MyWindow::MyWindow()
     : SimWindow(),
-      motionStep(0), ghostDrawn(false), treeState(0), motion_(NULL)
+      motionStep(0), ghostDrawn(false), treeState(0), motion_(NULL), timer()
 {
     mZoom = 0.15;
     mTranslate = true;
@@ -67,6 +67,7 @@ void MyWindow::drawSkels()
 
     for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
         mWorld->getSkeleton(i)->draw(mRI);
+
 
     updateDrawTree();
     drawTree();
@@ -159,10 +160,6 @@ void MyWindow::drawGhostManipulator()
 //==============================================================================
 void MyWindow::initDrawTree()
 {
-    /*
-    namespace bc = boost::chrono;
-    bc::thread_clock::time_point start = bc::thread_clock::now();
-    */
     if (!ss_ || !ss_->haveSolutionPath()){
         std::cerr << "No solution =(" << std::endl;
         // return;
@@ -230,22 +227,11 @@ void MyWindow::initDrawTree()
             //printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(edge_list[i2]));
         }
     }
-
-    /*
-    bc::thread_clock::time_point stop = bc::thread_clock::now();
-    std::cout << "duration: "
-              << bc::duration_cast<bc::milliseconds>(stop - start).count()
-              << " ms\n";
-              */
 }
 //==============================================================================
 
 void MyWindow::updateDrawTree()
 {
-    /*
-    namespace bc = boost::chrono;
-    bc::thread_clock::time_point start = bc::thread_clock::now();
-    */
     if (!ss_ || !ss_->haveSolutionPath()){
         std::cerr << "No solution =(" << std::endl;
         // return;
@@ -285,6 +271,7 @@ void MyWindow::updateDrawTree()
     std::vector<unsigned int> edge_list;
     for(unsigned int i(0); i<pdat.numVertices(); ++i)
     {
+        std::cout << "vertices:" << pdat.numVertices() << std::endl;
         unsigned int n_edge= pdat.getEdges(i,edge_list);
         for(unsigned int i2(0); i2<n_edge; ++i2)
         {
@@ -295,13 +282,6 @@ void MyWindow::updateDrawTree()
 
         }
     }
-
-    /*
-    bc::thread_clock::time_point stop = bc::thread_clock::now();
-    std::cout << "duration: "
-              << bc::duration_cast<bc::milliseconds>(stop - start).count()
-              << " ms\n";
-              */
 }
 //==============================================================================
 Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex &vertex)

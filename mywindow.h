@@ -55,6 +55,8 @@ private:
 
     std::vector< std::vector<Eigen::Vector3d> > edges;
     bool ghostDrawn;
+
+    dart::common::Timer timer;
 };
 
 #endif // MYWINDOW_H_
