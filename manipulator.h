@@ -55,26 +55,27 @@ public:
     void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
     void recordSolution();
 
-    og::PathGeometric getResultantMotion();
+    og::PathGeometric* getResultantMotion();
     void setPlanningTime(int time);
     int getPlanningTime();
     void setGoalBias(double bias);
     void setMaxNodes(int nodeNum);
+    void setPathNodes(int pathNodes);
 
     void init();
 
     void store(const char *filename);
     void load(const char *filename);
 
-    dart::simulation::World* getWorld();
-    void setWorld(dart::simulation::World* world);
+    dart::simulation::WorldPtr getWorld();
+    void setWorld(dart::simulation::WorldPtr world);
 
 private:
 
     bool isStateValid(const ob::State *state);
-    dart::simulation::World* world_;
+    dart::simulation::WorldPtr world_;
 
-    dd::Skeleton *staubli_;
+    dd::SkeletonPtr staubli_;
 
     dc::FCLMeshCollisionNode *table_;
     dc::FCLMeshCollisionNode *base_link_;
@@ -89,10 +90,11 @@ private:
 
     int planningTime_;
     double goalBias_;
+    int pathNodes_;
 
     boost::mutex mutex_;
 
-    dd::Skeleton* myObstacle[NUM_OBSTACLE];
+    dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
 };
 
 class ManipulatorMotionValidator : public ob::MotionValidator
@@ -115,5 +117,7 @@ private:
     ob::StateSpacePtr stateSpace_;
     void defaultSettings();
 };
+
+typedef std::shared_ptr<Manipulator> ManipulatorPtr;
 
 #endif // MANIPULATOR_H_

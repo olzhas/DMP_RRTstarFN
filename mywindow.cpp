@@ -2,15 +2,16 @@
 
 #include <fstream>
 
+namespace dd = dart::dynamics;
+
 //==============================================================================
 MyWindow::MyWindow()
-    : SimWindow()
+    : SimWindow(),
+      motionStep(0), ghostDrawn(false), treeState(0),
+      timer1("update"), timer2("draw")
 {
-    motionStep = 0;
-    mZoom = 0.15;
-    mTranslate = true;
-    ghostDrawn = false;
-    treeState = 0;
+    motion_ = NULL;
+    mZoom = 0.2;
 }
 
 //==============================================================================
@@ -30,8 +31,9 @@ void MyWindow::setMotion(og::PathGeometric *motion)
 void MyWindow::timeStepping()
 {
     mWorld->step();
+    /*
     if (motion_ != NULL){
-        dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+        dart::dynamics::SkeletonPtr staubli = mWorld->getSkeleton("TX90XLHB");
         if(motionStep < motion_->getStateCount()){
             //std::cout<<motion_ ->getStateCount() << std::endl;
             double *jointSpace
@@ -57,18 +59,31 @@ void MyWindow::timeStepping()
             mSimulating = false;
         }
     }
+    */
 }
 
 //==============================================================================
 void MyWindow::drawSkels()
 {
+    mTrans = Eigen::Vector3d(493.937, -20.943, -1020.23);
+
     glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
         mWorld->getSkeleton(i)->draw(mRI);
 
-    drawTree();
+    //dart::common::Timer timer1("update");
+    //timer1.start();
+    //updateDrawTree();
+    //timer1.print();
+    //timer1.stop();
+
+    //timer2.start();
+    //drawTree();
+    //timer2.print();
+    //timer2.stop();
+
 }
 
 //==============================================================================
@@ -136,8 +151,8 @@ void MyWindow::drawGhostManipulator()
         std::vector<double> reals;
         if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
         {
-            dart::dynamics::Skeleton *staubli = new dart::dynamics::Skeleton();
-            memmove(staubli, mWorld->getSkeleton("TX90XLHB"), sizeof(dart::dynamics::Skeleton));
+            dart::dynamics::SkeletonPtr staubli;
+            //memmove(staubli, mWorld->getSkeleton("TX90XLHB"), sizeof(dart::dynamics::Skeleton));
             ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
 
             std::stringstream ss;
@@ -154,15 +169,9 @@ void MyWindow::drawGhostManipulator()
     }
 }
 
-
-
 //==============================================================================
 void MyWindow::initDrawTree()
 {
-    /*
-    namespace bc = boost::chrono;
-    bc::thread_clock::time_point start = bc::thread_clock::now();
-    */
     if (!ss_ || !ss_->haveSolutionPath()){
         std::cerr << "No solution =(" << std::endl;
         // return;
@@ -174,7 +183,7 @@ void MyWindow::initDrawTree()
 
     // Print the vertices to file
 
-    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+    dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
     endEffectorPosition.reserve(pdat.numVertices());
 
@@ -229,19 +238,64 @@ void MyWindow::initDrawTree()
             //printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(edge_list[i2]));
         }
     }
-
-    /*
-    bc::thread_clock::time_point stop = bc::thread_clock::now();
-    std::cout << "duration: "
-              << bc::duration_cast<bc::milliseconds>(stop - start).count()
-              << " ms\n";
-              */
 }
+//==============================================================================
 
+void MyWindow::updateDrawTree()
+{
+    if (!ss_ || !ss_->haveSolutionPath()) {
+        std::cerr << "No solution =(" << std::endl;
+        // return;
+    }
+
+    // Get the planner data to visualize the vertices and the edges
+    ob::PlannerData pdat(ss_->getSpaceInformation());
+    ss_->getPlannerData(pdat);
+
+    // Print the vertices to file
+
+    dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
+
+    //endEffectorPosition.clear();
+    unsigned int prevSize = endEffectorPosition.size();
+    endEffectorPosition.reserve(pdat.numVertices());
+
+    std::vector<unsigned int> edge_list;
+    prevSize = edges.size();
+    edges.reserve(pdat.numVertices());
+    //std::cout << "vertices: " << pdat.numVertices() << std::endl;
+
+    for(unsigned int i(prevSize); i<pdat.numVertices(); ++i) {
+        std::vector<double> reals;
+        if(pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
+            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
+
+            for(size_t j(0); j<reals.size(); ++j)
+                staubli->setPosition(j+2, reals[j]);
+
+            staubli->computeForwardKinematics(true, false, false);
+            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+            if (pdat.getVertex(i).getTag())
+                endEffectorPositionDetached.push_back(transform.translation());
+            else
+                endEffectorPosition.push_back(transform.translation());
+
+            // edges handling
+            unsigned int n_edge= pdat.getEdges(i,edge_list);
+            for(unsigned int i2(0); i2<n_edge; ++i2)
+            {
+                std::vector<Eigen::Vector3d> temp;
+                temp.push_back(getVertex(pdat.getVertex(i)));
+                temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
+                edges.push_back(temp);
+            }
+        }
+    }
+}
 //==============================================================================
 Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex &vertex)
 {
-    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+    dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
     std::vector<double> reals;
 
     assert (vertex != ob::PlannerData::NO_VERTEX);
@@ -269,7 +323,7 @@ void MyWindow::drawManipulatorState(int state)
 
     // Print the vertices to file
 
-    dart::dynamics::Skeleton *staubli = mWorld->getSkeleton("TX90XLHB");
+    dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB"));
     std::vector<double> reals;
     ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(state).getState());
 

@@ -21,19 +21,20 @@ ob::OptimizationObjectivePtr getPathLengthObjective(const ob::SpaceInformationPt
 }
 
 //==============================================================================
-Manipulator::Manipulator()
+Manipulator::Manipulator() :
+    pathNodes_(0), goalBias_(0), planningTime_(0)
 {
     init();
 }
 
 void Manipulator::init()
 {
-    ds::World* myWorld = du::SkelParser::readWorld(SAFESPACE_DATA "/ground_plane/ground.skel");
+    ds::WorldPtr myWorld(du::SkelParser::readWorld(SAFESPACE_DATA "/ground_plane/ground.skel"));
 
-    dd::Skeleton* staubli = du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf");
+    dd::SkeletonPtr staubli(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
-    dd::Skeleton* complexObstacle = du::SoftSdfParser::readSkeleton(
-                SAFESPACE_DATA "/obstacles/complex_obstacle.sdf");
+    dd::SkeletonPtr complexObstacle(du::SoftSdfParser::readSkeleton(
+                                        SAFESPACE_DATA "/obstacles/complex_obstacle.sdf"));
 
     // staubli->disableSelfCollision();
 
@@ -144,8 +145,8 @@ staubli->computeForwardKinematics();
     // set state validity checking for this space
     ss_->setStateValidityChecker(boost::bind(&Manipulator::isStateValid, this, _1));
 
-//    ss_->getSpaceInformation()
-//            ->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
+    //    ss_->getSpaceInformation()
+    //            ->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
 
     ss_->getSpaceInformation()
             ->setMotionValidator(
@@ -163,7 +164,7 @@ staubli->computeForwardKinematics();
     jointSpace->setup();
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
-    staubli_ = world_->getSkeleton("TX90XLHB");
+    staubli_ = world_->getSkeleton("TX90XLHB")->clone();
 
     table_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("table"));
     base_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("base_link"));
@@ -568,13 +569,13 @@ void Manipulator::recordSolution()
 }
 
 //==============================================================================
-void Manipulator::setWorld(dart::simulation::World* world)
+void Manipulator::setWorld(dart::simulation::WorldPtr world)
 {
     world_ = world;
 }
 
 //==============================================================================
-dart::simulation::World* Manipulator::getWorld()
+dart::simulation::WorldPtr Manipulator::getWorld()
 {
     return world_;
 }
@@ -606,17 +607,20 @@ void Manipulator::setGoalBias(double bias)
 {
     goalBias_ = bias;
 }
-
 //==============================================================================
-og::PathGeometric Manipulator::getResultantMotion()
+void Manipulator::setPathNodes(int pathNodes)
+{
+    pathNodes_ = pathNodes;
+}
+//==============================================================================
+og::PathGeometric* Manipulator::getResultantMotion()
 {
     if (!ss_ || !ss_->haveSolutionPath()) {
         OMPL_WARN("No solution");
-        og::PathGeometric p(ss_->getSpaceInformation());
-        return p;
+        return NULL;
     }
 
     og::PathGeometric& p = ss_->getSolutionPath();
-    p.interpolate(20);
-    return p;
+    p.interpolate(pathNodes_);
+    return &p;
 }
