@@ -12,6 +12,8 @@ MyWindow::MyWindow()
 {
     motion_ = NULL;
     mZoom = 0.2;
+    rot = 0;
+    mCapture = true;
 }
 
 //==============================================================================
@@ -65,7 +67,14 @@ void MyWindow::timeStepping()
 //==============================================================================
 void MyWindow::drawSkels()
 {
-    mTrans = Eigen::Vector3d(493.937, -20.943, -1020.23);
+    rot += 0.01;
+    Eigen::Matrix3d mat;
+    mat = Eigen::AngleAxisd(-0.25*M_PI, Eigen::Vector3d::UnitY())
+            * Eigen::AngleAxisd(-0.5*M_PI,  Eigen::Vector3d::UnitX())
+            * Eigen::AngleAxisd(-rot*M_PI,  Eigen::Vector3d::UnitZ());
+    Eigen::Quaterniond quat(mat);
+    mTrackBall.setQuaternion(quat);
+    mTrans = Eigen::Vector3d(493.937, -20.943, -2020.23);
 
     glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -75,12 +84,12 @@ void MyWindow::drawSkels()
 
     //dart::common::Timer timer1("update");
     //timer1.start();
-    //updateDrawTree();
+    updateDrawTree();
     //timer1.print();
     //timer1.stop();
 
     //timer2.start();
-    //drawTree();
+    drawTree();
     //timer2.print();
     //timer2.stop();
 

@@ -58,6 +58,7 @@ private:
 
     dart::common::Timer timer1;
     dart::common::Timer timer2;
+    float rot;
 };
 
 #endif // MYWINDOW_H_
