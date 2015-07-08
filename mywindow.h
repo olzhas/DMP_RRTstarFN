@@ -44,7 +44,7 @@ public:
     og::SimpleSetupPtr ss_;
 
 private:
-    og::PathGeometric *motion_;
+    og::PathGeometric *motion_ = NULL;
 
     int motionStep;
     int treeState;
@@ -56,7 +56,8 @@ private:
     std::vector< std::vector<Eigen::Vector3d> > edges;
     bool ghostDrawn;
 
-    dart::common::Timer timer;
+    dart::common::Timer timer1;
+    dart::common::Timer timer2;
 };
 
 #endif // MYWINDOW_H_

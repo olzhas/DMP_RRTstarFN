@@ -55,7 +55,7 @@ public:
     void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
     void recordSolution();
 
-    og::PathGeometric getResultantMotion();
+    og::PathGeometric* getResultantMotion();
     void setPlanningTime(int time);
     int getPlanningTime();
     void setGoalBias(double bias);

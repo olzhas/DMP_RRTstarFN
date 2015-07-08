@@ -613,15 +613,14 @@ void Manipulator::setPathNodes(int pathNodes)
     pathNodes_ = pathNodes;
 }
 //==============================================================================
-og::PathGeometric Manipulator::getResultantMotion()
+og::PathGeometric* Manipulator::getResultantMotion()
 {
     if (!ss_ || !ss_->haveSolutionPath()) {
         OMPL_WARN("No solution");
-        og::PathGeometric p(ss_->getSpaceInformation());
-        return p;
+        return NULL;
     }
 
     og::PathGeometric& p = ss_->getSolutionPath();
     p.interpolate(pathNodes_);
-    return p;
+    return &p;
 }

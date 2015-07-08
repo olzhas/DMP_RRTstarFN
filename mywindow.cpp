@@ -7,8 +7,10 @@ namespace dd = dart::dynamics;
 //==============================================================================
 MyWindow::MyWindow()
     : SimWindow(),
-      motionStep(0), ghostDrawn(false), treeState(0), motion_(NULL), timer()
+      motionStep(0), ghostDrawn(false), treeState(0),
+      timer1("update"), timer2("draw")
 {
+    motion_ = NULL;
     mZoom = 0.15;
     mTranslate = true;
 }
@@ -30,6 +32,7 @@ void MyWindow::setMotion(og::PathGeometric *motion)
 void MyWindow::timeStepping()
 {
     mWorld->step();
+    /*
     if (motion_ != NULL){
         dart::dynamics::SkeletonPtr staubli = mWorld->getSkeleton("TX90XLHB");
         if(motionStep < motion_->getStateCount()){
@@ -57,6 +60,7 @@ void MyWindow::timeStepping()
             mSimulating = false;
         }
     }
+    */
 }
 
 //==============================================================================
@@ -69,9 +73,17 @@ void MyWindow::drawSkels()
         mWorld->getSkeleton(i)->draw(mRI);
 
 
+    //dart::common::Timer timer1("update");
+    //timer1.start();
     updateDrawTree();
+    //timer1.print();
+    //timer1.stop();
+
+    //timer2.start();
     drawTree();
-    std::cout << "drawn tree\n";
+    //timer2.print();
+    //timer2.stop();
+
 }
 
 //==============================================================================
@@ -171,8 +183,7 @@ void MyWindow::initDrawTree()
 
     // Print the vertices to file
 
-    dart::dynamics::SkeletonPtr staubli;
-    //mWorld->getSkeleton("TX90XLHB")->cloen;
+    dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
     endEffectorPosition.reserve(pdat.numVertices());
 
@@ -232,7 +243,7 @@ void MyWindow::initDrawTree()
 
 void MyWindow::updateDrawTree()
 {
-    if (!ss_ || !ss_->haveSolutionPath()){
+    if (!ss_ || !ss_->haveSolutionPath()) {
         std::cerr << "No solution =(" << std::endl;
         // return;
     }
@@ -245,41 +256,39 @@ void MyWindow::updateDrawTree()
 
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
-    endEffectorPosition.clear();
+    //endEffectorPosition.clear();
+    unsigned int prevSize = endEffectorPosition.size();
     endEffectorPosition.reserve(pdat.numVertices());
 
-    for(unsigned int i(0); i<pdat.numVertices(); ++i)
-    {
+    std::vector<unsigned int> edge_list;
+    prevSize = edges.size();
+    edges.reserve(pdat.numVertices());
+    //std::cout << "vertices: " << pdat.numVertices() << std::endl;
+
+    for(unsigned int i(prevSize); i<pdat.numVertices(); ++i) {
         std::vector<double> reals;
-        if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
-        {
+        if(pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
             ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
 
-            for(size_t j(0); j<reals.size(); ++j){
+            for(size_t j(0); j<reals.size(); ++j)
                 staubli->setPosition(j+2, reals[j]);
-            }
+
             staubli->computeForwardKinematics(true, false, false);
             Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
             if (pdat.getVertex(i).getTag())
                 endEffectorPositionDetached.push_back(transform.translation());
             else
                 endEffectorPosition.push_back(transform.translation());
-        }
-    }
 
-    // Print the edges to file
-    std::vector<unsigned int> edge_list;
-    for(unsigned int i(0); i<pdat.numVertices(); ++i)
-    {
-        std::cout << "vertices:" << pdat.numVertices() << std::endl;
-        unsigned int n_edge= pdat.getEdges(i,edge_list);
-        for(unsigned int i2(0); i2<n_edge; ++i2)
-        {
-            std::vector<Eigen::Vector3d> temp;
-            temp.push_back(getVertex(pdat.getVertex(i)));
-            temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
-            edges.push_back(temp);
-
+            // edges handling
+            unsigned int n_edge= pdat.getEdges(i,edge_list);
+            for(unsigned int i2(0); i2<n_edge; ++i2)
+            {
+                std::vector<Eigen::Vector3d> temp;
+                temp.push_back(getVertex(pdat.getVertex(i)));
+                temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
+                edges.push_back(temp);
+            }
         }
     }
 }
