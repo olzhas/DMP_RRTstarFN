@@ -11,8 +11,7 @@ MyWindow::MyWindow()
       timer1("update"), timer2("draw")
 {
     motion_ = NULL;
-    mZoom = 0.15;
-    mTranslate = true;
+    mZoom = 0.2;
 }
 
 //==============================================================================
@@ -66,21 +65,22 @@ void MyWindow::timeStepping()
 //==============================================================================
 void MyWindow::drawSkels()
 {
+    mTrans = Eigen::Vector3d(493.937, -20.943, -1020.23);
+
     glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
         mWorld->getSkeleton(i)->draw(mRI);
 
-
     //dart::common::Timer timer1("update");
     //timer1.start();
-    updateDrawTree();
+    //updateDrawTree();
     //timer1.print();
     //timer1.stop();
 
     //timer2.start();
-    drawTree();
+    //drawTree();
     //timer2.print();
     //timer2.stop();
 
