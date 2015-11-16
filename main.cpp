@@ -11,7 +11,8 @@
 #include "guimisc.h"
 
 int main(int argc, char* argv[]) {
-
+    // just to check if time ticks correctly
+    system("date");
     ManipulatorPtr manipulator(new Manipulator);
     std::string fileName = "mydump";
     manipulator->setPathNodes(3000);
@@ -26,8 +27,8 @@ int main(int argc, char* argv[]) {
     //#define LOAD_PRECALC_DATA
 #ifndef LOAD_PRECALC_DATA
     manipulator->setPlanningTime(60*5);
-    manipulator->setGoalBias(0.0);
-    manipulator->setMaxNodes(15000);
+    manipulator->setGoalBias(0.5);
+    manipulator->setMaxNodes(25000);
     std::cout << "Planning time is set to " << manipulator->getPlanningTime() << "sec\n";
 
     if (manipulator->plan()) {

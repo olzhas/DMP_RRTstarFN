@@ -353,7 +353,7 @@ bool Manipulator::plan()
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
         //ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.0/180.0*M_PI);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(20.0 / 180.0 * M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(200.0 / 180.0 * M_PI);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(goalBias_);
         ss_->solve(planningTime_);
     }

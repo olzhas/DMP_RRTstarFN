@@ -13,7 +13,7 @@ MyWindow::MyWindow()
     motion_ = NULL;
     mZoom = 0.2;
     rot = 0;
-    mCapture = true;
+    //mCapture = true;
 }
 
 //==============================================================================
@@ -33,7 +33,7 @@ void MyWindow::setMotion(og::PathGeometric *motion)
 void MyWindow::timeStepping()
 {
     mWorld->step();
-    /*
+
     if (motion_ != NULL){
         dart::dynamics::SkeletonPtr staubli = mWorld->getSkeleton("TX90XLHB");
         if(motionStep < motion_->getStateCount()){
@@ -61,20 +61,22 @@ void MyWindow::timeStepping()
             mSimulating = false;
         }
     }
-    */
+
 }
 
 //==============================================================================
 void MyWindow::drawSkels()
 {
+#ifdef CAMERA_FLY
     rot += 0.01;
     Eigen::Matrix3d mat;
     mat = Eigen::AngleAxisd(-0.25*M_PI, Eigen::Vector3d::UnitY())
-            * Eigen::AngleAxisd(-0.5*M_PI,  Eigen::Vector3d::UnitX())
+            * Eigen::AngleAxisd(-rot*M_PI,  Eigen::Vector3d::UnitX())
             * Eigen::AngleAxisd(-rot*M_PI,  Eigen::Vector3d::UnitZ());
     Eigen::Quaterniond quat(mat);
     mTrackBall.setQuaternion(quat);
     mTrans = Eigen::Vector3d(493.937, -20.943, -2020.23);
+#endif
 
     glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -83,10 +85,10 @@ void MyWindow::drawSkels()
         mWorld->getSkeleton(i)->draw(mRI);
 
     //dart::common::Timer timer1("update");
-    //timer1.start();
+    timer1.start();
     updateDrawTree();
-    //timer1.print();
-    //timer1.stop();
+    timer1.print();
+    timer1.stop();
 
     //timer2.start();
     drawTree();
@@ -132,11 +134,13 @@ void MyWindow::drawTree()
     }
     gluDeleteQuadric(c);
 
+    /*
     for (int i = 0; i < edges.size(); ++i) {
         Eigen::Vector3d start = edges[i][0];
         Eigen::Vector3d end = edges[i][1];
         dart::gui::drawLine3D(start, end);
     }
+*/
 }
 //==============================================================================
 
@@ -194,13 +198,12 @@ void MyWindow::initDrawTree()
 
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
+    endEffectorPosition.clear();
     endEffectorPosition.reserve(pdat.numVertices());
 
-    for(unsigned int i(0); i<pdat.numVertices(); ++i)
-    {
+    for(unsigned int i(0); i<pdat.numVertices(); ++i) {
         std::vector<double> reals;
-        if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
-        {
+        if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX) {
 
             ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
 
