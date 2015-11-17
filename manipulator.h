@@ -78,6 +78,9 @@ private:
 
     dd::SkeletonPtr staubli_;
 
+    dd::SkeletonPtr staubliInit_;
+    dd::SkeletonPtr staubliFinal_;
+
     dc::FCLMeshCollisionNode *table_;
     dc::FCLMeshCollisionNode *base_link_;
     dc::FCLMeshCollisionNode *shoulder_link_;
