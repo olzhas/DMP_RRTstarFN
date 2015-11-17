@@ -18,6 +18,7 @@
 #include <ompl/base/PlannerDataGraph.h>
 
 #include <dart/dart.h>
+#include <dart/common/Uri.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/shared_ptr.hpp>

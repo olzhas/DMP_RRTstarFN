@@ -21,6 +21,22 @@ namespace gui
 void drawLine3D(const Eigen::Vector3d start, const Eigen::Vector3d end);
 void drawSphere(const Eigen::Vector3d center, double radius);
 void drawNode(const Eigen::Vector3d center);
+
+class SimpleRGB{
+public:
+    double r;
+    double g;
+    double b;
+
+    SimpleRGB(double red, double green, double blue)
+    {
+        r = red;
+        g = green;
+        b = blue;
+    }
+
+};
+
 }
 }
 

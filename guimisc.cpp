@@ -19,6 +19,7 @@ void drawLine3D(const Eigen::Vector3d start, const Eigen::Vector3d end)
     gluQuadricDrawStyle(c, GLU_FILL);
     gluQuadricNormals(c, GLU_SMOOTH);
     //    GLfloat color[4]={0.8, 0.1, 0, 1};
+
     glColor3d(255.0/255.0, 102.0/255.0, 0.0/255.0);
 
 

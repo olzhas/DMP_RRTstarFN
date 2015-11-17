@@ -1,5 +1,6 @@
 #include "widget.h"
 
+//==============================================================================
 Widget::Widget()
 {
     ;
@@ -25,6 +26,6 @@ void Widget::exec(int *argcp, char **argv)
     window.initDrawTree();
     glutInit(argcp, argv);
     window.initWindow(800, 600, "Staubli TX90XL");
-    window.refreshTimer(10);
+    window.refreshTimer(5);
     glutMainLoop();
 }

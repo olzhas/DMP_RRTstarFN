@@ -61,4 +61,10 @@ private:
     float rot;
 };
 
+typedef struct{
+    double r;
+    double g;
+    double b;
+} SimpleRGB;
+
 #endif // MYWINDOW_H_

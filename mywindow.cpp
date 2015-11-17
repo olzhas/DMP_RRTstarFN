@@ -85,10 +85,10 @@ void MyWindow::drawSkels()
         mWorld->getSkeleton(i)->draw(mRI);
 
     //dart::common::Timer timer1("update");
-    timer1.start();
+    //timer1.start();
     updateDrawTree();
-    timer1.print();
-    timer1.stop();
+    //timer1.print();
+    //timer1.stop();
 
     //timer2.start();
     drawTree();
@@ -96,17 +96,20 @@ void MyWindow::drawSkels()
     //timer2.stop();
 
 }
-
 //==============================================================================
 void MyWindow::drawTree()
 {
+    //SimpleRGB boxColor = {.r = 255.0/255.0, .g=127.0/255.0, .b = 0/255.0}; // orange
+    dart::gui::SimpleRGB boxColor(215.0/255.0, 225.0/255.0,43.0/255.0);
+    dart::gui::SimpleRGB boxDetachedColor(200.0/255.0, 0.0/255.0,200.0/255.0);
+
     GLUquadricObj *c;
     c = gluNewQuadric();
     gluQuadricDrawStyle(c, GLU_FILL);
     gluQuadricNormals(c, GLU_SMOOTH);
     //glPushMatrix();
 
-    glColor3d(215.0/255.0, 225.0/255.0, 43.0/255.0);
+    glColor3d(boxColor.r, boxColor.g, boxColor.b);
     for (int i = 0; i < endEffectorPosition.size(); ++i) {
         Eigen::Vector3d center = endEffectorPosition.at(i);
         glPushMatrix();
@@ -115,7 +118,7 @@ void MyWindow::drawTree()
         glPopMatrix();
     }
 
-    glColor3d(215.0/255.0, 25.0/255.0, 43.0/255.0);
+    glColor3d(boxColor.r, boxColor.g, boxColor.b);
     for (int i = 0; i < solutionPositions.size(); ++i) {
         Eigen::Vector3d center = solutionPositions.at(i);
         glPushMatrix();
@@ -124,7 +127,7 @@ void MyWindow::drawTree()
         glPopMatrix();
     }
 
-    glColor3d(200.0/255.0, 0.0/255.0, 200.0/255.0);
+    glColor3d(boxDetachedColor.r, boxDetachedColor.g, boxDetachedColor.b);
     for (int i = 0; i < endEffectorPositionDetached.size(); ++i) {
         Eigen::Vector3d center = endEffectorPositionDetached.at(i);
         glPushMatrix();

@@ -21,50 +21,74 @@ ob::OptimizationObjectivePtr getPathLengthObjective(const ob::SpaceInformationPt
 }
 
 //==============================================================================
-Manipulator::Manipulator() :
-    pathNodes_(0), goalBias_(0), planningTime_(0)
+Manipulator::Manipulator()
+    : pathNodes_(0)
+    , goalBias_(0)
+    , planningTime_(0)
 {
     init();
 }
 
+inline std::string genBoxName(int i)
+{
+    std::string name = "box ";
+    name[3] = i + '0';
+    return name;
+}
+
 void Manipulator::init()
 {
-    ds::WorldPtr myWorld(du::SkelParser::readWorld(SAFESPACE_DATA "/ground_plane/ground.skel"));
+    ds::WorldPtr myWorld(du::SkelParser::readWorld(
+        dart::common::Uri::createFromString(
+            SAFESPACE_DATA "/ground_plane/ground.skel")));
 
     dd::SkeletonPtr staubli(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
+    /*
     dd::SkeletonPtr complexObstacle(du::SoftSdfParser::readSkeleton(
-                                        SAFESPACE_DATA "/obstacles/complex_obstacle.sdf"));
+        SAFESPACE_DATA "/obstacles/complex_obstacle.sdf"));
+    */
 
-    // staubli->disableSelfCollision();
+    enum ObstacleType { WALL,
+        HUMAN_BBOX,
+        CUBE };
 
-    std::string name = "box ";
+    ObstacleType obstType[NUM_OBSTACLE] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE };
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        if (i < 1) {
-            myObstacle[i] = du::SkelParser::readSkeleton(SAFESPACE_DATA "/obstacles/wall.skel");
+
+        std::string obstaclePath(SAFESPACE_DATA);
+        switch (obstType[i]) {
+        case WALL:
+            obstaclePath += "/obstacles/wall.skel";
+            break;
+        case HUMAN_BBOX:
+            obstaclePath += "/obstacles/human_box.skel";
+            break;
+        case CUBE:
+            obstaclePath += "/obstacles/cube.skel";
+            break;
+        default:
+            std::cerr << "Incorrenct obstacle type\n";
         }
-        else if (i < 2) {
-            myObstacle[i] = du::SkelParser::readSkeleton(SAFESPACE_DATA "/obstacles/human_box.skel");
-        }
-        else {
-            myObstacle[i] = du::SkelParser::readSkeleton(SAFESPACE_DATA "/obstacles/cube.skel");
-        }
+        myObstacle[i] = du::SkelParser::readSkeleton(obstaclePath);
 
         Eigen::Isometry3d T;
-
         Eigen::Matrix3d m;
-        m = Eigen::AngleAxisd(obstacle::rpy[i][0], Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(obstacle::rpy[i][1], Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2], Eigen::Vector3d::UnitZ());
+
+        m = Eigen::AngleAxisd(obstacle::rpy[i][0],
+                Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(obstacle::rpy[i][1],
+                Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
+                Eigen::Vector3d::UnitZ());
 
         T = Eigen::Translation3d(obstacle::pos[i][0], obstacle::pos[i][1],
-                obstacle::pos[i][2]);
+            obstacle::pos[i][2]);
 
         T.rotate(m);
 
         myObstacle[i]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-        name[3] = i + '0';
 
-        myObstacle[i]->setName(name);
+        myObstacle[i]->setName(genBoxName(i));
         //std::cout << "obstacle name: " << name << std::endl;
     }
 
@@ -149,16 +173,16 @@ staubli->computeForwardKinematics();
     //            ->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
 
     ss_->getSpaceInformation()
-            ->setMotionValidator(
-                ob::MotionValidatorPtr(
-                    new ManipulatorMotionValidator(ss_->getSpaceInformation())));
+        ->setMotionValidator(
+            ob::MotionValidatorPtr(
+                new ManipulatorMotionValidator(ss_->getSpaceInformation())));
 
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
     ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
 
     ss_->getProblemDefinition()
-            ->setOptimizationObjective(
-                getPathLengthObjective(ss_->getSpaceInformation()));
+        ->setOptimizationObjective(
+            getPathLengthObjective(ss_->getSpaceInformation()));
     ;
 
     jointSpace->setup();
@@ -176,8 +200,7 @@ staubli->computeForwardKinematics();
     toolflange_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("toolflange_link"));
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        name[3] = i + '0';
-        obstacle_[i] = new dc::FCLMeshCollisionNode(world_->getSkeleton(name)->getBodyNode(0));
+        obstacle_[i] = new dc::FCLMeshCollisionNode(world_->getSkeleton(genBoxName(i))->getBodyNode(0));
     }
 }
 
@@ -191,7 +214,7 @@ bool Manipulator::isStateValid(const ob::State* state)
     boost::lock_guard<boost::mutex> guard(mutex_);
 
     double* jointSpace
-            = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
+        = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
 
     std::vector<dc::Contact> contact;
     int num_max_contact = 1;
@@ -283,8 +306,8 @@ bool Manipulator::isStateValid(const ob::State* state)
 
     return true;
 
-    //bool collision_test = table_->detectCollision(&elbow_link_new, NULL, 1);
-    /*
+//bool collision_test = table_->detectCollision(&elbow_link_new, NULL, 1);
+/*
     switch(staubli->getBodyNode("shoulder_link")->getCollisionShape(0)->getShapeType()) {
     case dd::Shape::BOX:
         std::cout << "Shape::BOX" << std::endl;
@@ -353,7 +376,7 @@ bool Manipulator::plan()
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
         //ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.0/180.0*M_PI);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(200.0 / 180.0 * M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(15.0 / 180.0 * M_PI);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(goalBias_);
         ss_->solve(planningTime_);
     }
@@ -503,8 +526,8 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
 //==============================================================================
 // TODO implement motion validator
 bool ManipulatorMotionValidator::checkMotion(const ob::State* s1,
-                                             const ob::State* s2,
-                                             std::pair<ob::State*, double>& lastValid) const
+    const ob::State* s2,
+    std::pair<ob::State*, double>& lastValid) const
 {
     OMPL_ERROR("call of the method");
     return false;
@@ -519,7 +542,7 @@ void ManipulatorMotionValidator::defaultSettings()
 
 //==============================================================================
 void Manipulator::printEdge(std::ostream& os, const ob::StateSpacePtr& space,
-                            const ob::PlannerDataVertex& vertex)
+    const ob::PlannerDataVertex& vertex)
 {
     std::vector<double> reals;
     if (vertex != ob::PlannerData::NO_VERTEX) {
