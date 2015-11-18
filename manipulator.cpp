@@ -44,6 +44,9 @@ void Manipulator::init()
 
     dd::SkeletonPtr staubli(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
+    dd::SkeletonPtr staubliStartPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
+    dd::SkeletonPtr staubliFinalPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
+
     /*
     dd::SkeletonPtr complexObstacle(du::SoftSdfParser::readSkeleton(
         SAFESPACE_DATA "/obstacles/complex_obstacle.sdf"));
@@ -71,6 +74,7 @@ void Manipulator::init()
         default:
             std::cerr << "Incorrenct obstacle type\n";
         }
+
         myObstacle[i] = du::SkelParser::readSkeleton(obstaclePath);
 
         Eigen::Isometry3d T;
@@ -375,8 +379,7 @@ bool Manipulator::plan()
 
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
-        //ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.0/180.0*M_PI);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(15.0 / 180.0 * M_PI);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(range_);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(goalBias_);
         ss_->solve(planningTime_);
     }
@@ -635,6 +638,13 @@ void Manipulator::setPathNodes(int pathNodes)
 {
     pathNodes_ = pathNodes;
 }
+//==============================================================================
+
+void Manipulator::setRange(double range)
+{
+    range_ = range;
+}
+
 //==============================================================================
 og::PathGeometric* Manipulator::getResultantMotion()
 {

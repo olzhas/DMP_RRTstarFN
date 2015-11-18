@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 2.8)
 find_package(DART REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Bullet REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_search_module(YAMLCPP REQUIRED yaml-cpp)
 
 include(FindBoost)
 
@@ -26,6 +29,7 @@ target_link_libraries(${PROJECT_NAME}
     ${OMPL_LIBRARIES}
     ${FLANN_LIBRARIES}
     ${BULLET_LIBRARIES}
+    ${YAMLCPP_LIBRARIES}
     pthread
     )
 

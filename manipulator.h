@@ -62,6 +62,7 @@ public:
     void setGoalBias(double bias);
     void setMaxNodes(int nodeNum);
     void setPathNodes(int pathNodes);
+    void setRange(double range);
 
     void init();
 
@@ -95,6 +96,10 @@ private:
     int planningTime_;
     double goalBias_;
     int pathNodes_;
+    double range_;
+    std::vector<double> startState_;
+    std::vector<double> goalState_;
+
 
     boost::mutex mutex_;
 
