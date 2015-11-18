@@ -62,6 +62,7 @@ public:
     void setGoalBias(double bias);
     void setMaxNodes(int nodeNum);
     void setPathNodes(int pathNodes);
+    void setRange(double range);
 
     void init();
 
@@ -78,6 +79,9 @@ private:
 
     dd::SkeletonPtr staubli_;
 
+    dd::SkeletonPtr staubliInit_;
+    dd::SkeletonPtr staubliFinal_;
+
     dc::FCLMeshCollisionNode *table_;
     dc::FCLMeshCollisionNode *base_link_;
     dc::FCLMeshCollisionNode *shoulder_link_;
@@ -92,6 +96,10 @@ private:
     int planningTime_;
     double goalBias_;
     int pathNodes_;
+    double range_;
+    std::vector<double> startState_;
+    std::vector<double> goalState_;
+
 
     boost::mutex mutex_;
 

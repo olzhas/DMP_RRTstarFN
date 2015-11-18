@@ -99,7 +99,7 @@ void MyWindow::drawSkels()
 //==============================================================================
 void MyWindow::drawTree()
 {
-    dart::gui::SimpleRGB boxColor(255.0/255.0, 180.0/255.0, 0/255.0); // orange
+    dart::gui::SimpleRGB boxColor(255.0/255.0, 10.0/255.0, 0/255.0); // orange
     //dart::gui::SimpleRGB boxColor(215.0/255.0, 225.0/255.0,43.0/255.0);
     dart::gui::SimpleRGB boxDetachedColor(200.0/255.0, 0.0/255.0,200.0/255.0);
 
