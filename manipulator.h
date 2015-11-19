@@ -39,7 +39,7 @@ namespace og = ompl::geometric;
 namespace dc = dart::collision;
 namespace dd = dart::dynamics;
 
-class Manipulator 
+class Manipulator
 {
 public:
 
@@ -57,12 +57,6 @@ public:
     void recordSolution();
 
     og::PathGeometric* getResultantMotion();
-    void setPlanningTime(int time);
-    int getPlanningTime();
-    void setGoalBias(double bias);
-    void setMaxNodes(int nodeNum);
-    void setPathNodes(int pathNodes);
-    void setRange(double range);
 
     void setStartState(const std::vector<double> &st);
     void setFinalState(const std::vector<double> &st);

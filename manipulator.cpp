@@ -33,7 +33,7 @@ inline std::string genBoxName(int i)
     return name;
 }
 
-void Manipulator::init(const Configuration& config)
+void Solver::init(const Configuration& config)
 {
     cfg = config;
     ds::WorldPtr myWorld(du::SkelParser::readWorld(
@@ -41,7 +41,6 @@ void Manipulator::init(const Configuration& config)
             SAFESPACE_DATA "/ground_plane/ground.skel")));
 
     dd::SkeletonPtr staubli(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
-
     dd::SkeletonPtr staubliStartPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
     dd::SkeletonPtr staubliFinalPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
@@ -112,8 +111,6 @@ void Manipulator::init(const Configuration& config)
         staubliStartPos->setPosition(i, cfg.startState[i - 2]);
         staubliFinalPos->setPosition(i, cfg.goalState[i - 2]);
     }
-    myWorld->addSkeleton(staubliStartPos);
-    myWorld->addSkeleton(staubliFinalPos);
 
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {

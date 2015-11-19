@@ -6,7 +6,6 @@
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 
-
 #include <dart/dart.h>
 #include <string>
 #include <cmath>
@@ -16,23 +15,20 @@
 #include "guimisc.h"
 #include "configuration.h"
 
-class PlanningProblem
-{
+class PlanningProblem {
 public:
     PlanningProblem();
     void configure();
     void readFile();
     int solve(int argc, char* argv[]);
-    void setConfigFileName(std::string &filename);
+    void setConfigFileName(std::string& filename);
     void plan(int* argcp, char** argv);
 
 private:
-
     ManipulatorPtr manipulator; //
     Configuration cfg;
 
     Frontend frontend;
-
 };
 
 #endif // PLANNINGPROBLEM_H

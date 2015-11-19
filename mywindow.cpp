@@ -67,9 +67,9 @@ void MyWindow::timeStepping()
 //==============================================================================
 void MyWindow::drawSkels()
 {
-#define CAMERA_FLY
+//#define CAMERA_FLY
 #ifdef CAMERA_FLY
-    rot += 0.01;
+    rot += 0.001;
     Eigen::Matrix3d mat;
     mat = Eigen::AngleAxisd(-0.25*M_PI, Eigen::Vector3d::UnitY())
             * Eigen::AngleAxisd(-rot*M_PI,  Eigen::Vector3d::UnitX())
@@ -100,6 +100,7 @@ void MyWindow::drawSkels()
 //==============================================================================
 void MyWindow::drawTree()
 {
+    /*
     dart::gui::SimpleRGB boxColor(255.0/255.0, 10.0/255.0, 0/255.0); // orange
     //dart::gui::SimpleRGB boxColor(215.0/255.0, 225.0/255.0,43.0/255.0);
     dart::gui::SimpleRGB boxDetachedColor(200.0/255.0, 0.0/255.0,200.0/255.0);
@@ -137,7 +138,7 @@ void MyWindow::drawTree()
         glPopMatrix();
     }
     gluDeleteQuadric(c);
-
+*/
     /*
     for (int i = 0; i < edges.size(); ++i) {
         Eigen::Vector3d start = edges[i][0];
@@ -148,10 +149,11 @@ void MyWindow::drawTree()
 }
 //==============================================================================
 
+/*
 void MyWindow::drawGhostManipulator()
 {
-    if (!ss_ || !ss_->haveSolutionPath()){
 
+    if (!ss_ || !ss_->haveSolutionPath()){
         std::cerr << "No solution =(" << std::endl;
     }
 
@@ -160,8 +162,6 @@ void MyWindow::drawGhostManipulator()
     ss_->getPlannerData(pdat);
 
     // Print the vertices to file
-
-    //memmove(staubli, mWorld->getSkeleton("TX90XLHB"), sizeof(dart::dynamics::Skeleton));
 
     for(unsigned int i(0); i<pdat.numVertices(); ++i)
     {
@@ -185,12 +185,13 @@ void MyWindow::drawGhostManipulator()
         }
     }
 }
+*/
 
 //==============================================================================
 void MyWindow::initDrawTree()
 {
     if (!ss_ || !ss_->haveSolutionPath()){
-        std::cerr << "No solution =(" << std::endl;
+        std::cerr << "initDrawTree: No solution =(" << std::endl;
         // return;
     }
 
@@ -260,7 +261,7 @@ void MyWindow::initDrawTree()
 void MyWindow::updateDrawTree()
 {
     if (!ss_ || !ss_->haveSolutionPath()) {
-        std::cerr << "No solution =(" << std::endl;
+        std::cerr << "updateDrawTree: No solution =(" << std::endl;
         // return;
     }
 
@@ -330,7 +331,7 @@ void MyWindow::drawManipulatorState(int state)
 {
 
     if (!ss_ || !ss_->haveSolutionPath()){
-        std::cerr << "No solution =(" << std::endl;
+        std::cerr << "drawManipulatorState: No solution =(" << std::endl;
     }
 
     // Get the planner data to visualize the vertices and the edges

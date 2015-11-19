@@ -34,7 +34,6 @@ public:
     void initDrawTree();
     void updateDrawTree();
     void drawTree();
-    void drawGhostManipulator();
     void drawManipulatorState(int state);
 
     Eigen::Vector3d getVertex(const ob::PlannerDataVertex &vertex);

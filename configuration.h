@@ -4,17 +4,15 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-class Configuration
-{
+class Configuration {
 private:
     YAML::Node config;
 
 public:
-
-    int planningTime;   // time in seconds
-    double goalBias;    // biasing in goal
+    int planningTime; // time in seconds
+    double goalBias; // biasing in goal
     int maxNumberNodes; // maximum number of nodes
-    int pathNodes;      // number of nodes for interpolation
+    int pathNodes; // number of nodes for interpolation
 
     double rangeDeg;
     double rangeRad;
@@ -25,13 +23,12 @@ public:
     bool loadData;
     std::string loadDataFile;
 
-//==============================================================================
+    //==============================================================================
 
     Configuration();
 
     void readFile();
     void defaults();
-
 };
 
 #endif // CONFIGURATION_H
