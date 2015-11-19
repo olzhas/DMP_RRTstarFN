@@ -45,6 +45,7 @@ void Manipulator::init()
     dd::SkeletonPtr staubli(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
     dd::SkeletonPtr staubliStartPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
+    //staubliStartPos->setName();
     dd::SkeletonPtr staubliFinalPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
     /*
@@ -97,6 +98,14 @@ void Manipulator::init()
     }
 
     myWorld->addSkeleton(staubli);
+    for(size_t i(2); i<8; ++i){
+        staubliStartPos->setPosition(i,  0.6);
+        staubliFinalPos->setPosition(i, -0.1);
+    }
+    myWorld->addSkeleton(staubliStartPos);
+    staubliStartPos->computeForwardKinematics(true, false, false);
+    myWorld->addSkeleton(staubliFinalPos);
+    staubliFinalPos->computeForwardKinematics(true, false, false);
     // TODO make it smarter
     // complexObstacle->setName("box4");
     // myWorld->addSkeleton(complexObstacle);
