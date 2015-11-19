@@ -30,6 +30,7 @@
 #include <fstream>
 #include <mutex>
 
+#include "configuration.h"
 
 #define NUM_OBSTACLE 5
 #define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
@@ -64,7 +65,10 @@ public:
     void setPathNodes(int pathNodes);
     void setRange(double range);
 
-    void init();
+    void setStartState(const std::vector<double> &st);
+    void setFinalState(const std::vector<double> &st);
+
+    void init(const Configuration &config);
 
     void store(const char *filename);
     void load(const char *filename);
@@ -100,6 +104,7 @@ private:
     std::vector<double> startState_;
     std::vector<double> goalState_;
 
+    Configuration cfg;
 
     boost::mutex mutex_;
 
