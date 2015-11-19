@@ -22,11 +22,8 @@ ob::OptimizationObjectivePtr getPathLengthObjective(const ob::SpaceInformationPt
 
 //==============================================================================
 Manipulator::Manipulator()
-    : pathNodes_(0)
-    , goalBias_(0)
-    , planningTime_(0)
 {
-    init();
+    ;
 }
 
 inline std::string genBoxName(int i)
@@ -36,8 +33,9 @@ inline std::string genBoxName(int i)
     return name;
 }
 
-void Manipulator::init()
+void Manipulator::init(const Configuration& config)
 {
+    cfg = config;
     ds::WorldPtr myWorld(du::SkelParser::readWorld(
         dart::common::Uri::createFromString(
             SAFESPACE_DATA "/ground_plane/ground.skel")));
@@ -45,7 +43,6 @@ void Manipulator::init()
     dd::SkeletonPtr staubli(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
     dd::SkeletonPtr staubliStartPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
-    //staubliStartPos->setName();
     dd::SkeletonPtr staubliFinalPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
     /*
@@ -57,7 +54,7 @@ void Manipulator::init()
         HUMAN_BBOX,
         CUBE };
 
-    ObstacleType obstType[NUM_OBSTACLE] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE };
+    ObstacleType obstType[] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE };
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
 
@@ -83,8 +80,8 @@ void Manipulator::init()
 
         m = Eigen::AngleAxisd(obstacle::rpy[i][0],
                 Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(obstacle::rpy[i][1],
-                Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
-                Eigen::Vector3d::UnitZ());
+                                                Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
+                                                                                Eigen::Vector3d::UnitZ());
 
         T = Eigen::Translation3d(obstacle::pos[i][0], obstacle::pos[i][1],
             obstacle::pos[i][2]);
@@ -98,24 +95,28 @@ void Manipulator::init()
     }
 
     myWorld->addSkeleton(staubli);
-    for(size_t i(2); i<8; ++i){
-        staubliStartPos->setPosition(i,  0.6);
-        staubliFinalPos->setPosition(i, -0.1);
-    }
-    myWorld->addSkeleton(staubliStartPos);
-    staubliStartPos->computeForwardKinematics(true, false, false);
-    myWorld->addSkeleton(staubliFinalPos);
-    staubliFinalPos->computeForwardKinematics(true, false, false);
+
     // TODO make it smarter
     // complexObstacle->setName("box4");
     // myWorld->addSkeleton(complexObstacle);
 
     for (int i = 0; i < 8; ++i) {
         staubli->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
+        staubliStartPos->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
+        staubliFinalPos->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
 #ifdef DEBUG
         cout << staubli->getJoint(i)->isKinematic() << endl;
 #endif
     }
+
+    for (size_t i(2); i < 8; ++i) {
+        staubliStartPos->setPosition(i, cfg.startState[i - 2]);
+        staubliFinalPos->setPosition(i, cfg.goalState[i - 2]);
+    }
+    myWorld->addSkeleton(staubliStartPos);
+    staubliStartPos->computeForwardKinematics(true, false, false);
+    myWorld->addSkeleton(staubliFinalPos);
+    staubliFinalPos->computeForwardKinematics(true, false, false);
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
         myWorld->addSkeleton(myObstacle[i]);
@@ -369,34 +370,32 @@ bool Manipulator::plan()
 {
     if (!ss_)
         return false;
+
+    // TODO make it simpler
     ob::ScopedState<> start(ss_->getStateSpace());
-    start[0] = 62.5 / 180.0 * DART_PI;
-    start[1] = 49.5 / 180.0 * DART_PI;
-    start[2] = 92.8 / 180.0 * DART_PI;
-    start[3] = 0.0 / 180.0 * DART_PI;
-    start[4] = 0.0 / 180.0 * DART_PI;
-    start[5] = 0;
+    for (std::size_t i(0); i < cfg.startState.size(); ++i) {
+        start[i] = cfg.startState[i];
+    }
+
     ob::ScopedState<> goal(ss_->getStateSpace());
-    goal[0] = -52.2 / 180.0 * DART_PI;
-    goal[1] = 60.8 / 180.0 * DART_PI;
-    goal[2] = 63.0 / 180.0 * DART_PI;
-    goal[3] = 0;
-    goal[4] = 53.3 / 180.0 * DART_PI;
-    goal[5] = 0;
+    for (std::size_t i(0); i < cfg.goalState.size(); ++i) {
+        goal[i] = cfg.goalState[i];
+    }
     ss_->setStartAndGoalStates(start, goal);
     // generate a few solutions; all will be added to the goal;
 
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(range_);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(goalBias_);
-        ss_->solve(planningTime_);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
+        ss_->solve(cfg.planningTime);
     }
 
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
     OMPL_INFORM("Found %d solutions", (int)ns);
     return ss_->haveSolutionPath();
 }
+//==============================================================================
 
 //==============================================================================
 bool Manipulator::replan()
@@ -468,9 +467,9 @@ void Manipulator::load(const char* filename)
     goal[5] = 0;
 
     ss_->setStartAndGoalStates(start, goal);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(2.5 / 180.0 * M_PI);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(goalBias_);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(filename);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg.loadDataFile.c_str());
 
     /*
     ob::PlannerData pdat(ss_->getSpaceInformation());
@@ -615,16 +614,6 @@ dart::simulation::WorldPtr Manipulator::getWorld()
     return world_;
 }
 //==============================================================================
-void Manipulator::setPlanningTime(int time)
-{
-    planningTime_ = time;
-}
-//==============================================================================
-int Manipulator::getPlanningTime()
-{
-    return planningTime_;
-}
-//==============================================================================
 void Manipulator::setMaxNodes(int nodeNum)
 {
 #ifdef DEBUG
@@ -638,23 +627,6 @@ void Manipulator::setMaxNodes(int nodeNum)
 #endif
 }
 //==============================================================================
-void Manipulator::setGoalBias(double bias)
-{
-    goalBias_ = bias;
-}
-//==============================================================================
-void Manipulator::setPathNodes(int pathNodes)
-{
-    pathNodes_ = pathNodes;
-}
-//==============================================================================
-
-void Manipulator::setRange(double range)
-{
-    range_ = range;
-}
-
-//==============================================================================
 og::PathGeometric* Manipulator::getResultantMotion()
 {
     if (!ss_ || !ss_->haveSolutionPath()) {
@@ -663,6 +635,6 @@ og::PathGeometric* Manipulator::getResultantMotion()
     }
 
     og::PathGeometric& p = ss_->getSolutionPath();
-    p.interpolate(pathNodes_);
+    p.interpolate(cfg.pathNodes);
     return &p;
 }
