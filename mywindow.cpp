@@ -67,6 +67,7 @@ void MyWindow::timeStepping()
 //==============================================================================
 void MyWindow::drawSkels()
 {
+#define CAMERA_FLY
 #ifdef CAMERA_FLY
     rot += 0.01;
     Eigen::Matrix3d mat;

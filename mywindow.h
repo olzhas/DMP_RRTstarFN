@@ -8,8 +8,6 @@
 
 #include <dart/dart.h>
 
-#include <boost/chrono/thread_clock.hpp>
-
 #include "guimisc.h"
 
 namespace og = ompl::geometric;

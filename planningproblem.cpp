@@ -10,8 +10,6 @@ PlanningProblem::PlanningProblem()
 int PlanningProblem::solve(int argc, char* argv[])
 {
     // just to check if time ticks correctly
-    system("date");
-
     Widget widget;
     widget.setManipulator(manipulator);
     widget.init();
