@@ -62,6 +62,9 @@ void PlanningProblem::readFile()
         }
     }
 
+    if(config["dynamic-replanning"]){
+        dynamicReplanning = config["dynamic-replanning"].as<bool>();
+    }
 }
 
 void PlanningProblem::setConfigFileName(std::string &filename)
@@ -73,7 +76,6 @@ int PlanningProblem::exec(int argc, char* argv[])
 {
     // just to check if time ticks correctly
     system("date");
-    std::string fileName = "mydump";
 
     Widget widget;
     widget.setManipulator(manipulator);
@@ -82,18 +84,16 @@ int PlanningProblem::exec(int argc, char* argv[])
     boost::thread guiThread(boost::bind(&Widget::exec, widget, &argc, argv));
     boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
 
-    //#define DYNAMIC_PLANNING
-#ifdef DYNAMIC_PLANNING
-
-    for(int j = 0; j < 5; j++){
-        std::cout << "\nreplanning iteration #" << j << std::endl;
-        manipulator->updateObstacles();
-        manipulator->replan();
+    if(dynamicReplanning){
+        for(int j = 0; j < 5; j++){
+            std::cout << "\nreplanning iteration #" << j << std::endl;
+            manipulator->updateObstacles();
+            manipulator->replan();
+        }
     }
-#endif
 
-    //boost::thread guiThread(boost::bind(&Widget::exec, widget, &argc, argv));
     guiThread.join();
+    planThread.join();
     return EXIT_SUCCESS;
 }
 

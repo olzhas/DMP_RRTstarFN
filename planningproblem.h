@@ -31,6 +31,7 @@ private:
     double goalBias;    // biasing in goal
     int maxNumberNodes; // maximum number of nodes
     double range;
+    bool dynamicReplanning;
     std::vector<double> startState;
     std::vector<double> goalState;
 
