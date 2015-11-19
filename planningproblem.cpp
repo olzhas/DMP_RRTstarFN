@@ -5,25 +5,24 @@ PlanningProblem::PlanningProblem()
     cfg.readFile();
     manipulator = ManipulatorPtr(new Manipulator());
     manipulator->init(cfg);
+
+    frontend.setManipulator(manipulator);
+    frontend.init();
 }
 
 int PlanningProblem::solve(int argc, char* argv[])
 {
     // just to check if time ticks correctly
-    Widget widget;
-    widget.setManipulator(manipulator);
-    widget.init();
-
-    boost::thread guiThread(boost::bind(&Widget::exec, widget, &argc, argv));
+    boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
     boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
 
-    if(cfg.dynamicReplanning){
-        for(int j = 0; j < 5; j++){
-            std::cout << "\nreplanning iteration #" << j << std::endl;
-            manipulator->updateObstacles();
-            manipulator->replan();
-        }
-    }
+//    if(cfg.dynamicReplanning){
+//        for(int j = 0; j < 5; j++){
+//            std::cout << "\nreplanning iteration #" << j << std::endl;
+//            manipulator->updateObstacles();
+//            manipulator->replan();
+//        }
+//    }
 
     guiThread.join();
     planThread.join();

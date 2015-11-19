@@ -11,7 +11,7 @@
 #include <string>
 #include <cmath>
 
-#include "widget.h"
+#include "frontend.h"
 #include "manipulator.h"
 #include "guimisc.h"
 #include "configuration.h"
@@ -31,7 +31,7 @@ private:
     ManipulatorPtr manipulator; //
     Configuration cfg;
 
-    dart::simulation::WorldPtr renderWorld;
+    Frontend frontend;
 
 };
 

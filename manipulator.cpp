@@ -80,7 +80,7 @@ void Manipulator::init(const Configuration& config)
 
         m = Eigen::AngleAxisd(obstacle::rpy[i][0],
                 Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(obstacle::rpy[i][1],
-                                                Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
+                                            Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
                                                                                 Eigen::Vector3d::UnitZ());
 
         T = Eigen::Translation3d(obstacle::pos[i][0], obstacle::pos[i][1],
@@ -89,9 +89,8 @@ void Manipulator::init(const Configuration& config)
         T.rotate(m);
 
         myObstacle[i]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-
         myObstacle[i]->setName(genBoxName(i));
-        //std::cout << "obstacle name: " << name << std::endl;
+
     }
 
     myWorld->addSkeleton(staubli);
@@ -114,9 +113,8 @@ void Manipulator::init(const Configuration& config)
         staubliFinalPos->setPosition(i, cfg.goalState[i - 2]);
     }
     myWorld->addSkeleton(staubliStartPos);
-    staubliStartPos->computeForwardKinematics(true, false, false);
     myWorld->addSkeleton(staubliFinalPos);
-    staubliFinalPos->computeForwardKinematics(true, false, false);
+
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
         myWorld->addSkeleton(myObstacle[i]);
@@ -125,48 +123,6 @@ void Manipulator::init(const Configuration& config)
     myWorld->setGravity(Eigen::Vector3d(0.0, 0.0, 0.0));
 
     setWorld(myWorld);
-
-    std::cout << myWorld->getTimeStep() << std::endl;
-
-    //*/
-    /*
-Eigen::Isometry3d T;
-T = myObstacle[1]->getBodyNode("box")->getTransform();
-
-T.translation()(0) += 0.1*15;
-
-myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-myObstacle[1]->computeForwardKinematics();
-//
-
-/*
-     dart::dynamics::Skeleton *humanBox  = mWorld->getSkeleton("box1");
-        Eigen::Isometry3d T;
-        T = humanBox->getBodyNode("box")->getTransform();
-
-        T.translation()(0) -= 0.0005;
-        T.translation()(1) -= 0.00025;
-
-        humanBox->getJoint("joint 1")->setTransformFromParentBodyNode(T);
- */
-
-    /*
-VectorXd q = staubli->getPositions() * 0;
-
-q[2] =  0.7*DART_PI;
-q[3] =  0.4*DART_PI;
-q[4] = -0.4*DART_PI;
-q[5] = 0;
-q[6] = 0;
-q[7] = 0;
-
-staubli->setPositions(q);
-staubli->computeForwardKinematics();
-*/
-
-    // myWorld->setTimeStep(0.005);
-
-    // std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
 
     ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
 

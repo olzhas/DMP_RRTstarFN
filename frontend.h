@@ -1,13 +1,13 @@
-#ifndef WIDGET_H_
-#define WIDGET_H_
+#ifndef FRONTEND_H_
+#define FRONTEND_H_
 
 #include "mywindow.h"
 #include "manipulator.h"
 
-class Widget
+class Frontend
 {
 public:
-    Widget();
+    Frontend();
     void init();
     void exec(int *argcp, char **argv);
     void setManipulator(ManipulatorPtr robot);
@@ -15,6 +15,7 @@ public:
 private:
     MyWindow window;
     ManipulatorPtr manipulator;
+    dart::simulation::WorldPtr renderWorld;
 
 };
 
