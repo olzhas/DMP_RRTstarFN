@@ -1,0 +1,4 @@
+build/
+plotting/
+CMakeFiles/
+CMakeLists.txt.*
