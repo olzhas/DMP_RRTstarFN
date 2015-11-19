@@ -97,13 +97,6 @@ private:
 
     dc::FCLMeshCollisionNode *obstacle_[NUM_OBSTACLE];
 
-    int planningTime_;
-    double goalBias_;
-    int pathNodes_;
-    double range_;
-    std::vector<double> startState_;
-    std::vector<double> goalState_;
-
     Configuration cfg;
 
     boost::mutex mutex_;

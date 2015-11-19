@@ -35,7 +35,7 @@ int PlanningProblem::solve(int argc, char* argv[])
 void PlanningProblem::plan(int* argcp, char** argv)
 {
     if(!cfg.loadData){
-        std::cout << "Planning time is set to " << manipulator->getPlanningTime() << "sec\n";
+        std::cout << "Planning time is set to " << cfg.planningTime << "sec\n";
         if (manipulator->plan()) {
             manipulator->recordSolution();
             manipulator->store(cfg.loadDataFile.c_str());
