@@ -5,7 +5,7 @@ Frontend::Frontend() { ; }
 //==============================================================================
 void Frontend::init()
 {
-    window.setWorld(manipulator->getWorld());
+    window.setWorld(manipulator->getWorld()->clone());
     og::PathGeometric* resultantMotion = manipulator->getResultantMotion();
 
     window.setMotion(resultantMotion);

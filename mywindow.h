@@ -13,8 +13,7 @@
 namespace og = ompl::geometric;
 namespace ob = ompl::base;
 
-class MyWindow : public dart::gui::SimWindow
-{
+class MyWindow : public dart::gui::SimWindow {
 public:
     MyWindow();
 
@@ -29,19 +28,19 @@ public:
     // Documentation inherited
     virtual void keyboard(unsigned char _key, int _x, int _y);
 
-    void setMotion(og::PathGeometric *motion);
+    void setMotion(og::PathGeometric* motion);
 
     void initDrawTree();
     void updateDrawTree();
     void drawTree();
     void drawManipulatorState(int state);
 
-    Eigen::Vector3d getVertex(const ob::PlannerDataVertex &vertex);
+    Eigen::Vector3d getVertex(const ob::PlannerDataVertex& vertex);
 
     og::SimpleSetupPtr ss_;
 
 private:
-    og::PathGeometric *motion_ = NULL;
+    og::PathGeometric* motion_ = NULL;
 
     int motionStep;
     int treeState;
@@ -50,15 +49,14 @@ private:
     std::vector<Eigen::Vector3d> endEffectorPositionDetached;
     std::vector<Eigen::Vector3d> solutionPositions;
 
-    std::vector< std::vector<Eigen::Vector3d> > edges;
-    bool ghostDrawn;
+    std::vector<std::vector<Eigen::Vector3d> > edges;
 
     dart::common::Timer timer1;
     dart::common::Timer timer2;
     float rot;
 };
 
-typedef struct{
+typedef struct {
     double r;
     double g;
     double b;

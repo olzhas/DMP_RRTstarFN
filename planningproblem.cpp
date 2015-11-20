@@ -5,15 +5,12 @@ PlanningProblem::PlanningProblem()
     cfg.readFile();
     manipulator = ManipulatorPtr(new Manipulator());
     manipulator->init(cfg);
-
-    frontend.setManipulator(manipulator);
-    frontend.init();
 }
 
 int PlanningProblem::solve(int argc, char* argv[])
 {
     // just to check if time ticks correctly
-    boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
+
     boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
 
     //    if(cfg.dynamicReplanning){
@@ -24,8 +21,15 @@ int PlanningProblem::solve(int argc, char* argv[])
     //        }
     //    }
 
-    guiThread.join();
+
     planThread.join();
+
+    frontend.setManipulator(manipulator);
+    frontend.init();
+
+    boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
+    guiThread.join();
+
     return EXIT_SUCCESS;
 }
 
@@ -42,4 +46,5 @@ void PlanningProblem::plan(int* argcp, char** argv)
         OMPL_INFORM("Loading the tree from file %s", cfg.loadDataFile.c_str());
         manipulator->load(cfg.loadDataFile.c_str());
     }
+    return;
 }

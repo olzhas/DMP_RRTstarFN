@@ -48,6 +48,14 @@ void Configuration::readFile()
     if (config["dynamic-replanning"]) {
         dynamicReplanning = config["dynamic-replanning"].as<bool>();
     }
+
+    if(config["load-data"]) {
+        loadData = config["load-data"].as<bool>();
+    }
+
+    if(config["load-data-file"]){
+        loadDataFile = config["load-data-file"].as<std::string>();
+    }
 }
 
 void Configuration::defaults()

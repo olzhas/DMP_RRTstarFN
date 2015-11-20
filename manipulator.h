@@ -39,10 +39,8 @@ namespace og = ompl::geometric;
 namespace dc = dart::collision;
 namespace dd = dart::dynamics;
 
-class Manipulator
-{
+class Manipulator {
 public:
-
     og::SimpleSetupPtr ss_;
     ob::SpaceInformationPtr si_;
 
@@ -53,42 +51,33 @@ public:
     bool replan();
     void updateObstacles();
 
-    void printEdge(std::ostream &os, const ob::StateSpacePtr &space, const ob::PlannerDataVertex &vertex);
+    void setMaxNodes(int nodes);
+
+    void printEdge(std::ostream& os, const ob::StateSpacePtr& space, const ob::PlannerDataVertex& vertex);
     void recordSolution();
 
     og::PathGeometric* getResultantMotion();
 
-    void setStartState(const std::vector<double> &st);
-    void setFinalState(const std::vector<double> &st);
+    void setStartState(const std::vector<double>& st);
+    void setFinalState(const std::vector<double>& st);
 
-    void init(const Configuration &config);
+    void init(const Configuration(&config));
 
-    void store(const char *filename);
-    void load(const char *filename);
+    void store(const char* filename);
+    void load(const char* filename);
 
     dart::simulation::WorldPtr getWorld();
     void setWorld(dart::simulation::WorldPtr world);
 
 private:
-
-    bool isStateValid(const ob::State *state);
+    bool isStateValid(const ob::State* state);
     dart::simulation::WorldPtr world_;
 
     dd::SkeletonPtr staubli_;
-
-    dd::SkeletonPtr staubliInit_;
-    dd::SkeletonPtr staubliFinal_;
-
-    dc::FCLMeshCollisionNode *table_;
-    dc::FCLMeshCollisionNode *base_link_;
-    dc::FCLMeshCollisionNode *shoulder_link_;
-    dc::FCLMeshCollisionNode *arm_link_;
-    dc::FCLMeshCollisionNode *elbow_link_;
-    dc::FCLMeshCollisionNode *forearm_link_;
-    dc::FCLMeshCollisionNode *wrist_link_;
-    dc::FCLMeshCollisionNode *toolflange_link_;
-
-    dc::FCLMeshCollisionNode *obstacle_[NUM_OBSTACLE];
+    std::string rbtCollisionNodeName[8]={"table", "base_link", "shoulder_link",
+     "arm_link", "elbow_link", "forearm_link", "wrist_link","toolflange_link"}; 
+    dc::FCLMeshCollisionNode* rbtCollisionNode[8];
+    dc::FCLMeshCollisionNode* obstacle_[NUM_OBSTACLE];
 
     Configuration cfg;
 
@@ -97,22 +86,24 @@ private:
     dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
 };
 
-class ManipulatorMotionValidator : public ob::MotionValidator
-{
+class ManipulatorMotionValidator : public ob::MotionValidator {
 public:
-    ManipulatorMotionValidator(ob::SpaceInformation *si) : MotionValidator(si)
+    ManipulatorMotionValidator(ob::SpaceInformation* si)
+        : MotionValidator(si)
     {
         defaultSettings();
     }
-    ManipulatorMotionValidator(const ob::SpaceInformationPtr &si) : MotionValidator(si)
+    ManipulatorMotionValidator(const ob::SpaceInformationPtr& si)
+        : MotionValidator(si)
     {
         defaultSettings();
     }
     virtual ~ManipulatorMotionValidator()
     {
     }
-    virtual bool checkMotion(const ob::State *s1, const ob::State *s2) const;
-    virtual bool checkMotion(const ob::State *s1, const ob::State *s2, std::pair<ob::State*, double> &lastValid) const;
+    virtual bool checkMotion(const ob::State* s1, const ob::State* s2) const;
+    virtual bool checkMotion(const ob::State* s1, const ob::State* s2, std::pair<ob::State*, double>& lastValid) const;
+
 private:
     ob::StateSpacePtr stateSpace_;
     void defaultSettings();

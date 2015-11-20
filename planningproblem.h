@@ -29,6 +29,8 @@ private:
     Configuration cfg;
 
     Frontend frontend;
+
+    dart::simulation::WorldPtr demoWorld;
 };
 
 #endif // PLANNINGPROBLEM_H
