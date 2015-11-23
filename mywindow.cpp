@@ -16,24 +16,32 @@ MyWindow::MyWindow()
     mZoom = 0.2;
     rot = 0;
     //mCapture = true;
-
 }
 //==============================================================================
 
 void MyWindow::initGhostManipulators()
 {
     dd::SkeletonPtr staubliStartState = mWorld->getSkeleton("TX90XLHB")->clone();
-    for(int i=2; i<8; ++i){
-        staubliStartState->setPosition(i, cfg.startState[i-2]);
+    for (int i = 2; i < 8; ++i) {
+        staubliStartState->setPosition(i, cfg.startState[i - 2]);
     }
+    setSkeletonCollidable(staubliStartState, false);
     mWorld->addSkeleton(staubliStartState);
 
     dd::SkeletonPtr staubliFinalState = mWorld->getSkeleton("TX90XLHB")->clone();
-    for(int i=2; i<8; ++i){
-        staubliFinalState->setPosition(i, cfg.goalState[i-2]);
+    for (int i = 2; i < 8; ++i) {
+        staubliFinalState->setPosition(i, cfg.goalState[i - 2]);
     }
+    setSkeletonCollidable(staubliFinalState, false);
     mWorld->addSkeleton(staubliFinalState);
+}
 
+//==============================================================================
+void MyWindow::setSkeletonCollidable(dd::SkeletonPtr sk, bool isCollidable)
+{
+    for (size_t i = 0; i < sk->getNumBodyNodes(); ++i) {
+        sk->getBodyNode(i)->setCollidable(isCollidable);
+    }
 }
 
 //==============================================================================

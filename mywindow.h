@@ -36,6 +36,7 @@ public:
     void drawTree();
     void drawManipulatorState(int state);
     void initGhostManipulators();
+    void setSkeletonCollidable(dart::dynamics::SkeletonPtr sk, bool isCollidable);
 
     Eigen::Vector3d getVertex(const ob::PlannerDataVertex& vertex);
 
@@ -57,7 +58,6 @@ private:
     dart::common::Timer timer1;
     dart::common::Timer timer2;
     float rot;
-
 };
 
 typedef struct {
