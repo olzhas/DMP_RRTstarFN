@@ -68,6 +68,7 @@ public:
 
     dart::simulation::WorldPtr getWorld();
     void setWorld(dart::simulation::WorldPtr world);
+    Configuration cfg;
 
 private:
     bool isStateValid(const ob::State* state);
@@ -75,15 +76,16 @@ private:
 
     dd::SkeletonPtr staubli_;
     std::string rbtCollisionNodeName[8]={"table", "base_link", "shoulder_link",
-     "arm_link", "elbow_link", "forearm_link", "wrist_link","toolflange_link"}; 
+                                         "arm_link", "elbow_link", "forearm_link", "wrist_link","toolflange_link"};
     dc::FCLMeshCollisionNode* rbtCollisionNode[8];
     dc::FCLMeshCollisionNode* obstacle_[NUM_OBSTACLE];
 
-    Configuration cfg;
+
 
     boost::mutex mutex_;
 
     dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
+
 };
 
 class ManipulatorMotionValidator : public ob::MotionValidator {

@@ -9,6 +9,7 @@
 #include <dart/dart.h>
 
 #include "guimisc.h"
+#include "configuration.h"
 
 namespace og = ompl::geometric;
 namespace ob = ompl::base;
@@ -34,10 +35,12 @@ public:
     void updateDrawTree();
     void drawTree();
     void drawManipulatorState(int state);
+    void initGhostManipulators();
 
     Eigen::Vector3d getVertex(const ob::PlannerDataVertex& vertex);
 
     og::SimpleSetupPtr ss_;
+    Configuration cfg;
 
 private:
     og::PathGeometric* motion_ = NULL;
@@ -54,6 +57,7 @@ private:
     dart::common::Timer timer1;
     dart::common::Timer timer2;
     float rot;
+
 };
 
 typedef struct {

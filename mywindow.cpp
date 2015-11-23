@@ -16,6 +16,24 @@ MyWindow::MyWindow()
     mZoom = 0.2;
     rot = 0;
     //mCapture = true;
+
+}
+//==============================================================================
+
+void MyWindow::initGhostManipulators()
+{
+    dd::SkeletonPtr staubliStartState = mWorld->getSkeleton("TX90XLHB")->clone();
+    for(int i=2; i<8; ++i){
+        staubliStartState->setPosition(i, cfg.startState[i-2]);
+    }
+    mWorld->addSkeleton(staubliStartState);
+
+    dd::SkeletonPtr staubliFinalState = mWorld->getSkeleton("TX90XLHB")->clone();
+    for(int i=2; i<8; ++i){
+        staubliFinalState->setPosition(i, cfg.goalState[i-2]);
+    }
+    mWorld->addSkeleton(staubliFinalState);
+
 }
 
 //==============================================================================

@@ -19,6 +19,7 @@ void Frontend::setManipulator(ManipulatorPtr robot)
 //==============================================================================
 void Frontend::exec(int* argcp, char** argv)
 {
+    window.cfg = manipulator->cfg;
     glutInit(argcp, argv);
     window.initDrawTree();
     window.initWindow(800, 600, "Staubli TX90XL");
