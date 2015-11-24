@@ -37,13 +37,10 @@ void Manipulator::init(const Configuration& config)
 {
     cfg = config;
     ds::WorldPtr myWorld(du::SkelParser::readWorld(
-        dart::common::Uri::createFromString(
-            SAFESPACE_DATA "/ground_plane/ground.skel")));
+                             dart::common::Uri::createFromString(
+                                 SAFESPACE_DATA "/ground_plane/ground.skel")));
 
-    dd::SkeletonPtr staubli(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
-
-    dd::SkeletonPtr staubliStartPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
-    dd::SkeletonPtr staubliFinalPos(du::SoftSdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
+    dd::SkeletonPtr staubli(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
     /*
     dd::SkeletonPtr complexObstacle(du::SoftSdfParser::readSkeleton(
@@ -51,8 +48,8 @@ void Manipulator::init(const Configuration& config)
     */
 
     enum ObstacleType { WALL,
-        HUMAN_BBOX,
-        CUBE };
+                        HUMAN_BBOX,
+                        CUBE };
 
     ObstacleType obstType[] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE };
 
@@ -80,18 +77,16 @@ void Manipulator::init(const Configuration& config)
 
         m = Eigen::AngleAxisd(obstacle::rpy[i][0],
                 Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(obstacle::rpy[i][1],
-                                                Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
-                                                                                Eigen::Vector3d::UnitZ());
+                Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
+                Eigen::Vector3d::UnitZ());
 
         T = Eigen::Translation3d(obstacle::pos[i][0], obstacle::pos[i][1],
-            obstacle::pos[i][2]);
+                obstacle::pos[i][2]);
 
         T.rotate(m);
 
         myObstacle[i]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-
         myObstacle[i]->setName(genBoxName(i));
-        //std::cout << "obstacle name: " << name << std::endl;
     }
 
     myWorld->addSkeleton(staubli);
@@ -102,21 +97,11 @@ void Manipulator::init(const Configuration& config)
 
     for (int i = 0; i < 8; ++i) {
         staubli->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
-        staubliStartPos->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
-        staubliFinalPos->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
+
 #ifdef DEBUG
         cout << staubli->getJoint(i)->isKinematic() << endl;
 #endif
     }
-
-    for (size_t i(2); i < 8; ++i) {
-        staubliStartPos->setPosition(i, cfg.startState[i - 2]);
-        staubliFinalPos->setPosition(i, cfg.goalState[i - 2]);
-    }
-    myWorld->addSkeleton(staubliStartPos);
-    staubliStartPos->computeForwardKinematics(true, false, false);
-    myWorld->addSkeleton(staubliFinalPos);
-    staubliFinalPos->computeForwardKinematics(true, false, false);
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
         myWorld->addSkeleton(myObstacle[i]);
@@ -125,48 +110,6 @@ void Manipulator::init(const Configuration& config)
     myWorld->setGravity(Eigen::Vector3d(0.0, 0.0, 0.0));
 
     setWorld(myWorld);
-
-    std::cout << myWorld->getTimeStep() << std::endl;
-
-    //*/
-    /*
-Eigen::Isometry3d T;
-T = myObstacle[1]->getBodyNode("box")->getTransform();
-
-T.translation()(0) += 0.1*15;
-
-myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-myObstacle[1]->computeForwardKinematics();
-//
-
-/*
-     dart::dynamics::Skeleton *humanBox  = mWorld->getSkeleton("box1");
-        Eigen::Isometry3d T;
-        T = humanBox->getBodyNode("box")->getTransform();
-
-        T.translation()(0) -= 0.0005;
-        T.translation()(1) -= 0.00025;
-
-        humanBox->getJoint("joint 1")->setTransformFromParentBodyNode(T);
- */
-
-    /*
-VectorXd q = staubli->getPositions() * 0;
-
-q[2] =  0.7*DART_PI;
-q[3] =  0.4*DART_PI;
-q[4] = -0.4*DART_PI;
-q[5] = 0;
-q[6] = 0;
-q[7] = 0;
-
-staubli->setPositions(q);
-staubli->computeForwardKinematics();
-*/
-
-    // myWorld->setTimeStep(0.005);
-
-    // std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
 
     ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
 
@@ -187,51 +130,40 @@ staubli->computeForwardKinematics();
     //            ->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
 
     ss_->getSpaceInformation()
-        ->setMotionValidator(
-            ob::MotionValidatorPtr(
-                new ManipulatorMotionValidator(ss_->getSpaceInformation())));
+            ->setMotionValidator(
+                ob::MotionValidatorPtr(
+                    new ManipulatorMotionValidator(ss_->getSpaceInformation())));
 
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
     ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
 
     ss_->getProblemDefinition()
-        ->setOptimizationObjective(
-            getPathLengthObjective(ss_->getSpaceInformation()));
-    ;
+            ->setOptimizationObjective(
+                getPathLengthObjective(ss_->getSpaceInformation()));
 
     jointSpace->setup();
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
-    staubli_ = world_->getSkeleton("TX90XLHB")->clone();
+    staubli_ = world_->getSkeleton("TX90XLHB");
+/*
 
-    table_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("table"));
-    base_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("base_link"));
-    shoulder_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("shoulder_link"));
-    arm_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("arm_link")); //
-    elbow_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("elbow_link"));
-    forearm_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("forearm_link")); //
-    wrist_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("wrist_link"));
-    toolflange_link_ = new dc::FCLMeshCollisionNode(staubli_->getBodyNode("toolflange_link"));
+    for(size_t i(0); i < 8; ++i){
+        rbtCollisionNode[i] = new dc::FCLMeshCollisionNode(staubli_->getBodyNode(rbtCollisionNodeName[i]));
+    }
 
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
         obstacle_[i] = new dc::FCLMeshCollisionNode(world_->getSkeleton(genBoxName(i))->getBodyNode(0));
     }
+*/
 }
 
 //==============================================================================
 bool Manipulator::isStateValid(const ob::State* state)
 {
-    /*
-    namespace bc = boost::chrono;
-    bc::thread_clock::time_point start = bc::thread_clock::now();
-*/
     boost::lock_guard<boost::mutex> guard(mutex_);
 
     double* jointSpace
-        = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
-
-    std::vector<dc::Contact> contact;
-    int num_max_contact = 1;
+            = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
 
     for (int i = 2; i < 8; ++i) {
         staubli_->setPosition(i, jointSpace[i - 2]);
@@ -239,124 +171,10 @@ bool Manipulator::isStateValid(const ob::State* state)
     }
 
     staubli_->computeForwardKinematics(true, false, false);
-    bool collision;
-    /*
-    collision = world_->checkCollision(true);
-    return collision;
-*/
-
-    collision = table_->detectCollision(elbow_link_, &contact, num_max_contact);
-    if (collision) {
-#ifdef DEBUG
-        std::cout << "BAD STATE!" << std::endl;
-#endif
+    if(world_->checkCollision(false))
         return false;
-    }
-
-    collision = table_->detectCollision(forearm_link_, &contact, num_max_contact);
-    if (collision) {
-#ifdef DEBUG
-        std::cout << "BAD STATE!" << std::endl;
-#endif
-        return false;
-    }
-
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        collision = forearm_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
-        if (collision) {
-#ifdef DEBUG
-            std::cout << "BAD STATE!" << std::endl;
-#endif
-
-            return false;
-        }
-        collision = arm_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
-        if (collision) {
-#ifdef DEBUG
-            std::cout << "BAD STATE!" << std::endl;
-#endif
-            return false;
-        }
-        collision = elbow_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
-        if (collision) {
-#ifdef DEBUG
-            std::cout << "BAD STATE!" << std::endl;
-#endif
-            return false;
-        }
-        collision = toolflange_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
-        if (collision) {
-#ifdef DEBUG
-            std::cout << "BAD STATE!" << std::endl;
-#endif
-            return false;
-        }
-        collision = wrist_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
-        if (collision) {
-#ifdef DEBUG
-            std::cout << "BAD STATE!" << std::endl;
-#endif
-            return false;
-        }
-    }
-
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        collision = shoulder_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
-        if (collision) {
-#ifdef DEBUG
-            std::cout << "BAD STATE!" << std::endl;
-#endif
-            return false;
-        }
-
-        collision = base_link_->detectCollision(obstacle_[i], &contact, num_max_contact);
-        if (collision) {
-#ifdef DEBUG
-            std::cout << "BAD STATE!" << std::endl;
-#endif
-            return false;
-        }
-    }
 
     return true;
-
-//bool collision_test = table_->detectCollision(&elbow_link_new, NULL, 1);
-/*
-    switch(staubli->getBodyNode("shoulder_link")->getCollisionShape(0)->getShapeType()) {
-    case dd::Shape::BOX:
-        std::cout << "Shape::BOX" << std::endl;
-        break;
-    case dd::Shape::ELLIPSOID:
-        std::cout << "Shape::ELLIPSOID" << std::endl;
-        break;
-    case dd::Shape::CYLINDER:
-        std::cout << "Shape::CYLINDER" << std::endl;
-        break;
-    case dd::Shape::PLANE:
-        std::cout << "Shape::CYLINDER" << std::endl;
-        break;
-    case dd::Shape::MESH:
-        std::cout << "Shape::MESH" << std::endl;
-        break;
-    case dd::Shape::SOFT_MESH:
-        std::cout << "Shape::SOFT_MESH" << std::endl;
-        break;
-    default:
-        std::cout << "nothing to watch here" << std::endl;
-    }
-
-
-    bc::thread_clock::time_point stop = bc::thread_clock::now();
-    std::cout << "duration: "
-              << bc::duration_cast<bc::milliseconds>(stop - start).count()
-              << " ms\n";
-*/
-
-#ifdef DEBUG
-    for (int i = 0; i < 6; ++i) {
-        OMPL_INFORM("joint %d: %f", i + 1, jointSpace[i]);
-    }
-#endif
 }
 
 //==============================================================================
@@ -386,6 +204,7 @@ bool Manipulator::plan()
 
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
         ss_->solve(cfg.planningTime);
@@ -467,6 +286,7 @@ void Manipulator::load(const char* filename)
     goal[5] = 0;
 
     ss_->setStartAndGoalStates(start, goal);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
     ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg.loadDataFile.c_str());
@@ -537,8 +357,8 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
 //==============================================================================
 // TODO implement motion validator
 bool ManipulatorMotionValidator::checkMotion(const ob::State* s1,
-    const ob::State* s2,
-    std::pair<ob::State*, double>& lastValid) const
+                                             const ob::State* s2,
+                                             std::pair<ob::State*, double>& lastValid) const
 {
     OMPL_ERROR("call of the method");
     return false;
@@ -553,7 +373,7 @@ void ManipulatorMotionValidator::defaultSettings()
 
 //==============================================================================
 void Manipulator::printEdge(std::ostream& os, const ob::StateSpacePtr& space,
-    const ob::PlannerDataVertex& vertex)
+                            const ob::PlannerDataVertex& vertex)
 {
     std::vector<double> reals;
     if (vertex != ob::PlannerData::NO_VERTEX) {

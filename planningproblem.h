@@ -6,33 +6,31 @@
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 
-
 #include <dart/dart.h>
 #include <string>
 #include <cmath>
 
-#include "widget.h"
+#include "frontend.h"
 #include "manipulator.h"
 #include "guimisc.h"
 #include "configuration.h"
 
-class PlanningProblem
-{
+class PlanningProblem {
 public:
     PlanningProblem();
     void configure();
     void readFile();
     int solve(int argc, char* argv[]);
-    void setConfigFileName(std::string &filename);
+    void setConfigFileName(std::string& filename);
     void plan(int* argcp, char** argv);
 
 private:
-
     ManipulatorPtr manipulator; //
     Configuration cfg;
 
-    dart::simulation::WorldPtr renderWorld;
+    Frontend frontend;
 
+    dart::simulation::WorldPtr demoWorld;
 };
 
 #endif // PLANNINGPROBLEM_H

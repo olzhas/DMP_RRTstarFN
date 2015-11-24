@@ -1,4 +1,4 @@
-<sdf version='1.4'>
+<sdf version='1.5'>
   <model name='TX90XLHB'>
     <static>false</static>
 
@@ -32,7 +32,7 @@
       <parent>world</parent>
       <child>table</child>
       <axis>
-        <xyz>0.0 0.0 1</xyz>
+        <xyz>0.0 0.0 1.0</xyz>
         <limit>
           <lower>0</lower>
           <upper>0</upper>
@@ -101,7 +101,7 @@
     </joint>
 
     <link name='shoulder_link'>
-      <pose>0 0 1.278 0 -0 0</pose>
+      <pose>0 0 1.278 0 0 0</pose>
       <inertial>
         <pose>0.0191425 0.0247638 -0.0645956 0 -0 0</pose>
         <mass>16.9346</mass>
@@ -157,7 +157,7 @@
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
-        <use_parent_model_frame>1</use_parent_model_frame>
+        <use_parent_model_frame>0</use_parent_model_frame>
       </axis>
     </joint>
 
@@ -218,7 +218,7 @@
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
-        <use_parent_model_frame>1</use_parent_model_frame>
+        <use_parent_model_frame>0</use_parent_model_frame>
       </axis>
     </joint>
 
@@ -279,7 +279,7 @@
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
-        <use_parent_model_frame>1</use_parent_model_frame>
+        <use_parent_model_frame>0</use_parent_model_frame>
       </axis>
     </joint>
 
@@ -340,7 +340,7 @@
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
-        <use_parent_model_frame>1</use_parent_model_frame>
+        <use_parent_model_frame>0</use_parent_model_frame>
       </axis>
     </joint>
 
@@ -401,7 +401,7 @@
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
-        <use_parent_model_frame>1</use_parent_model_frame>
+        <use_parent_model_frame>0</use_parent_model_frame>
       </axis>
     </joint>
 
@@ -462,7 +462,7 @@
           <spring_reference>0</spring_reference>
           <spring_stiffness>0</spring_stiffness>
         </dynamics>
-        <use_parent_model_frame>1</use_parent_model_frame>
+        <use_parent_model_frame>0</use_parent_model_frame>
       </axis>
     </joint>
   </model>

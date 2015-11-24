@@ -1,30 +1,28 @@
-#include "widget.h"
+#include "frontend.h"
 
 //==============================================================================
-Widget::Widget()
-{
-    ;
-}
+Frontend::Frontend() { ; }
 //==============================================================================
-void Widget::init()
+void Frontend::init()
 {
-    window.setWorld(manipulator->getWorld());
+    window.setWorld(manipulator->getWorld()->clone());
     og::PathGeometric* resultantMotion = manipulator->getResultantMotion();
 
     window.setMotion(resultantMotion);
     window.ss_ = manipulator->ss_;
-
 }
 //==============================================================================
-void Widget::setManipulator(ManipulatorPtr robot)
+void Frontend::setManipulator(ManipulatorPtr robot)
 {
     manipulator = robot;
 }
 //==============================================================================
-void Widget::exec(int *argcp, char **argv)
+void Frontend::exec(int* argcp, char** argv)
 {
-    window.initDrawTree();
+    window.cfg = manipulator->cfg;
+    window.initGhostManipulators();
     glutInit(argcp, argv);
+    window.initDrawTree();
     window.initWindow(800, 600, "Staubli TX90XL");
     window.refreshTimer(30);
     glutMainLoop();

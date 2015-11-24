@@ -3,28 +3,83 @@
 #include <fstream>
 
 namespace dd = dart::dynamics;
+namespace du = dart::utils;
+
+#define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
 
 //==============================================================================
 MyWindow::MyWindow()
-    : SimWindow(),
-      motionStep(0), ghostDrawn(false), treeState(0),
-      timer1("update"), timer2("draw")
+    : SimWindow()
+    , motionStep(0)
+    , treeState(0)
+    , timer1("update")
+    , timer2("draw")
 {
     motion_ = NULL;
     mZoom = 0.2;
     rot = 0;
     //mCapture = true;
 }
+//==============================================================================
 
+void MyWindow::initGhostManipulators()
+{
+    dd::SkeletonPtr staubliStartState(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
+    staubliStartState->setName("TX90XLHB-Start");
+    for (int i = 2; i < 8; ++i) {
+        staubliStartState->setPosition(i, cfg.startState[i - 2]);
+    }
+
+    setSkeletonAlpha(staubliStartState, 0.2);
+    setSkeletonCollidable(staubliStartState, false);
+    mWorld->addSkeleton(staubliStartState);
+
+    //==========================================================================
+
+    dd::SkeletonPtr staubliFinalState(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
+    staubliFinalState->setName("TX90XLHB-Final");
+    for (int i = 2; i < 8; ++i) {
+        staubliFinalState->setPosition(i, cfg.goalState[i - 2]);
+    }
+    mWorld->addSkeleton(staubliFinalState);
+    setSkeletonCollidable(staubliFinalState, false);
+    setSkeletonAlpha(staubliFinalState, 0.2);
+}
+
+//==============================================================================
+void MyWindow::setSkeletonCollidable(dd::SkeletonPtr& sk, const bool& isCollidable)
+{
+    for (size_t i = 0; i < sk->getNumBodyNodes(); ++i) {
+        sk->getBodyNode(i)->setCollidable(isCollidable);
+    }
+}
+
+//==============================================================================
+void MyWindow::setSkeletonRGBA(dd::SkeletonPtr& sk, const Eigen::Vector4d& _color)
+{
+    //
+    for (size_t i = 0; i < sk->getNumBodyNodes(); ++i) {
+        for(size_t j = 0; j < sk->getBodyNode(i)->getNumVisualizationShapes(); ++j){
+            sk->getBodyNode(i)->getVisualizationShape(j)->setRGBA(_color);
+        }
+    }
+}
+
+//==============================================================================
+void MyWindow::setSkeletonAlpha(dd::SkeletonPtr& sk, const double& alpha)
+{
+    for (size_t i = 0; i < sk->getNumBodyNodes(); ++i) {
+        sk->getBodyNode(i)->getVisualizationShape(0)->setAlpha(alpha);
+    }
+}
 //==============================================================================
 MyWindow::~MyWindow()
 {
-
 }
 
 //==============================================================================
 
-void MyWindow::setMotion(og::PathGeometric *motion)
+void MyWindow::setMotion(og::PathGeometric* motion)
 {
     motion_ = motion;
 }
@@ -34,16 +89,17 @@ void MyWindow::timeStepping()
 {
     mWorld->step();
 
-    if (motion_ != NULL){
+    if (motion_ != NULL) {
         dart::dynamics::SkeletonPtr staubli = mWorld->getSkeleton("TX90XLHB");
-        if(motionStep < motion_->getStateCount()){
+        if (motionStep < motion_->getStateCount()) {
             //std::cout<<motion_ ->getStateCount() << std::endl;
-            double *jointSpace
+            double* jointSpace
                     = (double*)motion_->getState(motionStep)
-                    ->as<ob::RealVectorStateSpace::StateType>()->values;
+                    ->as<ob::RealVectorStateSpace::StateType>()
+                    ->values;
 
             for (int i = 2; i < 8; ++i) {
-                staubli->setPosition(i, jointSpace[i-2]);
+                staubli->setPosition(i, jointSpace[i - 2]);
             }
             staubli->computeForwardKinematics(true, false, false);
 
@@ -53,26 +109,28 @@ void MyWindow::timeStepping()
             Eigen::Vector3d mytest = Eigen::Vector3d(transform.translation());
 
             // camera movement
-            mTrans[0] = -mytest[0]*1000.0;
-            mTrans[1] = -mytest[1]*1000.0;
-            mTrans[2] = mytest[2]*10.0;
-
-        } else {
+            /*
+            mTrans[0] = -mytest[0] * 1000.0;
+            mTrans[1] = -mytest[1] * 1000.0;
+            mTrans[2] = mytest[2] * 10.0;
+            */
+        }
+        else {
             mSimulating = false;
         }
     }
-
 }
 
 //==============================================================================
 void MyWindow::drawSkels()
 {
+    //#define CAMERA_FLY
 #ifdef CAMERA_FLY
-    rot += 0.01;
+    rot += 0.001;
     Eigen::Matrix3d mat;
-    mat = Eigen::AngleAxisd(-0.25*M_PI, Eigen::Vector3d::UnitY())
-            * Eigen::AngleAxisd(-rot*M_PI,  Eigen::Vector3d::UnitX())
-            * Eigen::AngleAxisd(-rot*M_PI,  Eigen::Vector3d::UnitZ());
+    mat = Eigen::AngleAxisd(-0.25 * M_PI, Eigen::Vector3d::UnitY())
+            * Eigen::AngleAxisd(-rot * M_PI, Eigen::Vector3d::UnitX())
+            * Eigen::AngleAxisd(-rot * M_PI, Eigen::Vector3d::UnitZ());
     Eigen::Quaterniond quat(mat);
     mTrackBall.setQuaternion(quat);
     mTrans = Eigen::Vector3d(493.937, -20.943, -2020.23);
@@ -84,7 +142,6 @@ void MyWindow::drawSkels()
     for (unsigned int i = 0; i < mWorld->getNumSkeletons(); i++)
         mWorld->getSkeleton(i)->draw(mRI);
 
-    //dart::common::Timer timer1("update");
     //timer1.start();
     updateDrawTree();
     //timer1.print();
@@ -94,14 +151,15 @@ void MyWindow::drawSkels()
     drawTree();
     //timer2.print();
     //timer2.stop();
-
 }
 //==============================================================================
 void MyWindow::drawTree()
 {
+
     dart::gui::SimpleRGB boxColor(255.0/255.0, 10.0/255.0, 0/255.0); // orange
     //dart::gui::SimpleRGB boxColor(215.0/255.0, 225.0/255.0,43.0/255.0);
-    dart::gui::SimpleRGB boxDetachedColor(200.0/255.0, 0.0/255.0,200.0/255.0);
+    dart::gui::SimpleRGB boxDetachedColor(200.0/255.0, 0.0/255.0, 200.0/255.0);
+    dart::gui::SimpleRGB boxSolColor(10.0/255.0, 200.0/255.0, 200.0/255.0);
 
     GLUquadricObj *c;
     c = gluNewQuadric();
@@ -118,12 +176,12 @@ void MyWindow::drawTree()
         glPopMatrix();
     }
 
-    glColor3d(boxColor.r, boxColor.g, boxColor.b);
+    glColor3d(boxSolColor.r, boxSolColor.g, boxSolColor.b);
     for (int i = 0; i < solutionPositions.size(); ++i) {
         Eigen::Vector3d center = solutionPositions.at(i);
         glPushMatrix();
         glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.025);
+        glutSolidCube(0.005);
         glPopMatrix();
     }
 
@@ -147,10 +205,11 @@ void MyWindow::drawTree()
 }
 //==============================================================================
 
+/*
 void MyWindow::drawGhostManipulator()
 {
-    if (!ss_ || !ss_->haveSolutionPath()){
 
+    if (!ss_ || !ss_->haveSolutionPath()){
         std::cerr << "No solution =(" << std::endl;
     }
 
@@ -159,8 +218,6 @@ void MyWindow::drawGhostManipulator()
     ss_->getPlannerData(pdat);
 
     // Print the vertices to file
-
-    //memmove(staubli, mWorld->getSkeleton("TX90XLHB"), sizeof(dart::dynamics::Skeleton));
 
     for(unsigned int i(0); i<pdat.numVertices(); ++i)
     {
@@ -184,12 +241,13 @@ void MyWindow::drawGhostManipulator()
         }
     }
 }
+*/
 
 //==============================================================================
 void MyWindow::initDrawTree()
 {
-    if (!ss_ || !ss_->haveSolutionPath()){
-        std::cerr << "No solution =(" << std::endl;
+    if (!ss_ || !ss_->haveSolutionPath()) {
+        std::cerr << "initDrawTree: No solution =(" << std::endl;
         // return;
     }
 
@@ -204,14 +262,14 @@ void MyWindow::initDrawTree()
     endEffectorPosition.clear();
     endEffectorPosition.reserve(pdat.numVertices());
 
-    for(unsigned int i(0); i<pdat.numVertices(); ++i) {
+    for (unsigned int i(0); i < pdat.numVertices(); ++i) {
         std::vector<double> reals;
-        if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX) {
+        if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
 
             ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
 
-            for(size_t j(0); j<reals.size(); ++j){
-                staubli->setPosition(j+2, reals[j]);
+            for (size_t j(0); j < reals.size(); ++j) {
+                staubli->setPosition(j + 2, reals[j]);
             }
             staubli->computeForwardKinematics(true, false, false);
             Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
@@ -223,14 +281,15 @@ void MyWindow::initDrawTree()
     }
 
     //std::cout<<motion_ ->getStateCount() << std::endl;
-    if (motion_ != NULL){
-        for(int j(0); j < motion_->getStateCount();j++){
-            double *jointSpace
+    if (motion_ != NULL) {
+        for (int j(0); j < motion_->getStateCount(); j++) {
+            double* jointSpace
                     = (double*)motion_->getState(j)
-                    ->as<ob::RealVectorStateSpace::StateType>()->values;
+                    ->as<ob::RealVectorStateSpace::StateType>()
+                    ->values;
 
             for (int i = 2; i < 8; ++i) {
-                staubli->setPosition(i, jointSpace[i-2]);
+                staubli->setPosition(i, jointSpace[i - 2]);
             }
             staubli->computeForwardKinematics(true, false, false);
             Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
@@ -240,11 +299,9 @@ void MyWindow::initDrawTree()
 
     // Print the edges to file
     std::vector<unsigned int> edge_list;
-    for(unsigned int i(0); i<pdat.numVertices(); ++i)
-    {
-        unsigned int n_edge= pdat.getEdges(i,edge_list);
-        for(unsigned int i2(0); i2<n_edge; ++i2)
-        {
+    for (unsigned int i(0); i < pdat.numVertices(); ++i) {
+        unsigned int n_edge = pdat.getEdges(i, edge_list);
+        for (unsigned int i2(0); i2 < n_edge; ++i2) {
             std::vector<Eigen::Vector3d> temp;
             temp.push_back(getVertex(pdat.getVertex(i)));
             temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
@@ -258,8 +315,9 @@ void MyWindow::initDrawTree()
 
 void MyWindow::updateDrawTree()
 {
+
     if (!ss_ || !ss_->haveSolutionPath()) {
-        std::cerr << "No solution =(" << std::endl;
+        std::cerr << "updateDrawTree: No solution =(" << std::endl;
         // return;
     }
 
@@ -280,13 +338,13 @@ void MyWindow::updateDrawTree()
     edges.reserve(pdat.numVertices());
     //std::cout << "vertices: " << pdat.numVertices() << std::endl;
 
-    for(unsigned int i(prevSize); i<pdat.numVertices(); ++i) {
+    for (unsigned int i(prevSize); i < pdat.numVertices(); ++i) {
         std::vector<double> reals;
-        if(pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
+        if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
             ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
 
-            for(size_t j(0); j<reals.size(); ++j)
-                staubli->setPosition(j+2, reals[j]);
+            for (size_t j(0); j < reals.size(); ++j)
+                staubli->setPosition(j + 2, reals[j]);
 
             staubli->computeForwardKinematics(true, false, false);
             Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
@@ -296,9 +354,8 @@ void MyWindow::updateDrawTree()
                 endEffectorPosition.push_back(transform.translation());
 
             // edges handling
-            unsigned int n_edge= pdat.getEdges(i,edge_list);
-            for(unsigned int i2(0); i2<n_edge; ++i2)
-            {
+            unsigned int n_edge = pdat.getEdges(i, edge_list);
+            for (unsigned int i2(0); i2 < n_edge; ++i2) {
                 std::vector<Eigen::Vector3d> temp;
                 temp.push_back(getVertex(pdat.getVertex(i)));
                 temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
@@ -306,18 +363,19 @@ void MyWindow::updateDrawTree()
             }
         }
     }
+
 }
 //==============================================================================
-Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex &vertex)
+Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex& vertex)
 {
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
     std::vector<double> reals;
 
-    assert (vertex != ob::PlannerData::NO_VERTEX);
+    assert(vertex != ob::PlannerData::NO_VERTEX);
 
     ss_->getStateSpace()->copyToReals(reals, vertex.getState());
-    for(size_t j(0); j<reals.size(); ++j) {
-        staubli->setPosition(j+2, reals[j]);
+    for (size_t j(0); j < reals.size(); ++j) {
+        staubli->setPosition(j + 2, reals[j]);
     }
     staubli->computeForwardKinematics(true, false, false);
 
@@ -327,9 +385,8 @@ Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex &vertex)
 //==============================================================================
 void MyWindow::drawManipulatorState(int state)
 {
-
-    if (!ss_ || !ss_->haveSolutionPath()){
-        std::cerr << "No solution =(" << std::endl;
+    if (!ss_ || !ss_->haveSolutionPath()) {
+        std::cerr << "drawManipulatorState: No solution =(" << std::endl;
     }
 
     // Get the planner data to visualize the vertices and the edges
@@ -342,45 +399,39 @@ void MyWindow::drawManipulatorState(int state)
     std::vector<double> reals;
     ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(state).getState());
 
-    for(size_t j(0); j<reals.size(); ++j){
-        staubli->setPosition(j+2, reals[j]);
+    for (size_t j(0); j < reals.size(); ++j) {
+        staubli->setPosition(j + 2, reals[j]);
     }
     staubli->computeForwardKinematics(true, false, false);
-
 }
 //==============================================================================
 void MyWindow::keyboard(unsigned char _key, int _x, int _y)
 {
-    switch (_key)
-    {
-    case ' ':  // use space key to play or stop the motion
+    switch (_key) {
+    case ' ': // use space key to play or stop the motion
         mSimulating = !mSimulating;
-        if (mSimulating)
-        {
+        if (mSimulating) {
             mPlay = false;
             glutTimerFunc(mDisplayTimeout, refreshTimer, 0);
         }
         break;
-    case 'p':  // playBack
+    case 'p': // playBack
         mPlay = !mPlay;
-        if (mPlay)
-        {
+        if (mPlay) {
             mSimulating = false;
             glutTimerFunc(mDisplayTimeout, refreshTimer, 0);
         }
         break;
-    case '[':  // step backward
-        if (!mSimulating)
-        {
+    case '[': // step backward
+        if (!mSimulating) {
             mPlayFrame--;
             if (mPlayFrame < 0)
                 mPlayFrame = 0;
             glutPostRedisplay();
         }
         break;
-    case ']':  // step forwardward
-        if (!mSimulating)
-        {
+    case ']': // step forwardward
+        if (!mSimulating) {
             mPlayFrame++;
             if (mPlayFrame >= mWorld->getRecording()->getNumFrames())
                 mPlayFrame = 0;
@@ -393,8 +444,8 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         drawManipulatorState(treeState);
         std::cout << treeState << std::endl;
         break;
-    case';':
-        if(treeState >= 0)
+    case ';':
+        if (treeState >= 0)
             treeState--;
         drawManipulatorState(treeState);
         std::cout << treeState << std::endl;
