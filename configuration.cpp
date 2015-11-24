@@ -32,14 +32,14 @@ void Configuration::readFile()
     }
 
     if (config["start-pos"]) {
-        startState.resize(6); // FIXME
+        startState.resize(6); // FIXME configuration value
         for (std::size_t i(0); i < config["start-pos"].size(); ++i) {
             startState[i] = config["start-pos"][i].as<double>() / 180.0 * M_PI;
         }
     }
 
     if (config["goal-pos"]) {
-        goalState.resize(6); // FIXME
+        goalState.resize(6); // FIXME configuration value
         for (std::size_t i(0); i < config["goal-pos"].size(); ++i) {
             goalState[i] = config["goal-pos"][i].as<double>() / 180.0 * M_PI;
         }

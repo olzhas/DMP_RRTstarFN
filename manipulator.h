@@ -72,20 +72,15 @@ public:
 
 private:
     bool isStateValid(const ob::State* state);
+
+    std::string dumpFileNameGenerate();
     dart::simulation::WorldPtr world_;
 
     dd::SkeletonPtr staubli_;
-    std::string rbtCollisionNodeName[8]={"table", "base_link", "shoulder_link",
-                                         "arm_link", "elbow_link", "forearm_link", "wrist_link","toolflange_link"};
-    dc::FCLMeshCollisionNode* rbtCollisionNode[8];
-    dc::FCLMeshCollisionNode* obstacle_[NUM_OBSTACLE];
-
-
 
     boost::mutex mutex_;
 
     dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
-
 };
 
 class ManipulatorMotionValidator : public ob::MotionValidator {
