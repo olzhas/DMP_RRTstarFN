@@ -36,7 +36,9 @@ public:
     void drawTree();
     void drawManipulatorState(int state);
     void initGhostManipulators();
-    void setSkeletonCollidable(dart::dynamics::SkeletonPtr sk, bool isCollidable);
+    void setSkeletonCollidable(dart::dynamics::SkeletonPtr& sk, const bool& isCollidable);
+    void setSkeletonRGBA(dart::dynamics::SkeletonPtr& sk, const Eigen::Vector4d& _color);
+    void setSkeletonAlpha(dart::dynamics::SkeletonPtr& sk, const double& alpha);
 
     Eigen::Vector3d getVertex(const ob::PlannerDataVertex& vertex);
 

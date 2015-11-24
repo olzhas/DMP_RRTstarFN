@@ -23,7 +23,7 @@ ob::OptimizationObjectivePtr getPathLengthObjective(const ob::SpaceInformationPt
 //==============================================================================
 Manipulator::Manipulator()
 {
-;
+    ;
 }
 
 inline std::string genBoxName(int i)
@@ -37,8 +37,8 @@ void Manipulator::init(const Configuration& config)
 {
     cfg = config;
     ds::WorldPtr myWorld(du::SkelParser::readWorld(
-        dart::common::Uri::createFromString(
-            SAFESPACE_DATA "/ground_plane/ground.skel")));
+                             dart::common::Uri::createFromString(
+                                 SAFESPACE_DATA "/ground_plane/ground.skel")));
 
     dd::SkeletonPtr staubli(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
@@ -48,8 +48,8 @@ void Manipulator::init(const Configuration& config)
     */
 
     enum ObstacleType { WALL,
-        HUMAN_BBOX,
-        CUBE };
+                        HUMAN_BBOX,
+                        CUBE };
 
     ObstacleType obstType[] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE };
 
@@ -77,11 +77,11 @@ void Manipulator::init(const Configuration& config)
 
         m = Eigen::AngleAxisd(obstacle::rpy[i][0],
                 Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(obstacle::rpy[i][1],
-                                                Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
-                                                                                Eigen::Vector3d::UnitZ());
+                Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
+                Eigen::Vector3d::UnitZ());
 
         T = Eigen::Translation3d(obstacle::pos[i][0], obstacle::pos[i][1],
-            obstacle::pos[i][2]);
+                obstacle::pos[i][2]);
 
         T.rotate(m);
 
@@ -130,16 +130,16 @@ void Manipulator::init(const Configuration& config)
     //            ->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
 
     ss_->getSpaceInformation()
-        ->setMotionValidator(
-            ob::MotionValidatorPtr(
-                new ManipulatorMotionValidator(ss_->getSpaceInformation())));
+            ->setMotionValidator(
+                ob::MotionValidatorPtr(
+                    new ManipulatorMotionValidator(ss_->getSpaceInformation())));
 
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
     ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
 
     ss_->getProblemDefinition()
-        ->setOptimizationObjective(
-            getPathLengthObjective(ss_->getSpaceInformation()));
+            ->setOptimizationObjective(
+                getPathLengthObjective(ss_->getSpaceInformation()));
     ;
 
     jointSpace->setup();
@@ -163,7 +163,7 @@ bool Manipulator::isStateValid(const ob::State* state)
     boost::lock_guard<boost::mutex> guard(mutex_);
 
     double* jointSpace
-        = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
+            = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
 
     for (int i = 2; i < 8; ++i) {
         staubli_->setPosition(i, jointSpace[i - 2]);
@@ -171,9 +171,8 @@ bool Manipulator::isStateValid(const ob::State* state)
     }
 
     staubli_->computeForwardKinematics(true, false, false);
-    bool collision;
-    
-    collision = world_->checkCollision(true);
+    bool collision = world_->checkCollision(false);
+
     return collision;
 }
 
@@ -204,6 +203,7 @@ bool Manipulator::plan()
 
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
         ss_->solve(cfg.planningTime);
@@ -285,6 +285,7 @@ void Manipulator::load(const char* filename)
     goal[5] = 0;
 
     ss_->setStartAndGoalStates(start, goal);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
     ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg.loadDataFile.c_str());
@@ -337,14 +338,14 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
 {
     ob::State* s3;
     if (si_->isValid(s1) == false || si_->isValid(s2) == false) {
-        //OMPL_WARN("Hey intermediate state is invalid");
+        OMPL_WARN("Hey intermediate state is invalid");
         return false;
     }
 
     for (double step = 0.1; step < 1; step += 0.1) {
         stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, step, s3);
         if (si_->isValid(s3) == false) {
-            //OMPL_WARN("Hey intermediate state is invalid");
+            OMPL_WARN("Hey intermediate state is invalid");
             return false;
         }
     }
@@ -355,8 +356,8 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
 //==============================================================================
 // TODO implement motion validator
 bool ManipulatorMotionValidator::checkMotion(const ob::State* s1,
-    const ob::State* s2,
-    std::pair<ob::State*, double>& lastValid) const
+                                             const ob::State* s2,
+                                             std::pair<ob::State*, double>& lastValid) const
 {
     OMPL_ERROR("call of the method");
     return false;
@@ -371,7 +372,7 @@ void ManipulatorMotionValidator::defaultSettings()
 
 //==============================================================================
 void Manipulator::printEdge(std::ostream& os, const ob::StateSpacePtr& space,
-    const ob::PlannerDataVertex& vertex)
+                            const ob::PlannerDataVertex& vertex)
 {
     std::vector<double> reals;
     if (vertex != ob::PlannerData::NO_VERTEX) {
