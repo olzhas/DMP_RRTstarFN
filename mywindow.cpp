@@ -172,7 +172,7 @@ void MyWindow::drawTree()
         Eigen::Vector3d center = endEffectorPosition.at(i);
         glPushMatrix();
         glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.015);
+        glutSolidCube(0.01);
         glPopMatrix();
     }
 
@@ -181,7 +181,7 @@ void MyWindow::drawTree()
         Eigen::Vector3d center = solutionPositions.at(i);
         glPushMatrix();
         glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.005);
+        glutSolidCube(0.015);
         glPopMatrix();
     }
 
@@ -203,45 +203,6 @@ void MyWindow::drawTree()
     }
 */
 }
-//==============================================================================
-
-/*
-void MyWindow::drawGhostManipulator()
-{
-
-    if (!ss_ || !ss_->haveSolutionPath()){
-        std::cerr << "No solution =(" << std::endl;
-    }
-
-    // Get the planner data to visualize the vertices and the edges
-    ob::PlannerData pdat(ss_->getSpaceInformation());
-    ss_->getPlannerData(pdat);
-
-    // Print the vertices to file
-
-    for(unsigned int i(0); i<pdat.numVertices(); ++i)
-    {
-        std::vector<double> reals;
-        if(pdat.getVertex(i)!=ob::PlannerData::NO_VERTEX)
-        {
-            dart::dynamics::SkeletonPtr staubli;
-            //memmove(staubli, mWorld->getSkeleton("TX90XLHB"), sizeof(dart::dynamics::Skeleton));
-            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
-
-            std::stringstream ss;
-            ss << "TX90XLHB" << i;
-            for(size_t j(0); j<reals.size(); ++j){
-
-                staubli->setPosition(j+2, reals[j]);
-
-            }
-            staubli->computeForwardKinematics(true, false, false);
-            staubli->setName(ss.str());
-            mWorld->addSkeleton(staubli);
-        }
-    }
-}
-*/
 
 //==============================================================================
 void MyWindow::initDrawTree()

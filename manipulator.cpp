@@ -91,9 +91,10 @@ void Manipulator::init(const Configuration& config)
 
     myWorld->addSkeleton(staubli);
 
-    // TODO make it smarter
-    // complexObstacle->setName("box4");
-    // myWorld->addSkeleton(complexObstacle);
+#ifdef COMPLEX_OBSTACLE
+    complexObstacle->setName("box4");
+    myWorld->addSkeleton(complexObstacle);
+#endif
 
     for (int i = 0; i < 8; ++i) {
         staubli->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
@@ -145,7 +146,7 @@ void Manipulator::init(const Configuration& config)
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
-/*
+    /*
 
     for(size_t i(0); i < 8; ++i){
         rbtCollisionNode[i] = new dc::FCLMeshCollisionNode(staubli_->getBodyNode(rbtCollisionNodeName[i]));
@@ -189,7 +190,6 @@ bool Manipulator::plan()
     if (!ss_)
         return false;
 
-    // TODO make it simpler
     ob::ScopedState<> start(ss_->getStateSpace());
     for (std::size_t i(0); i < cfg.startState.size(); ++i) {
         start[i] = cfg.startState[i];
@@ -204,7 +204,7 @@ bool Manipulator::plan()
 
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
         ss_->solve(cfg.planningTime);
@@ -215,7 +215,10 @@ bool Manipulator::plan()
     return ss_->haveSolutionPath();
 }
 //==============================================================================
+std::string dumpFileNameGenerate()
+{
 
+}
 //==============================================================================
 bool Manipulator::replan()
 {
@@ -271,19 +274,14 @@ void Manipulator::load(const char* filename)
     ss_->setup();
 
     ob::ScopedState<> start(ss_->getStateSpace());
-    start[0] = 62.5 / 180.0 * DART_PI;
-    start[1] = 49.5 / 180.0 * DART_PI;
-    start[2] = 92.8 / 180.0 * DART_PI;
-    start[3] = 0.0 / 180.0 * DART_PI;
-    start[4] = 0.0 / 180.0 * DART_PI;
-    start[5] = 0;
+    for (std::size_t i(0); i < cfg.startState.size(); ++i) {
+        start[i] = cfg.startState[i];
+    }
+
     ob::ScopedState<> goal(ss_->getStateSpace());
-    goal[0] = -52.2 / 180.0 * DART_PI;
-    goal[1] = 60.8 / 180.0 * DART_PI;
-    goal[2] = 63.0 / 180.0 * DART_PI;
-    goal[3] = 0;
-    goal[4] = 53.3 / 180.0 * DART_PI;
-    goal[5] = 0;
+    for (std::size_t i(0); i < cfg.goalState.size(); ++i) {
+        goal[i] = cfg.goalState[i];
+    }
 
     ss_->setStartAndGoalStates(start, goal);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false);
@@ -342,8 +340,8 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
         //OMPL_WARN("Hey intermediate state is invalid");
         return false;
     }
-
-    for (double step = 0.1; step < 1; step += 0.1) {
+#define INTERP_STEP 0.05
+    for (double step = INTERP_STEP; step < 1.0; step += INTERP_STEP) {
         stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, step, s3);
         if (si_->isValid(s3) == false) {
             //OMPL_WARN("Hey intermediate state is invalid");
