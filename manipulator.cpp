@@ -140,13 +140,12 @@ void Manipulator::init(const Configuration& config)
     ss_->getProblemDefinition()
             ->setOptimizationObjective(
                 getPathLengthObjective(ss_->getSpaceInformation()));
-    ;
 
     jointSpace->setup();
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
-    staubli_ = world_->getSkeleton("TX90XLHB")->clone();
-
+    staubli_ = world_->getSkeleton("TX90XLHB");
+/*
 
     for(size_t i(0); i < 8; ++i){
         rbtCollisionNode[i] = new dc::FCLMeshCollisionNode(staubli_->getBodyNode(rbtCollisionNodeName[i]));
@@ -155,6 +154,7 @@ void Manipulator::init(const Configuration& config)
     for (int i = 0; i < NUM_OBSTACLE; ++i) {
         obstacle_[i] = new dc::FCLMeshCollisionNode(world_->getSkeleton(genBoxName(i))->getBodyNode(0));
     }
+*/
 }
 
 //==============================================================================
@@ -171,9 +171,10 @@ bool Manipulator::isStateValid(const ob::State* state)
     }
 
     staubli_->computeForwardKinematics(true, false, false);
-    bool collision = world_->checkCollision(false);
+    if(world_->checkCollision(false))
+        return false;
 
-    return collision;
+    return true;
 }
 
 //==============================================================================
@@ -338,14 +339,14 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
 {
     ob::State* s3;
     if (si_->isValid(s1) == false || si_->isValid(s2) == false) {
-        OMPL_WARN("Hey intermediate state is invalid");
+        //OMPL_WARN("Hey intermediate state is invalid");
         return false;
     }
 
     for (double step = 0.1; step < 1; step += 0.1) {
         stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, step, s3);
         if (si_->isValid(s3) == false) {
-            OMPL_WARN("Hey intermediate state is invalid");
+            //OMPL_WARN("Hey intermediate state is invalid");
             return false;
         }
     }

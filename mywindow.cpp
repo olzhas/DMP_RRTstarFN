@@ -43,6 +43,7 @@ void MyWindow::initGhostManipulators()
     }
     mWorld->addSkeleton(staubliFinalState);
     setSkeletonCollidable(staubliFinalState, false);
+    setSkeletonAlpha(staubliFinalState, 0.2);
 }
 
 //==============================================================================
@@ -180,7 +181,7 @@ void MyWindow::drawTree()
         Eigen::Vector3d center = solutionPositions.at(i);
         glPushMatrix();
         glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.025);
+        glutSolidCube(0.005);
         glPopMatrix();
     }
 
