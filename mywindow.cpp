@@ -167,7 +167,7 @@ void MyWindow::drawTree()
     gluQuadricNormals(c, GLU_SMOOTH);
     //glPushMatrix();
 
-    glColor3d(boxColor.r, boxColor.g, boxColor.b);
+    glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
     for (int i = 0; i < endEffectorPosition.size(); ++i) {
         Eigen::Vector3d center = endEffectorPosition.at(i);
         glPushMatrix();

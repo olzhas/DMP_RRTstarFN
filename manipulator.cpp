@@ -337,7 +337,7 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
 {
     ob::State* s3;
     if (si_->isValid(s1) == false || si_->isValid(s2) == false) {
-        //OMPL_WARN("Hey intermediate state is invalid");
+        //OMPL_WARN("Hey, the initial or final state is invalid");
         return false;
     }
 #define INTERP_STEP 0.05

@@ -9,10 +9,6 @@ PlanningProblem::PlanningProblem()
 
 int PlanningProblem::solve(int argc, char* argv[])
 {
-    // just to check if time ticks correctly
-
-    boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
-
     //    if(cfg.dynamicReplanning){
     //        for(int j = 0; j < 5; j++){
     //            std::cout << "\nreplanning iteration #" << j << std::endl;
@@ -21,13 +17,12 @@ int PlanningProblem::solve(int argc, char* argv[])
     //        }
     //    }
 
-
-    planThread.join();
-
     frontend.setManipulator(manipulator);
     frontend.init();
 
+    boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
     boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
+    planThread.join();
     guiThread.join();
 
     return EXIT_SUCCESS;
