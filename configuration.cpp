@@ -56,6 +56,10 @@ void Configuration::readFile()
     if(config["load-data-file"]){
         loadDataFile = config["load-data-file"].as<std::string>();
     }
+
+    if(config["obstacle-num"]) {
+        numObstacle = config["obstacle-num"].as<int>();
+    }
 }
 
 void Configuration::defaults()

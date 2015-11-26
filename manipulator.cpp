@@ -1,7 +1,5 @@
 #include "manipulator.h"
 
-//#include "config/obstacle_config_red.h"
-//#include "config/obstacle_config_green.h"
 #include "config/obstacle_config_blue.h"
 
 namespace ob = ompl::base;
@@ -32,31 +30,19 @@ inline std::string genBoxName(int i)
     name[3] = i + '0';
     return name;
 }
-
-void Manipulator::init(ConfigurationPtr &config)
+//==============================================================================
+void Manipulator::spawnObstacle(std::string path)
 {
-    cfg = config;
-    ds::WorldPtr myWorld(du::SkelParser::readWorld(
-                             dart::common::Uri::createFromString(
-                                 SAFESPACE_DATA "/ground_plane/ground.skel")));
-
-    dd::SkeletonPtr staubli(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
-
-    /*
-    dd::SkeletonPtr complexObstacle(du::SoftSdfParser::readSkeleton(
-        SAFESPACE_DATA "/obstacles/complex_obstacle.sdf"));
-    */
-
-    enum ObstacleType { WALL,
-                        HUMAN_BBOX,
-                        CUBE };
-
-    ObstacleType obstType[] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE };
-
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
+    ;
+}
+//==============================================================================
+// FIXME reimplement it with spawnObstacle() method
+void Manipulator::spawnStaticObstacles()
+{
+    for (int i = 0; i < cfg->numObstacle; ++i) {
 
         std::string obstaclePath(SAFESPACE_DATA);
-        switch (obstType[i]) {
+        switch (obstacleStatic[i]) {
         case WALL:
             obstaclePath += "/obstacles/wall.skel";
             break;
@@ -89,12 +75,20 @@ void Manipulator::init(ConfigurationPtr &config)
         myObstacle[i]->setName(genBoxName(i));
     }
 
-    myWorld->addSkeleton(staubli);
+    for (int i = 0; i < cfg->numObstacle; ++i) {
+        world_->addSkeleton(myObstacle[i]);
+    }
+}
+//==============================================================================
+void Manipulator::init(ConfigurationPtr &config)
+{
+    cfg = config;
+    ds::WorldPtr myWorld(du::SkelParser::readWorld(
+                             dart::common::Uri::createFromString(
+                                 SAFESPACE_DATA "/ground_plane/ground.skel")));
+    dd::SkeletonPtr staubli(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
-#ifdef COMPLEX_OBSTACLE
-    complexObstacle->setName("box4");
-    myWorld->addSkeleton(complexObstacle);
-#endif
+    myWorld->addSkeleton(staubli);
 
     for (int i = 0; i < 8; ++i) {
         staubli->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
@@ -104,13 +98,10 @@ void Manipulator::init(ConfigurationPtr &config)
 #endif
     }
 
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        myWorld->addSkeleton(myObstacle[i]);
-    }
-
     myWorld->setGravity(Eigen::Vector3d(0.0, 0.0, 0.0));
 
     setWorld(myWorld);
+    spawnStaticObstacles();
 
     ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
 
@@ -433,7 +424,7 @@ void Manipulator::recordSolution()
 }
 
 //==============================================================================
-void Manipulator::setWorld(dart::simulation::WorldPtr world)
+void Manipulator::setWorld(dart::simulation::WorldPtr &world)
 {
     world_ = world;
 }
@@ -467,4 +458,9 @@ og::PathGeometric* Manipulator::getResultantMotion()
     og::PathGeometric& p = ss_->getSolutionPath();
     p.interpolate(cfg->pathNodes);
     return &p;
+}
+//==============================================================================
+void Manipulator::spawnDynamicObstacles()
+{
+
 }

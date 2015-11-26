@@ -25,6 +25,8 @@ public:
 
     bool dynamicObstacle;
 
+    int numObstacle;
+
     //==============================================================================
 
     Configuration();

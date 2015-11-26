@@ -406,7 +406,6 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         }
         break;
     case '\'':
-
         treeState++;
         drawManipulatorState(treeState);
         std::cout << treeState << std::endl;
@@ -422,7 +421,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         cameraReset = !cameraReset;
         break;
     case 'o':
-        cfg->dynamicObstacle = !cfg->dynamicObstacle;
+        cfg->dynamicObstacle = !(cfg->dynamicObstacle);
         break;
     default:
         Win3D::keyboard(_key, _x, _y);

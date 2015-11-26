@@ -21,7 +21,7 @@ void Frontend::exec(int* argcp, char** argv)
     window.setMotion(resultantMotion);
     window.ss_ = manipulator->ss_;
 
-    window.cfg = ConfigurationPtr(manipulator->cfg);
+    window.cfg = manipulator->cfg;
     window.initGhostManipulators();
     glutInit(argcp, argv);
     window.initDrawTree();

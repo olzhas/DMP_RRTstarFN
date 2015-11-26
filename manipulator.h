@@ -67,8 +67,13 @@ public:
     void load(const char* filename);
 
     dart::simulation::WorldPtr getWorld();
-    void setWorld(dart::simulation::WorldPtr world);
+    void setWorld(dart::simulation::WorldPtr &world);
     ConfigurationPtr cfg;
+
+    enum ObstacleType { WALL,
+                        HUMAN_BBOX,
+                        CUBE };
+    ObstacleType obstacleStatic[5] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE }; // FIXME number of obstacles is fixed
 
 private:
     bool isStateValid(const ob::State* state);
@@ -83,6 +88,10 @@ private:
     dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
 
     void configurePlanner();
+
+    void spawnStaticObstacles();
+    void spawnDynamicObstacles();
+    void spawnObstacle(std::string path);
 
 };
 
