@@ -15,6 +15,7 @@ MyWindow::MyWindow()
     , timer1("update")
     , timer2("draw")
     , cameraReset(false)
+    , prevSize(0)
 {
     motion_ = NULL;
     mZoom = 0.2;
@@ -125,24 +126,20 @@ void MyWindow::timeStepping()
 void MyWindow::drawSkels()
 {
     if(cameraReset){
-        mTrans = Eigen::Vector3d(00, 250, -2000);
+        mTrans = Eigen::Vector3d(0, -50, -1500);
         Eigen::Matrix3d mat;
-        mat = Eigen::AngleAxisd(50.0/180.0*M_PI, Eigen::Vector3d::UnitX())
-                * Eigen::AngleAxisd(-3.5/180.0*M_PI, Eigen::Vector3d::UnitY())
-                * Eigen::AngleAxisd(60.0/180.0*M_PI, Eigen::Vector3d::UnitZ());
+        mat = Eigen::AngleAxisd(-50.0/180.0*M_PI, Eigen::Vector3d::UnitX())
+                * Eigen::AngleAxisd(4.0/180.0*M_PI, Eigen::Vector3d::UnitY())
+                * Eigen::AngleAxisd(-61.0/180.0*M_PI, Eigen::Vector3d::UnitZ());
         Eigen::Quaterniond quat(mat);
         mTrackBall.setQuaternion(quat);
     } else {
-        dtwarn << mTrans;
-        double alpha, beta, gamma;
-        Eigen::Matrix3d rotMat = mTrackBall.getRotationMatrix();
-        beta = asin(rotMat(0,2));
-        alpha = acos(rotMat(2,2)/cos(beta));
-        gamma = acos(rotMat(0,0)/cos(beta));
+        //dtwarn << mTrans;
 
-        dtwarn << "alpha " << alpha / M_PI * 180.0
-               << " beta " << beta  / M_PI * 180.0
-               << " gamma "<< gamma / M_PI * 180.0;
+        Eigen::Matrix3d rotMat = mTrackBall.getRotationMatrix();
+        Eigen::Vector3d angles;
+        angles = dart::math::matrixToEulerXYZ(rotMat) / M_PI * 180.0;
+        //dtwarn << angles[0] << " " << angles[1] << " " << angles[2] << "\n";
     }
 
 
@@ -301,11 +298,10 @@ void MyWindow::updateDrawTree()
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
     //endEffectorPosition.clear();
-    unsigned int prevSize = endEffectorPosition.size();
+    prevSize = endEffectorPosition.size();
     endEffectorPosition.reserve(pdat.numVertices());
 
     std::vector<unsigned int> edge_list;
-    prevSize = edges.size();
     edges.reserve(pdat.numVertices());
     //std::cout << "vertices: " << pdat.numVertices() << std::endl;
 
@@ -422,6 +418,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         std::cout << treeState << std::endl;
         break;
     case 'g':
+    case 'G':
         cameraReset = !cameraReset;
     default:
         Win3D::keyboard(_key, _x, _y);

@@ -21,8 +21,8 @@ int PlanningProblem::solve(int argc, char* argv[])
     frontend.init();
 
     boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
-    boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
     planThread.join();
+    boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
     guiThread.join();
 
     return EXIT_SUCCESS;

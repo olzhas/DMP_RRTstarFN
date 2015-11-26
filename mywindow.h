@@ -60,6 +60,8 @@ private:
     dart::common::Timer timer1;
     dart::common::Timer timer2;
     bool cameraReset;
+
+    volatile unsigned int prevSize;
 };
 
 typedef struct {
