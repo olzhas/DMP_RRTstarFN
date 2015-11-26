@@ -204,9 +204,7 @@ bool Manipulator::plan()
 
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
+        configurePlanner();
         ss_->solve(cfg->planningTime);
     }
 
@@ -218,7 +216,9 @@ bool Manipulator::plan()
 //TODO
 void Manipulator::configurePlanner()
 {
-;
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
 }
 
 //==============================================================================
@@ -298,9 +298,7 @@ void Manipulator::load(const char* filename)
     }
 
     ss_->setStartAndGoalStates(start, goal);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
+    configurePlanner();
     ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg->loadDataFile.c_str());
 
     /*
