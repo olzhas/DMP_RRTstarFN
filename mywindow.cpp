@@ -14,10 +14,11 @@ MyWindow::MyWindow()
     , treeState(0)
     , timer1("update")
     , timer2("draw")
+    , cameraReset(false)
+    , prevSize(0)
 {
     motion_ = NULL;
     mZoom = 0.2;
-    rot = 0;
     //mCapture = true;
 }
 //==============================================================================
@@ -124,17 +125,23 @@ void MyWindow::timeStepping()
 //==============================================================================
 void MyWindow::drawSkels()
 {
-    //#define CAMERA_FLY
-#ifdef CAMERA_FLY
-    rot += 0.001;
-    Eigen::Matrix3d mat;
-    mat = Eigen::AngleAxisd(-0.25 * M_PI, Eigen::Vector3d::UnitY())
-            * Eigen::AngleAxisd(-rot * M_PI, Eigen::Vector3d::UnitX())
-            * Eigen::AngleAxisd(-rot * M_PI, Eigen::Vector3d::UnitZ());
-    Eigen::Quaterniond quat(mat);
-    mTrackBall.setQuaternion(quat);
-    mTrans = Eigen::Vector3d(493.937, -20.943, -2020.23);
-#endif
+    if(cameraReset){
+        mTrans = Eigen::Vector3d(0, -50, -1500);
+        Eigen::Matrix3d mat;
+        mat = Eigen::AngleAxisd(-50.0/180.0*M_PI, Eigen::Vector3d::UnitX())
+                * Eigen::AngleAxisd(4.0/180.0*M_PI, Eigen::Vector3d::UnitY())
+                * Eigen::AngleAxisd(-61.0/180.0*M_PI, Eigen::Vector3d::UnitZ());
+        Eigen::Quaterniond quat(mat);
+        mTrackBall.setQuaternion(quat);
+    } else {
+        //dtwarn << mTrans;
+
+        Eigen::Matrix3d rotMat = mTrackBall.getRotationMatrix();
+        Eigen::Vector3d angles;
+        angles = dart::math::matrixToEulerXYZ(rotMat) / M_PI * 180.0;
+        //dtwarn << angles[0] << " " << angles[1] << " " << angles[2] << "\n";
+    }
+
 
     glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -291,11 +298,10 @@ void MyWindow::updateDrawTree()
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
     //endEffectorPosition.clear();
-    unsigned int prevSize = endEffectorPosition.size();
+    prevSize = endEffectorPosition.size();
     endEffectorPosition.reserve(pdat.numVertices());
 
     std::vector<unsigned int> edge_list;
-    prevSize = edges.size();
     edges.reserve(pdat.numVertices());
     //std::cout << "vertices: " << pdat.numVertices() << std::endl;
 
@@ -411,8 +417,12 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         drawManipulatorState(treeState);
         std::cout << treeState << std::endl;
         break;
+    case 'g':
+    case 'G':
+        cameraReset = !cameraReset;
     default:
         Win3D::keyboard(_key, _x, _y);
+        break;
     }
 
     // Keyboard control for Controller

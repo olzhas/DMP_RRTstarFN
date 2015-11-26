@@ -6,10 +6,7 @@ Frontend::Frontend() { ; }
 void Frontend::init()
 {
     window.setWorld(manipulator->getWorld()->clone());
-    og::PathGeometric* resultantMotion = manipulator->getResultantMotion();
 
-    window.setMotion(resultantMotion);
-    window.ss_ = manipulator->ss_;
 }
 //==============================================================================
 void Frontend::setManipulator(ManipulatorPtr robot)
@@ -19,6 +16,11 @@ void Frontend::setManipulator(ManipulatorPtr robot)
 //==============================================================================
 void Frontend::exec(int* argcp, char** argv)
 {
+    og::PathGeometric* resultantMotion = manipulator->getResultantMotion();
+
+    window.setMotion(resultantMotion);
+    window.ss_ = manipulator->ss_;
+
     window.cfg = manipulator->cfg;
     window.initGhostManipulators();
     glutInit(argcp, argv);
