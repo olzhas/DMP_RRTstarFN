@@ -1,12 +1,14 @@
 #include "planningproblem.h"
 
+//==============================================================================
 PlanningProblem::PlanningProblem()
 {
+    cfg = ConfigurationPtr(new Configuration);
     cfg->readFile();
     manipulator = ManipulatorPtr(new Manipulator());
     manipulator->init(cfg);
 }
-
+//==============================================================================
 int PlanningProblem::solve(int argc, char* argv[])
 {
     //    if(cfg.dynamicReplanning){
@@ -27,7 +29,7 @@ int PlanningProblem::solve(int argc, char* argv[])
 
     return EXIT_SUCCESS;
 }
-
+//==============================================================================
 void PlanningProblem::plan(int* argcp, char** argv)
 {
     if (!cfg->loadData) {
