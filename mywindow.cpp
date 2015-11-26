@@ -14,10 +14,10 @@ MyWindow::MyWindow()
     , treeState(0)
     , timer1("update")
     , timer2("draw")
+    , cameraReset(false)
 {
     motion_ = NULL;
     mZoom = 0.2;
-    rot = 0;
     //mCapture = true;
 }
 //==============================================================================
@@ -124,17 +124,27 @@ void MyWindow::timeStepping()
 //==============================================================================
 void MyWindow::drawSkels()
 {
-    //#define CAMERA_FLY
-#ifdef CAMERA_FLY
-    rot += 0.001;
-    Eigen::Matrix3d mat;
-    mat = Eigen::AngleAxisd(-0.25 * M_PI, Eigen::Vector3d::UnitY())
-            * Eigen::AngleAxisd(-rot * M_PI, Eigen::Vector3d::UnitX())
-            * Eigen::AngleAxisd(-rot * M_PI, Eigen::Vector3d::UnitZ());
-    Eigen::Quaterniond quat(mat);
-    mTrackBall.setQuaternion(quat);
-    mTrans = Eigen::Vector3d(493.937, -20.943, -2020.23);
-#endif
+    if(cameraReset){
+        mTrans = Eigen::Vector3d(00, 250, -2000);
+        Eigen::Matrix3d mat;
+        mat = Eigen::AngleAxisd(50.0/180.0*M_PI, Eigen::Vector3d::UnitX())
+                * Eigen::AngleAxisd(-3.5/180.0*M_PI, Eigen::Vector3d::UnitY())
+                * Eigen::AngleAxisd(60.0/180.0*M_PI, Eigen::Vector3d::UnitZ());
+        Eigen::Quaterniond quat(mat);
+        mTrackBall.setQuaternion(quat);
+    } else {
+        dtwarn << mTrans;
+        double alpha, beta, gamma;
+        Eigen::Matrix3d rotMat = mTrackBall.getRotationMatrix();
+        beta = asin(rotMat(0,2));
+        alpha = acos(rotMat(2,2)/cos(beta));
+        gamma = acos(rotMat(0,0)/cos(beta));
+
+        dtwarn << "alpha " << alpha / M_PI * 180.0
+               << " beta " << beta  / M_PI * 180.0
+               << " gamma "<< gamma / M_PI * 180.0;
+    }
+
 
     glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -411,8 +421,11 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         drawManipulatorState(treeState);
         std::cout << treeState << std::endl;
         break;
+    case 'g':
+        cameraReset = !cameraReset;
     default:
         Win3D::keyboard(_key, _x, _y);
+        break;
     }
 
     // Keyboard control for Controller
