@@ -33,7 +33,7 @@ inline std::string genBoxName(int i)
     return name;
 }
 
-void Manipulator::init(const Configuration& config)
+void Manipulator::init(ConfigurationPtr &config)
 {
     cfg = config;
     ds::WorldPtr myWorld(du::SkelParser::readWorld(
@@ -191,13 +191,13 @@ bool Manipulator::plan()
         return false;
 
     ob::ScopedState<> start(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg.startState.size(); ++i) {
-        start[i] = cfg.startState[i];
+    for (std::size_t i(0); i < cfg->startState.size(); ++i) {
+        start[i] = cfg->startState[i];
     }
 
     ob::ScopedState<> goal(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg.goalState.size(); ++i) {
-        goal[i] = cfg.goalState[i];
+    for (std::size_t i(0); i < cfg->goalState.size(); ++i) {
+        goal[i] = cfg->goalState[i];
     }
     ss_->setStartAndGoalStates(start, goal);
     // generate a few solutions; all will be added to the goal;
@@ -205,9 +205,9 @@ bool Manipulator::plan()
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
         ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
-        ss_->solve(cfg.planningTime);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
+        ss_->solve(cfg->planningTime);
     }
 
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
@@ -215,6 +215,14 @@ bool Manipulator::plan()
     return ss_->haveSolutionPath();
 }
 //==============================================================================
+//TODO
+void Manipulator::configurePlanner()
+{
+;
+}
+
+//==============================================================================
+// TODO
 std::string dumpFileNameGenerate()
 {
 
@@ -265,6 +273,12 @@ void Manipulator::store(const char* filename)
     pdstorage.store(pdat, filename);
 }
 //==============================================================================
+// TODO
+void setStates()
+{
+;
+}
+//==============================================================================
 void Manipulator::load(const char* filename)
 {
     if (ss_->getPlanner()) {
@@ -274,20 +288,20 @@ void Manipulator::load(const char* filename)
     ss_->setup();
 
     ob::ScopedState<> start(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg.startState.size(); ++i) {
-        start[i] = cfg.startState[i];
+    for (std::size_t i(0); i < cfg->startState.size(); ++i) {
+        start[i] = cfg->startState[i];
     }
 
     ob::ScopedState<> goal(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg.goalState.size(); ++i) {
-        goal[i] = cfg.goalState[i];
+    for (std::size_t i(0); i < cfg->goalState.size(); ++i) {
+        goal[i] = cfg->goalState[i];
     }
 
     ss_->setStartAndGoalStates(start, goal);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg.loadDataFile.c_str());
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg->loadDataFile.c_str());
 
     /*
     ob::PlannerData pdat(ss_->getSpaceInformation());
@@ -453,6 +467,6 @@ og::PathGeometric* Manipulator::getResultantMotion()
     }
 
     og::PathGeometric& p = ss_->getSolutionPath();
-    p.interpolate(cfg.pathNodes);
+    p.interpolate(cfg->pathNodes);
     return &p;
 }

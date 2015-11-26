@@ -23,6 +23,8 @@ public:
     bool loadData;
     std::string loadDataFile;
 
+    bool dynamicObstacle;
+
     //==============================================================================
 
     Configuration();
@@ -31,4 +33,5 @@ public:
     void defaults();
 };
 
+typedef std::shared_ptr<Configuration> ConfigurationPtr;
 #endif // CONFIGURATION_H

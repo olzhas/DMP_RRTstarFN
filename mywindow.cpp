@@ -28,7 +28,7 @@ void MyWindow::initGhostManipulators()
     dd::SkeletonPtr staubliStartState(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
     staubliStartState->setName("TX90XLHB-Start");
     for (int i = 2; i < 8; ++i) {
-        staubliStartState->setPosition(i, cfg.startState[i - 2]);
+        staubliStartState->setPosition(i, cfg->startState[i - 2]);
     }
 
     setSkeletonAlpha(staubliStartState, 0.2);
@@ -40,7 +40,7 @@ void MyWindow::initGhostManipulators()
     dd::SkeletonPtr staubliFinalState(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
     staubliFinalState->setName("TX90XLHB-Final");
     for (int i = 2; i < 8; ++i) {
-        staubliFinalState->setPosition(i, cfg.goalState[i - 2]);
+        staubliFinalState->setPosition(i, cfg->goalState[i - 2]);
     }
     mWorld->addSkeleton(staubliFinalState);
     setSkeletonCollidable(staubliFinalState, false);
@@ -420,6 +420,10 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
     case 'g':
     case 'G':
         cameraReset = !cameraReset;
+        break;
+    case 'o':
+        cfg->dynamicObstacle = !cfg->dynamicObstacle;
+        break;
     default:
         Win3D::keyboard(_key, _x, _y);
         break;

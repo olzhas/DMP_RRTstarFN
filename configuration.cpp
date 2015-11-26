@@ -67,4 +67,5 @@ void Configuration::defaults()
     loadData = false;
     loadDataFile = "mydump";
     dynamicReplanning = false;
+    dynamicObstacle = false;
 }

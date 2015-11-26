@@ -26,7 +26,7 @@ public:
 
 private:
     ManipulatorPtr manipulator; //
-    Configuration cfg;
+    ConfigurationPtr cfg;
 
     Frontend frontend;
 

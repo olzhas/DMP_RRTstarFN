@@ -61,14 +61,14 @@ public:
     void setStartState(const std::vector<double>& st);
     void setFinalState(const std::vector<double>& st);
 
-    void init(const Configuration(&config));
+    void init(ConfigurationPtr &config);
 
     void store(const char* filename);
     void load(const char* filename);
 
     dart::simulation::WorldPtr getWorld();
     void setWorld(dart::simulation::WorldPtr world);
-    Configuration cfg;
+    ConfigurationPtr cfg;
 
 private:
     bool isStateValid(const ob::State* state);
@@ -81,6 +81,9 @@ private:
     boost::mutex mutex_;
 
     dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
+
+    void configurePlanner();
+
 };
 
 class ManipulatorMotionValidator : public ob::MotionValidator {

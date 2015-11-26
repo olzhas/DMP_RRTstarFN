@@ -2,7 +2,7 @@
 
 PlanningProblem::PlanningProblem()
 {
-    cfg.readFile();
+    cfg->readFile();
     manipulator = ManipulatorPtr(new Manipulator());
     manipulator->init(cfg);
 }
@@ -21,8 +21,8 @@ int PlanningProblem::solve(int argc, char* argv[])
     frontend.init();
 
     boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
-    planThread.join();
     boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
+    planThread.join();
     guiThread.join();
 
     return EXIT_SUCCESS;
@@ -30,16 +30,20 @@ int PlanningProblem::solve(int argc, char* argv[])
 
 void PlanningProblem::plan(int* argcp, char** argv)
 {
-    if (!cfg.loadData) {
-        std::cout << "Planning time is set to " << cfg.planningTime << "sec\n";
+    if (!cfg->loadData) {
+        std::cout << "Planning time is set to " << cfg->planningTime << " sec\n";
         if (manipulator->plan()) {
             manipulator->recordSolution();
-            manipulator->store(cfg.loadDataFile.c_str());
+            manipulator->store(cfg->loadDataFile.c_str());
         }
     }
     else {
-        OMPL_INFORM("Loading the tree from file %s", cfg.loadDataFile.c_str());
-        manipulator->load(cfg.loadDataFile.c_str());
+        OMPL_INFORM("Loading the tree from file %s", cfg->loadDataFile.c_str());
+        manipulator->load(cfg->loadDataFile.c_str());
     }
+    while(!cfg->dynamicObstacle){
+        ;//std::cout << "wait for dynamic replanning" << std::endl;
+    }
+    std::cout << "dynamic replanning was initiated" << std::endl;
     return;
 }
