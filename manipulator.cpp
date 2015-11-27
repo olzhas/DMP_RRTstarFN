@@ -204,14 +204,12 @@ bool Manipulator::plan()
     return ss_->haveSolutionPath();
 }
 //==============================================================================
-//TODO
 void Manipulator::configurePlanner()
 {
     ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
     ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
 }
-
 //==============================================================================
 // TODO
 std::string dumpFileNameGenerate()
@@ -267,7 +265,7 @@ void Manipulator::store(const char* filename)
 // TODO
 void setStates()
 {
-;
+    ;
 }
 //==============================================================================
 void Manipulator::load(const char* filename)
@@ -462,5 +460,37 @@ og::PathGeometric* Manipulator::getResultantMotion()
 //==============================================================================
 void Manipulator::spawnDynamicObstacles()
 {
+    double rpy[][3] = {{ 4.16858072, 3.14151269, 2.59488083},
+                       { 5.79539508, 4.12217189, 5.59803713},
+                       { 0, 0, 1.7},
+                       { 0, 0, 0.7},
+                       { 0, 0, 0}};
 
+    double pos[][3] = {{  0.850,  -0.423, 1.344},
+                       {  10.192,  0.701, 0.940},
+                       {  10.916, -0.517, 1.230},
+                       {  10.768, -0.282, 1.623},
+                       {  10.200, -0.700, 1.450}};
+
+    std::string obstaclePath(SAFESPACE_DATA "/obstacles/cube.skel");
+
+    dd::SkeletonPtr dynamicObstacle = du::SkelParser::readSkeleton(obstaclePath);
+
+    Eigen::Isometry3d T;
+    Eigen::Matrix3d m;
+
+    m = Eigen::AngleAxisd(rpy[0][0],
+            Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(rpy[0][1],
+            Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(rpy[0][2],
+            Eigen::Vector3d::UnitZ());
+
+    T = Eigen::Translation3d(pos[0][0], pos[0][1], pos[0][2]);
+
+    T.rotate(m);
+
+    dynamicObstacle->getJoint("joint 1")->setTransformFromParentBodyNode(T);
+    dynamicObstacle->setName(genBoxName(2)); //FIXME hardcoded value
+    dynamicObstacle->getBodyNode(0)->getVisualizationShape(0)->setAlpha(0.9);
+
+    world_->addSkeleton(dynamicObstacle);
 }

@@ -75,6 +75,7 @@ public:
                         CUBE };
     ObstacleType obstacleStatic[5] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE }; // FIXME number of obstacles is fixed
 
+    void spawnDynamicObstacles();
 private:
     bool isStateValid(const ob::State* state);
 
@@ -90,7 +91,7 @@ private:
     void configurePlanner();
 
     void spawnStaticObstacles();
-    void spawnDynamicObstacles();
+
     void spawnObstacle(std::string path);
 
 };

@@ -1,0 +1,38 @@
+#include "obstacle.h"
+
+Obstacle::Obstacle()
+{
+
+}
+
+void Obstacle::setPos(const Eigen::Vector3d &position)
+{
+    pos = position;
+}
+
+void Obstacle::setRollPitchYaw(const Eigen::Vector3d &angles)
+{
+    rpy = angles;
+}
+
+
+//TODO check if inline is appropriate here
+void Obstacle::setStatic()
+{
+    dynamic = false;
+}
+
+bool Obstacle::isStatic()
+{
+    return !dynamic;
+}
+
+void Obstacle::setDynamic()
+{
+    dynamic = true;
+}
+
+bool Obstacle::isDynamic()
+{
+    return dynamic;
+}

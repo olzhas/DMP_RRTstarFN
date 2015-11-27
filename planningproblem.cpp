@@ -11,18 +11,10 @@ PlanningProblem::PlanningProblem()
 //==============================================================================
 int PlanningProblem::solve(int argc, char* argv[])
 {
-    //    if(cfg.dynamicReplanning){
-    //        for(int j = 0; j < 5; j++){
-    //            std::cout << "\nreplanning iteration #" << j << std::endl;
-    //            manipulator->updateObstacles();
-    //            manipulator->replan();
-    //        }
-    //    }
+    boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
 
     frontend.setManipulator(manipulator);
     frontend.init();
-
-    boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
     boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
     planThread.join();
     guiThread.join();
@@ -47,5 +39,7 @@ void PlanningProblem::plan(int* argcp, char** argv)
         ;//std::cout << "wait for dynamic replanning" << std::endl;
     }
     std::cout << "dynamic replanning was initiated" << std::endl;
+    manipulator->spawnDynamicObstacles();
+    manipulator->replan();
     return;
 }
