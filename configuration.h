@@ -17,11 +17,21 @@ public:
     double rangeDeg;
     double rangeRad;
     bool dynamicReplanning;
+    int cnt;
     std::vector<double> startState;
     std::vector<double> goalState;
 
     bool loadData;
     std::string loadDataFile;
+
+    bool dynamicObstacle;
+    bool planningDone;
+
+    bool drawTree;
+
+    int numObstacle;
+
+    std::vector<double> dynamicObstaclePosition;
 
     //==============================================================================
 
@@ -31,4 +41,5 @@ public:
     void defaults();
 };
 
+typedef std::shared_ptr<Configuration> ConfigurationPtr;
 #endif // CONFIGURATION_H

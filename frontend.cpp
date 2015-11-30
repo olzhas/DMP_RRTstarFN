@@ -5,7 +5,7 @@ Frontend::Frontend() { ; }
 //==============================================================================
 void Frontend::init()
 {
-    window.setWorld(manipulator->getWorld()->clone());
+    window.setWorld(manipulator->getWorld());
 
 }
 //==============================================================================
@@ -16,6 +16,7 @@ void Frontend::setManipulator(ManipulatorPtr robot)
 //==============================================================================
 void Frontend::exec(int* argcp, char** argv)
 {
+    while(!manipulator->cfg->planningDone);
     og::PathGeometric* resultantMotion = manipulator->getResultantMotion();
 
     window.setMotion(resultantMotion);
@@ -24,7 +25,7 @@ void Frontend::exec(int* argcp, char** argv)
     window.cfg = manipulator->cfg;
     window.initGhostManipulators();
     glutInit(argcp, argv);
-    window.initDrawTree();
+    window.initDrawTree(); // FIXME bottleneck
     window.initWindow(800, 600, "Staubli TX90XL");
     window.refreshTimer(30);
     glutMainLoop();

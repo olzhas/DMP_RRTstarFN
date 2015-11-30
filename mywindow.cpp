@@ -18,7 +18,7 @@ MyWindow::MyWindow()
     , prevSize(0)
 {
     motion_ = NULL;
-    mZoom = 0.2;
+    mZoom = 0.3;
     //mCapture = true;
 }
 //==============================================================================
@@ -28,7 +28,7 @@ void MyWindow::initGhostManipulators()
     dd::SkeletonPtr staubliStartState(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
     staubliStartState->setName("TX90XLHB-Start");
     for (int i = 2; i < 8; ++i) {
-        staubliStartState->setPosition(i, cfg.startState[i - 2]);
+        staubliStartState->setPosition(i, cfg->startState[i - 2]);
     }
 
     setSkeletonAlpha(staubliStartState, 0.2);
@@ -40,7 +40,7 @@ void MyWindow::initGhostManipulators()
     dd::SkeletonPtr staubliFinalState(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
     staubliFinalState->setName("TX90XLHB-Final");
     for (int i = 2; i < 8; ++i) {
-        staubliFinalState->setPosition(i, cfg.goalState[i - 2]);
+        staubliFinalState->setPosition(i, cfg->goalState[i - 2]);
     }
     mWorld->addSkeleton(staubliFinalState);
     setSkeletonCollidable(staubliFinalState, false);
@@ -165,7 +165,7 @@ void MyWindow::drawTree()
 
     dart::gui::SimpleRGB boxColor(255.0/255.0, 10.0/255.0, 0/255.0); // orange
     //dart::gui::SimpleRGB boxColor(215.0/255.0, 225.0/255.0,43.0/255.0);
-    dart::gui::SimpleRGB boxDetachedColor(200.0/255.0, 0.0/255.0, 200.0/255.0);
+    dart::gui::SimpleRGB boxDetachedColor(5.0/255.0, 55.0/255.0, 255.0/255.0);
     dart::gui::SimpleRGB boxSolColor(10.0/255.0, 200.0/255.0, 200.0/255.0);
 
     GLUquadricObj *c;
@@ -173,14 +173,15 @@ void MyWindow::drawTree()
     gluQuadricDrawStyle(c, GLU_FILL);
     gluQuadricNormals(c, GLU_SMOOTH);
     //glPushMatrix();
-
-    glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
-    for (int i = 0; i < endEffectorPosition.size(); ++i) {
-        Eigen::Vector3d center = endEffectorPosition.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.01);
-        glPopMatrix();
+    if(cfg->drawTree){
+        glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
+        for (int i = 0; i < endEffectorPosition.size(); ++i) {
+            Eigen::Vector3d center = endEffectorPosition.at(i);
+            glPushMatrix();
+            glTranslatef(center[0], center[1], center[2]);
+            glutSolidCube(0.01);
+            glPopMatrix();
+        }
     }
 
     glColor3d(boxSolColor.r, boxSolColor.g, boxSolColor.b);
@@ -197,7 +198,7 @@ void MyWindow::drawTree()
         Eigen::Vector3d center = endEffectorPositionDetached.at(i);
         glPushMatrix();
         glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.025);
+        glutSolidCube(0.0125);
         glPopMatrix();
     }
     gluDeleteQuadric(c);
@@ -330,7 +331,21 @@ void MyWindow::updateDrawTree()
             }
         }
     }
+    if(cfg->dynamicReplanning && cfg->cnt == 0){
+        cfg->cnt++;
+        for(size_t i(0); i < pdat.numVertices(); ++i){
+            std::vector<double> reals;
+            if (pdat.getVertex(i).getTag()){
+                ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
 
+                for (size_t j(0); j < reals.size(); ++j)
+                    staubli->setPosition(j + 2, reals[j]);
+                staubli->computeForwardKinematics(true, false, false);
+                Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+                endEffectorPositionDetached.push_back(transform.translation());
+            }
+        }
+    }
 }
 //==============================================================================
 Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex& vertex)
@@ -406,7 +421,6 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         }
         break;
     case '\'':
-
         treeState++;
         drawManipulatorState(treeState);
         std::cout << treeState << std::endl;
@@ -420,6 +434,13 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
     case 'g':
     case 'G':
         cameraReset = !cameraReset;
+        break;
+    case 'o':
+        cfg->dynamicObstacle = !(cfg->dynamicObstacle);
+        break;
+    case 't':
+        cfg->drawTree = !cfg->drawTree;
+        break;
     default:
         Win3D::keyboard(_key, _x, _y);
         break;

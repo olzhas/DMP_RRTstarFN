@@ -30,6 +30,7 @@
 #include <mutex>
 
 #include "configuration.h"
+#include "weightedrealvectorstatespace.h"
 
 #define NUM_OBSTACLE 5
 #define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
@@ -61,15 +62,21 @@ public:
     void setStartState(const std::vector<double>& st);
     void setFinalState(const std::vector<double>& st);
 
-    void init(const Configuration(&config));
+    void init(ConfigurationPtr &config);
 
     void store(const char* filename);
     void load(const char* filename);
 
     dart::simulation::WorldPtr getWorld();
-    void setWorld(dart::simulation::WorldPtr world);
-    Configuration cfg;
+    void setWorld(dart::simulation::WorldPtr &world);
+    ConfigurationPtr cfg;
 
+    enum ObstacleType { WALL,
+                        HUMAN_BBOX,
+                        CUBE };
+    ObstacleType obstacleStatic[5] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE }; // FIXME number of obstacles is fixed
+
+    void spawnDynamicObstacles();
 private:
     bool isStateValid(const ob::State* state);
 
@@ -81,6 +88,15 @@ private:
     boost::mutex mutex_;
 
     dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
+
+    void configurePlanner();
+
+    void spawnStaticObstacles();
+
+    void spawnObstacle(std::string path);
+
+    inline void setState(ob::ScopedState<> &state, std::vector<double> &set);
+
 };
 
 class ManipulatorMotionValidator : public ob::MotionValidator {

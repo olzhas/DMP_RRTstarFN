@@ -1,7 +1,5 @@
 #include "manipulator.h"
 
-//#include "config/obstacle_config_red.h"
-//#include "config/obstacle_config_green.h"
 #include "config/obstacle_config_blue.h"
 
 namespace ob = ompl::base;
@@ -32,31 +30,19 @@ inline std::string genBoxName(int i)
     name[3] = i + '0';
     return name;
 }
-
-void Manipulator::init(const Configuration& config)
+//==============================================================================
+void Manipulator::spawnObstacle(std::string path)
 {
-    cfg = config;
-    ds::WorldPtr myWorld(du::SkelParser::readWorld(
-                             dart::common::Uri::createFromString(
-                                 SAFESPACE_DATA "/ground_plane/ground.skel")));
-
-    dd::SkeletonPtr staubli(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
-
-    /*
-    dd::SkeletonPtr complexObstacle(du::SoftSdfParser::readSkeleton(
-        SAFESPACE_DATA "/obstacles/complex_obstacle.sdf"));
-    */
-
-    enum ObstacleType { WALL,
-                        HUMAN_BBOX,
-                        CUBE };
-
-    ObstacleType obstType[] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE };
-
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
+    ;
+}
+//==============================================================================
+// FIXME reimplement it with spawnObstacle() method
+void Manipulator::spawnStaticObstacles()
+{
+    for (int i = 0; i < cfg->numObstacle; ++i) {
 
         std::string obstaclePath(SAFESPACE_DATA);
-        switch (obstType[i]) {
+        switch (obstacleStatic[i]) {
         case WALL:
             obstaclePath += "/obstacles/wall.skel";
             break;
@@ -89,12 +75,21 @@ void Manipulator::init(const Configuration& config)
         myObstacle[i]->setName(genBoxName(i));
     }
 
-    myWorld->addSkeleton(staubli);
+    for (int i = 0; i < cfg->numObstacle; ++i) {
+        world_->addSkeleton(myObstacle[i]);
+    }
+}
+//==============================================================================
+void Manipulator::init(ConfigurationPtr &config)
+{
+    cfg = config;
+    ds::WorldPtr myWorld(du::SkelParser::readWorld(
+                             dart::common::Uri::createFromString(
+                                 SAFESPACE_DATA "/ground_plane/ground.skel")));
+    dd::SkeletonPtr staubli(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
-#ifdef COMPLEX_OBSTACLE
-    complexObstacle->setName("box4");
-    myWorld->addSkeleton(complexObstacle);
-#endif
+    staubli->enableSelfCollision();
+    myWorld->addSkeleton(staubli);
 
     for (int i = 0; i < 8; ++i) {
         staubli->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
@@ -104,15 +99,12 @@ void Manipulator::init(const Configuration& config)
 #endif
     }
 
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        myWorld->addSkeleton(myObstacle[i]);
-    }
-
     myWorld->setGravity(Eigen::Vector3d(0.0, 0.0, 0.0));
 
     setWorld(myWorld);
+    spawnStaticObstacles();
 
-    ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
+    ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
 
     // TODO make this configurable through config files
     jointSpace->addDimension(-M_PI, M_PI);
@@ -121,7 +113,6 @@ void Manipulator::init(const Configuration& config)
     jointSpace->addDimension(-270.0 / 180.0 * M_PI, 270.0 / 180.0 * M_PI);
     jointSpace->addDimension(-115.0 / 180.0 * M_PI, 140.0 / 180.0 * M_PI);
     jointSpace->addDimension(-270.0 / 180.0 * M_PI, 270.0 / 180.0 * M_PI);
-    //jointSpace->setMaximumExtent(10);
 
     ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(jointSpace)));
     // set state validity checking for this space
@@ -146,16 +137,6 @@ void Manipulator::init(const Configuration& config)
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
-    /*
-
-    for(size_t i(0); i < 8; ++i){
-        rbtCollisionNode[i] = new dc::FCLMeshCollisionNode(staubli_->getBodyNode(rbtCollisionNodeName[i]));
-    }
-
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        obstacle_[i] = new dc::FCLMeshCollisionNode(world_->getSkeleton(genBoxName(i))->getBodyNode(0));
-    }
-*/
 }
 
 //==============================================================================
@@ -191,23 +172,21 @@ bool Manipulator::plan()
         return false;
 
     ob::ScopedState<> start(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg.startState.size(); ++i) {
-        start[i] = cfg.startState[i];
+    for (std::size_t i(0); i < cfg->startState.size(); ++i) {
+        start[i] = cfg->startState[i];
     }
 
     ob::ScopedState<> goal(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg.goalState.size(); ++i) {
-        goal[i] = cfg.goalState[i];
+    for (std::size_t i(0); i < cfg->goalState.size(); ++i) {
+        goal[i] = cfg->goalState[i];
     }
     ss_->setStartAndGoalStates(start, goal);
     // generate a few solutions; all will be added to the goal;
 
     if (ss_->getPlanner()) {
         ss_->getPlanner()->clear();
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
-        ss_->solve(cfg.planningTime);
+        configurePlanner();
+        ss_->solve(cfg->planningTime);
     }
 
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
@@ -215,6 +194,14 @@ bool Manipulator::plan()
     return ss_->haveSolutionPath();
 }
 //==============================================================================
+void Manipulator::configurePlanner()
+{
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
+}
+//==============================================================================
+// TODO
 std::string dumpFileNameGenerate()
 {
 
@@ -227,8 +214,14 @@ bool Manipulator::replan()
     // generate a few solutions; all will be added to the goal;
     ss_->getProblemDefinition()->clearSolutionPaths();
 
+    int trial = 10;
     if (ss_->getPlanner()) {
-        ss_->solve(0.1);
+        for(int i=0; i<trial; ++i){
+            ss_->solve(0.1);
+            cfg->dynamicReplanning = true;
+            if(cfg->cnt > 0)
+                cfg->cnt--;
+        }
     }
 
     //ss_->getProblemDefinition()->clearSolutionPaths();
@@ -265,6 +258,14 @@ void Manipulator::store(const char* filename)
     pdstorage.store(pdat, filename);
 }
 //==============================================================================
+// TODO
+inline void Manipulator::setState(ob::ScopedState<> &state, std::vector<double> &set)
+{
+    for(size_t i(0); i<set.size(); ++i){
+        state[i] = set[i];
+    }
+}
+//==============================================================================
 void Manipulator::load(const char* filename)
 {
     if (ss_->getPlanner()) {
@@ -274,20 +275,14 @@ void Manipulator::load(const char* filename)
     ss_->setup();
 
     ob::ScopedState<> start(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg.startState.size(); ++i) {
-        start[i] = cfg.startState[i];
-    }
+    setState(start, cfg->startState);
 
     ob::ScopedState<> goal(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg.goalState.size(); ++i) {
-        goal[i] = cfg.goalState[i];
-    }
+    setState(goal, cfg->goalState);
 
     ss_->setStartAndGoalStates(start, goal);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg.rangeRad);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg.goalBias);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg.loadDataFile.c_str());
+    configurePlanner();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg->loadDataFile.c_str());
 
     /*
     ob::PlannerData pdat(ss_->getSpaceInformation());
@@ -421,7 +416,7 @@ void Manipulator::recordSolution()
 }
 
 //==============================================================================
-void Manipulator::setWorld(dart::simulation::WorldPtr world)
+void Manipulator::setWorld(dart::simulation::WorldPtr &world)
 {
     world_ = world;
 }
@@ -453,6 +448,43 @@ og::PathGeometric* Manipulator::getResultantMotion()
     }
 
     og::PathGeometric& p = ss_->getSolutionPath();
-    p.interpolate(cfg.pathNodes);
+    p.interpolate(cfg->pathNodes);
     return &p;
+}
+//==============================================================================
+void Manipulator::spawnDynamicObstacles()
+{
+    double rpy[][3] = {{ 4.16858072, 3.14151269, 2.59488083},
+                       { 5.79539508, 4.12217189, 5.59803713},
+                       { 0, 0, 1.7},
+                       { 0, 0, 0.7},
+                       { 0, 0, 0}};
+
+    double pos[][3] = {{  0.850,  -0.423, 1.044},
+                       {  10.192,  0.701, 0.940},
+                       {  10.916, -0.517, 1.230},
+                       {  10.768, -0.282, 1.623},
+                       {  10.200, -0.700, 1.450}};
+
+    std::string obstaclePath(SAFESPACE_DATA "/obstacles/cube.skel");
+
+    dd::SkeletonPtr dynamicObstacle = du::SkelParser::readSkeleton(obstaclePath);
+
+    Eigen::Isometry3d T;
+    Eigen::Matrix3d m;
+
+    m = Eigen::AngleAxisd(rpy[0][0],
+            Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(rpy[0][1],
+            Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(rpy[0][2],
+            Eigen::Vector3d::UnitZ());
+
+    T = Eigen::Translation3d(pos[0][0], pos[0][1], pos[0][2]);
+
+    T.rotate(m);
+
+    dynamicObstacle->getJoint("joint 1")->setTransformFromParentBodyNode(T);
+    dynamicObstacle->setName(genBoxName(2)); //FIXME hardcoded value
+    dynamicObstacle->getBodyNode(0)->getVisualizationShape(0)->setAlpha(0.9);
+
+    world_->addSkeleton(dynamicObstacle);
 }

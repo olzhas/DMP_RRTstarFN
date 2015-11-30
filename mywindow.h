@@ -43,7 +43,7 @@ public:
     Eigen::Vector3d getVertex(const ob::PlannerDataVertex& vertex);
 
     og::SimpleSetupPtr ss_;
-    Configuration cfg;
+    ConfigurationPtr cfg;
 
 private:
     og::PathGeometric* motion_ = NULL;
@@ -61,7 +61,9 @@ private:
     dart::common::Timer timer2;
     bool cameraReset;
 
-    volatile unsigned int prevSize;
+    unsigned int prevSize;
+    bool dynamicObstacle;
+
 };
 
 typedef struct {

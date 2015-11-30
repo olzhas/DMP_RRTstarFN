@@ -32,16 +32,20 @@ void Configuration::readFile()
     }
 
     if (config["start-pos"]) {
-        startState.resize(6); // FIXME configuration value
-        for (std::size_t i(0); i < config["start-pos"].size(); ++i) {
-            startState[i] = config["start-pos"][i].as<double>() / 180.0 * M_PI;
+        if(config["start-pos"].size() > 0) {
+            startState.resize(config["start-pos"].size());
+            for (std::size_t i(0); i < config["start-pos"].size(); ++i) {
+                startState[i] = config["start-pos"][i].as<double>() / 180.0 * M_PI;
+            }
         }
     }
 
     if (config["goal-pos"]) {
-        goalState.resize(6); // FIXME configuration value
-        for (std::size_t i(0); i < config["goal-pos"].size(); ++i) {
-            goalState[i] = config["goal-pos"][i].as<double>() / 180.0 * M_PI;
+        if(config["goal-pos"].size() > 0){
+            goalState.resize(config["goal-pos"].size());
+            for (std::size_t i(0); i < config["goal-pos"].size(); ++i) {
+                goalState[i] = config["goal-pos"][i].as<double>() / 180.0 * M_PI;
+            }
         }
     }
 
@@ -56,6 +60,14 @@ void Configuration::readFile()
     if(config["load-data-file"]){
         loadDataFile = config["load-data-file"].as<std::string>();
     }
+
+    if(config["obstacle-num"]) {
+        numObstacle = config["obstacle-num"].as<int>();
+    }
+
+    if(config["dynamic-obstacle-pos"]) {
+
+    }
 }
 
 void Configuration::defaults()
@@ -67,4 +79,8 @@ void Configuration::defaults()
     loadData = false;
     loadDataFile = "mydump";
     dynamicReplanning = false;
+    dynamicObstacle = false;
+    planningDone = false;
+    cnt = 0;
+    drawTree = false;
 }
