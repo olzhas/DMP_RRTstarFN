@@ -214,8 +214,10 @@ bool Manipulator::replan()
     // generate a few solutions; all will be added to the goal;
     ss_->getProblemDefinition()->clearSolutionPaths();
 
+    int trial = 10;
     if (ss_->getPlanner()) {
-        ss_->solve(0.1);
+        for(int i=0; i<trial; ++i)
+            ss_->solve(0.1);
     }
 
     //ss_->getProblemDefinition()->clearSolutionPaths();
