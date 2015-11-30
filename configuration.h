@@ -17,6 +17,7 @@ public:
     double rangeDeg;
     double rangeRad;
     bool dynamicReplanning;
+    int cnt;
     std::vector<double> startState;
     std::vector<double> goalState;
 
@@ -24,8 +25,11 @@ public:
     std::string loadDataFile;
 
     bool dynamicObstacle;
+    bool planningDone;
 
     int numObstacle;
+
+    std::vector<double> dynamicObstaclePosition;
 
     //==============================================================================
 

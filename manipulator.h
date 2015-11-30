@@ -30,6 +30,7 @@
 #include <mutex>
 
 #include "configuration.h"
+#include "weightedrealvectorstatespace.h"
 
 #define NUM_OBSTACLE 5
 #define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
@@ -93,6 +94,8 @@ private:
     void spawnStaticObstacles();
 
     void spawnObstacle(std::string path);
+
+    inline void setState(ob::ScopedState<> &state, std::vector<double> &set);
 
 };
 

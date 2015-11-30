@@ -1,6 +1,7 @@
 #ifndef OBSTACLE_H
 #define OBSTACLE_H
 
+#include <yaml-cpp/yaml.h>
 #include <dart/math/math.h>
 
 class Obstacle
@@ -27,6 +28,8 @@ public:
     bool isStatic();
     void setDynamic();
     bool isDynamic();
+
+    void loadObstacleArray(std::string configFile);
 };
 
 #endif // OBSTACLE_H

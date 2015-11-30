@@ -13,11 +13,13 @@ int PlanningProblem::solve(int argc, char* argv[])
 {
     boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
 
+
     frontend.setManipulator(manipulator);
     frontend.init();
+
     boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
-    planThread.join();
     guiThread.join();
+    planThread.join();
 
     return EXIT_SUCCESS;
 }
@@ -35,11 +37,16 @@ void PlanningProblem::plan(int* argcp, char** argv)
         OMPL_INFORM("Loading the tree from file %s", cfg->loadDataFile.c_str());
         manipulator->load(cfg->loadDataFile.c_str());
     }
+    cfg->planningDone = true;
+
     while(!cfg->dynamicObstacle){
         ;//std::cout << "wait for dynamic replanning" << std::endl;
     }
+
     std::cout << "dynamic replanning was initiated" << std::endl;
     manipulator->spawnDynamicObstacles();
     manipulator->replan();
+    cfg->dynamicReplanning = true;
+
     return;
 }

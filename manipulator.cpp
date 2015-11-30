@@ -88,6 +88,7 @@ void Manipulator::init(ConfigurationPtr &config)
                                  SAFESPACE_DATA "/ground_plane/ground.skel")));
     dd::SkeletonPtr staubli(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
+    staubli->enableSelfCollision();
     myWorld->addSkeleton(staubli);
 
     for (int i = 0; i < 8; ++i) {
@@ -103,7 +104,7 @@ void Manipulator::init(ConfigurationPtr &config)
     setWorld(myWorld);
     spawnStaticObstacles();
 
-    ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
+    ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
 
     // TODO make this configurable through config files
     jointSpace->addDimension(-M_PI, M_PI);
@@ -112,7 +113,6 @@ void Manipulator::init(ConfigurationPtr &config)
     jointSpace->addDimension(-270.0 / 180.0 * M_PI, 270.0 / 180.0 * M_PI);
     jointSpace->addDimension(-115.0 / 180.0 * M_PI, 140.0 / 180.0 * M_PI);
     jointSpace->addDimension(-270.0 / 180.0 * M_PI, 270.0 / 180.0 * M_PI);
-    //jointSpace->setMaximumExtent(10);
 
     ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(jointSpace)));
     // set state validity checking for this space
@@ -137,16 +137,6 @@ void Manipulator::init(ConfigurationPtr &config)
     //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
-    /*
-
-    for(size_t i(0); i < 8; ++i){
-        rbtCollisionNode[i] = new dc::FCLMeshCollisionNode(staubli_->getBodyNode(rbtCollisionNodeName[i]));
-    }
-
-    for (int i = 0; i < NUM_OBSTACLE; ++i) {
-        obstacle_[i] = new dc::FCLMeshCollisionNode(world_->getSkeleton(genBoxName(i))->getBodyNode(0));
-    }
-*/
 }
 
 //==============================================================================
@@ -263,9 +253,11 @@ void Manipulator::store(const char* filename)
 }
 //==============================================================================
 // TODO
-void setStates()
+inline void Manipulator::setState(ob::ScopedState<> &state, std::vector<double> &set)
 {
-    ;
+    for(size_t i(0); i<set.size(); ++i){
+        state[i] = set[i];
+    }
 }
 //==============================================================================
 void Manipulator::load(const char* filename)
@@ -277,14 +269,10 @@ void Manipulator::load(const char* filename)
     ss_->setup();
 
     ob::ScopedState<> start(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg->startState.size(); ++i) {
-        start[i] = cfg->startState[i];
-    }
+    setState(start, cfg->startState);
 
     ob::ScopedState<> goal(ss_->getStateSpace());
-    for (std::size_t i(0); i < cfg->goalState.size(); ++i) {
-        goal[i] = cfg->goalState[i];
-    }
+    setState(goal, cfg->goalState);
 
     ss_->setStartAndGoalStates(start, goal);
     configurePlanner();
@@ -466,7 +454,7 @@ void Manipulator::spawnDynamicObstacles()
                        { 0, 0, 0.7},
                        { 0, 0, 0}};
 
-    double pos[][3] = {{  0.850,  -0.423, 1.344},
+    double pos[][3] = {{  0.850,  -0.423, 1.044},
                        {  10.192,  0.701, 0.940},
                        {  10.916, -0.517, 1.230},
                        {  10.768, -0.282, 1.623},

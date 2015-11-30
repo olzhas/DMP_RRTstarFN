@@ -36,3 +36,9 @@ bool Obstacle::isDynamic()
 {
     return dynamic;
 }
+
+void Obstacle::loadObstacleArray(std::string configFile)
+{
+    YAML::Node config = YAML::LoadFile(configFile);
+
+}
