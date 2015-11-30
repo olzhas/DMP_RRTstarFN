@@ -216,8 +216,12 @@ bool Manipulator::replan()
 
     int trial = 10;
     if (ss_->getPlanner()) {
-        for(int i=0; i<trial; ++i)
+        for(int i=0; i<trial; ++i){
             ss_->solve(0.1);
+            cfg->dynamicReplanning = true;
+            if(cfg->cnt > 0)
+                cfg->cnt--;
+        }
     }
 
     //ss_->getProblemDefinition()->clearSolutionPaths();

@@ -29,5 +29,4 @@ void Frontend::exec(int* argcp, char** argv)
     window.initWindow(800, 600, "Staubli TX90XL");
     window.refreshTimer(30);
     glutMainLoop();
-
 }

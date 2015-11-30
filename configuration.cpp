@@ -82,4 +82,5 @@ void Configuration::defaults()
     dynamicObstacle = false;
     planningDone = false;
     cnt = 0;
+    drawTree = false;
 }

@@ -173,14 +173,15 @@ void MyWindow::drawTree()
     gluQuadricDrawStyle(c, GLU_FILL);
     gluQuadricNormals(c, GLU_SMOOTH);
     //glPushMatrix();
-
-    glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
-    for (int i = 0; i < endEffectorPosition.size(); ++i) {
-        Eigen::Vector3d center = endEffectorPosition.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.01);
-        glPopMatrix();
+    if(cfg->drawTree){
+        glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
+        for (int i = 0; i < endEffectorPosition.size(); ++i) {
+            Eigen::Vector3d center = endEffectorPosition.at(i);
+            glPushMatrix();
+            glTranslatef(center[0], center[1], center[2]);
+            glutSolidCube(0.01);
+            glPopMatrix();
+        }
     }
 
     glColor3d(boxSolColor.r, boxSolColor.g, boxSolColor.b);
@@ -436,6 +437,9 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         break;
     case 'o':
         cfg->dynamicObstacle = !(cfg->dynamicObstacle);
+        break;
+    case 't':
+        cfg->drawTree = !cfg->drawTree;
         break;
     default:
         Win3D::keyboard(_key, _x, _y);

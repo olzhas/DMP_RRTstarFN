@@ -27,6 +27,8 @@ public:
     bool dynamicObstacle;
     bool planningDone;
 
+    bool drawTree;
+
     int numObstacle;
 
     std::vector<double> dynamicObstaclePosition;
