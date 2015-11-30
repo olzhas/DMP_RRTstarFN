@@ -83,4 +83,5 @@ void Configuration::defaults()
     planningDone = false;
     cnt = 0;
     drawTree = false;
+    interpolate = false;
 }

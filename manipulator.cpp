@@ -214,14 +214,10 @@ bool Manipulator::replan()
     // generate a few solutions; all will be added to the goal;
     ss_->getProblemDefinition()->clearSolutionPaths();
 
-    int trial = 10;
+
     if (ss_->getPlanner()) {
-        for(int i=0; i<trial; ++i){
-            ss_->solve(0.1);
-            cfg->dynamicReplanning = true;
-            if(cfg->cnt > 0)
-                cfg->cnt--;
-        }
+        ss_->solve(7);
+        cfg->dynamicReplanning = true;
     }
 
     //ss_->getProblemDefinition()->clearSolutionPaths();
@@ -448,7 +444,9 @@ og::PathGeometric* Manipulator::getResultantMotion()
     }
 
     og::PathGeometric& p = ss_->getSolutionPath();
-    p.interpolate(cfg->pathNodes);
+    if(cfg->interpolate){
+        p.interpolate(cfg->pathNodes);
+    }
     return &p;
 }
 //==============================================================================

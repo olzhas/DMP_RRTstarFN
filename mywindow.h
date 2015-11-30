@@ -53,6 +53,7 @@ private:
 
     std::vector<Eigen::Vector3d> endEffectorPosition;
     std::vector<Eigen::Vector3d> endEffectorPositionDetached;
+    std::vector<Eigen::Vector3d> endEffectorPositionDynamicAdded;
     std::vector<Eigen::Vector3d> solutionPositions;
 
     std::vector<std::vector<Eigen::Vector3d> > edges;
