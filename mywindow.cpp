@@ -176,13 +176,23 @@ void MyWindow::drawTree()
     gluQuadricNormals(c, GLU_SMOOTH);
     //glPushMatrix();
     if(cfg->drawTree){
-        glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
+
         for (int i = 0; i < endEffectorPosition.size(); ++i) {
+            glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
             Node center = endEffectorPosition.at(i);
             glPushMatrix();
             glTranslatef(center.x(), center.y(), center.z());
             glutSolidCube(0.01);
             glPopMatrix();
+            if(cfg->drawTreeEdges){
+                std::vector<unsigned int> childList = endEffectorPosition.at(i).child;
+                for(auto it = childList.begin(); it != childList.end(); ++it){
+                    if(*it >= i){
+                        dart::gui::drawLine3D(endEffectorPosition.at(i).getPos(),
+                                              endEffectorPosition.at(*it).getPos());
+                    }
+                }
+            }
         }
     }
 
@@ -194,6 +204,7 @@ void MyWindow::drawTree()
         glutSolidCube(0.015);
         glPopMatrix();
     }
+
 
     glColor3d(boxDetachedColor.r, boxDetachedColor.g, boxDetachedColor.b);
     for (int i = 0; i < endEffectorPositionDetached.size(); ++i) {
@@ -259,7 +270,7 @@ void MyWindow::initDrawTree()
             else
             {
                 Node n(transform.translation());
-                pdat.getVertex(i).;
+                pdat.getEdges(i, n.child);
                 endEffectorPosition.push_back(n);
             }
         }
@@ -467,6 +478,9 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         break;
     case 't':
         cfg->drawTree = !cfg->drawTree;
+        break;
+    case 'e':
+        cfg->drawTreeEdges = !cfg->drawTreeEdges;
         break;
     default:
         Win3D::keyboard(_key, _x, _y);

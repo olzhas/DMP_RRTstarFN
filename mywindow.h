@@ -65,7 +65,9 @@ private:
         double y(){ return position[1]; }
         double z(){ return position[2]; }
 
-        std::vector<int> child;
+        std::vector<unsigned int> child;
+
+        Eigen::Vector3d getPos(){return position;}
     };
 
     std::vector<Node> endEffectorPosition;
