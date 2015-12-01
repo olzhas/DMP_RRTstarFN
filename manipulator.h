@@ -1,8 +1,6 @@
 #ifndef MANIPULATOR_H_
 #define MANIPULATOR_H_
 
-#include <ompl/base/spaces/RealVectorStateSpace.h>
-
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/DRRTstarFN.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
@@ -99,28 +97,7 @@ private:
 
 };
 
-class ManipulatorMotionValidator : public ob::MotionValidator {
-public:
-    ManipulatorMotionValidator(ob::SpaceInformation* si)
-        : MotionValidator(si)
-    {
-        defaultSettings();
-    }
-    ManipulatorMotionValidator(const ob::SpaceInformationPtr& si)
-        : MotionValidator(si)
-    {
-        defaultSettings();
-    }
-    virtual ~ManipulatorMotionValidator()
-    {
-    }
-    virtual bool checkMotion(const ob::State* s1, const ob::State* s2) const;
-    virtual bool checkMotion(const ob::State* s1, const ob::State* s2, std::pair<ob::State*, double>& lastValid) const;
 
-private:
-    ob::StateSpacePtr stateSpace_;
-    void defaultSettings();
-};
 
 typedef std::shared_ptr<Manipulator> ManipulatorPtr;
 

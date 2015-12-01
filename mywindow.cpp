@@ -178,9 +178,9 @@ void MyWindow::drawTree()
     if(cfg->drawTree){
         glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
         for (int i = 0; i < endEffectorPosition.size(); ++i) {
-            Eigen::Vector3d center = endEffectorPosition.at(i);
+            Node center = endEffectorPosition.at(i);
             glPushMatrix();
-            glTranslatef(center[0], center[1], center[2]);
+            glTranslatef(center.x(), center.y(), center.z());
             glutSolidCube(0.01);
             glPopMatrix();
         }
@@ -257,7 +257,11 @@ void MyWindow::initDrawTree()
             if (pdat.getVertex(i).getTag())
                 endEffectorPositionDetached.push_back(transform.translation());
             else
-                endEffectorPosition.push_back(transform.translation());
+            {
+                Node n(transform.translation());
+                pdat.getVertex(i).;
+                endEffectorPosition.push_back(n);
+            }
         }
     }
 
@@ -334,7 +338,7 @@ void MyWindow::updateDrawTree()
             if (pdat.getVertex(i).getTag())
                 endEffectorPositionDetached.push_back(transform.translation());
             else
-                endEffectorPosition.push_back(transform.translation());
+                endEffectorPosition.push_back(Node(transform.translation()));
 
             // edges handling
             /*
