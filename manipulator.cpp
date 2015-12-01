@@ -197,6 +197,7 @@ bool Manipulator::plan()
 //==============================================================================
 void Manipulator::configurePlanner()
 {
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(cfg->maxNumberNodes);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
     ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);

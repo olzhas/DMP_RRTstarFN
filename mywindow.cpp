@@ -196,7 +196,7 @@ void MyWindow::drawTree()
         }
     }
 
-    glColor3d(boxSolColor.r, boxSolColor.g, boxSolColor.b);
+    glColor4d(boxSolColor.r, boxSolColor.g, boxSolColor.b,0.2);
     for (int i = 0; i < solutionPositions.size(); ++i) {
         Eigen::Vector3d center = solutionPositions.at(i);
         glPushMatrix();
