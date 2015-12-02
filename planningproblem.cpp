@@ -43,6 +43,8 @@ void PlanningProblem::plan(int* argcp, char** argv)
         ;//std::cout << "wait for dynamic replanning" << std::endl;
     }
 
+    resultantMotion = manipulator->getResultantMotion();
+
     std::cout << "dynamic replanning was initiated" << std::endl;
     manipulator->spawnDynamicObstacles();
     manipulator->replan();

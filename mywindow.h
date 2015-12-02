@@ -51,8 +51,28 @@ private:
     int motionStep;
     int treeState;
 
-    std::vector<Eigen::Vector3d> endEffectorPosition;
+    class Node {
+        Eigen::Vector3d position;
+    public:
+
+        Node(Eigen::Vector3d value){
+            position = value;
+        }
+
+        Node(){ dtwarn << "null constructor\n";}
+
+        double x(){ return position[0]; }
+        double y(){ return position[1]; }
+        double z(){ return position[2]; }
+
+        std::vector<unsigned int> child;
+
+        Eigen::Vector3d getPos(){return position;}
+    };
+
+    std::vector<Node> endEffectorPosition;
     std::vector<Eigen::Vector3d> endEffectorPositionDetached;
+    std::vector<Eigen::Vector3d> endEffectorPositionDynamicAdded;
     std::vector<Eigen::Vector3d> solutionPositions;
 
     std::vector<std::vector<Eigen::Vector3d> > edges;

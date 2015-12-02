@@ -27,6 +27,7 @@ public:
 private:
     ManipulatorPtr manipulator; //
     ConfigurationPtr cfg;
+    ompl::geometric::PathGeometric* resultantMotion;
 
     Frontend frontend;
 

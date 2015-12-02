@@ -1,4 +1,5 @@
 #include "manipulator.h"
+#include "manipulatormotionvalidator.h"
 
 #include "config/obstacle_config_blue.h"
 
@@ -39,6 +40,7 @@ void Manipulator::spawnObstacle(std::string path)
 // FIXME reimplement it with spawnObstacle() method
 void Manipulator::spawnStaticObstacles()
 {
+    dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
     for (int i = 0; i < cfg->numObstacle; ++i) {
 
         std::string obstaclePath(SAFESPACE_DATA);
@@ -196,6 +198,7 @@ bool Manipulator::plan()
 //==============================================================================
 void Manipulator::configurePlanner()
 {
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(cfg->maxNumberNodes);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
     ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
@@ -213,15 +216,20 @@ bool Manipulator::replan()
         return false;
     // generate a few solutions; all will be added to the goal;
     ss_->getProblemDefinition()->clearSolutionPaths();
+    og::PathGeometric& p = ss_->getSolutionPath();
 
-    int trial = 10;
+    bool* collisionMap = new bool[p.getStateCount()];
+
+    for(size_t i(0); i < p.getStateCount(); ++i){
+        collisionMap[i] = isStateValid(p.getState(i));
+
+    }
+    delete collisionMap;
+
     if (ss_->getPlanner()) {
-        for(int i=0; i<trial; ++i){
-            ss_->solve(0.1);
-            cfg->dynamicReplanning = true;
-            if(cfg->cnt > 0)
-                cfg->cnt--;
-        }
+        //ss_->getPlanner()->as<og::DRRTstarFN>()->
+        ss_->solve(0.5);
+        cfg->dynamicReplanning = true;
     }
 
     //ss_->getProblemDefinition()->clearSolutionPaths();
@@ -235,15 +243,15 @@ void Manipulator::updateObstacles()
 {
     // double avgSpeed = 0.05;// calculated from the average speed of walking, 5
     // kph
+    // FIXME introduce update for dynamic obstacles
+    //    double avgSpeed = 0.05;
+    //    Eigen::Isometry3d T;
+    //    T = myObstacle[1]->getBodyNode("box")->getTransform();
 
-    double avgSpeed = 0.05;
-    Eigen::Isometry3d T;
-    T = myObstacle[1]->getBodyNode("box")->getTransform();
+    //    T.translation()(0) -= avgSpeed;
 
-    T.translation()(0) -= avgSpeed;
-
-    myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-    myObstacle[1]->computeForwardKinematics(true, false, false);
+    //    myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
+    //    myObstacle[1]->computeForwardKinematics(true, false, false);
 }
 
 //==============================================================================
@@ -327,42 +335,7 @@ void Manipulator::load(const char* filename)
     //ss_->getPlanner()->as<og::DRRTstarFN>()
 }
 
-//==============================================================================
-bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::State* s2) const
-{
-    ob::State* s3;
-    if (si_->isValid(s1) == false || si_->isValid(s2) == false) {
-        //OMPL_WARN("Hey, the initial or final state is invalid");
-        return false;
-    }
-#define INTERP_STEP 0.05
-    for (double step = INTERP_STEP; step < 1.0; step += INTERP_STEP) {
-        stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, step, s3);
-        if (si_->isValid(s3) == false) {
-            //OMPL_WARN("Hey intermediate state is invalid");
-            return false;
-        }
-    }
 
-    return true;
-}
-
-//==============================================================================
-// TODO implement motion validator
-bool ManipulatorMotionValidator::checkMotion(const ob::State* s1,
-                                             const ob::State* s2,
-                                             std::pair<ob::State*, double>& lastValid) const
-{
-    OMPL_ERROR("call of the method");
-    return false;
-}
-
-void ManipulatorMotionValidator::defaultSettings()
-{
-    stateSpace_ = si_->getStateSpace();
-    if (!stateSpace_)
-        throw ompl::Exception("No state space for motion validator");
-}
 
 //==============================================================================
 void Manipulator::printEdge(std::ostream& os, const ob::StateSpacePtr& space,
@@ -448,7 +421,9 @@ og::PathGeometric* Manipulator::getResultantMotion()
     }
 
     og::PathGeometric& p = ss_->getSolutionPath();
-    p.interpolate(cfg->pathNodes);
+    if(cfg->interpolate){
+        p.interpolate(cfg->pathNodes);
+    }
     return &p;
 }
 //==============================================================================
@@ -460,7 +435,7 @@ void Manipulator::spawnDynamicObstacles()
                        { 0, 0, 0.7},
                        { 0, 0, 0}};
 
-    double pos[][3] = {{  0.850,  -0.423, 1.044},
+    double pos[][3] = {{  0.850,  -0.423, 0.744},
                        {  10.192,  0.701, 0.940},
                        {  10.916, -0.517, 1.230},
                        {  10.768, -0.282, 1.623},
@@ -473,10 +448,9 @@ void Manipulator::spawnDynamicObstacles()
     Eigen::Isometry3d T;
     Eigen::Matrix3d m;
 
-    m = Eigen::AngleAxisd(rpy[0][0],
-            Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(rpy[0][1],
-            Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(rpy[0][2],
-            Eigen::Vector3d::UnitZ());
+    m  = Eigen::AngleAxisd(rpy[0][0], Eigen::Vector3d::UnitX())
+            * Eigen::AngleAxisd(rpy[0][1], Eigen::Vector3d::UnitY())
+            * Eigen::AngleAxisd(rpy[0][2], Eigen::Vector3d::UnitZ());
 
     T = Eigen::Translation3d(pos[0][0], pos[0][1], pos[0][2]);
 

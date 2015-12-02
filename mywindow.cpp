@@ -1,6 +1,7 @@
 #include "mywindow.h"
 
 #include <fstream>
+#include <ompl/geometric/planners/rrt/DRRTstarFN.h>
 
 namespace dd = dart::dynamics;
 namespace du = dart::utils;
@@ -167,6 +168,7 @@ void MyWindow::drawTree()
     //dart::gui::SimpleRGB boxColor(215.0/255.0, 225.0/255.0,43.0/255.0);
     dart::gui::SimpleRGB boxDetachedColor(5.0/255.0, 55.0/255.0, 255.0/255.0);
     dart::gui::SimpleRGB boxSolColor(10.0/255.0, 200.0/255.0, 200.0/255.0);
+    dart::gui::SimpleRGB boxDAColor(190.0/255.0, 20.0/255.0, 20.0/255.0);
 
     GLUquadricObj *c;
     c = gluNewQuadric();
@@ -174,17 +176,27 @@ void MyWindow::drawTree()
     gluQuadricNormals(c, GLU_SMOOTH);
     //glPushMatrix();
     if(cfg->drawTree){
-        glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
+
         for (int i = 0; i < endEffectorPosition.size(); ++i) {
-            Eigen::Vector3d center = endEffectorPosition.at(i);
+            glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
+            Node center = endEffectorPosition.at(i);
             glPushMatrix();
-            glTranslatef(center[0], center[1], center[2]);
+            glTranslatef(center.x(), center.y(), center.z());
             glutSolidCube(0.01);
             glPopMatrix();
+            if(cfg->drawTreeEdges){
+                std::vector<unsigned int> childList = endEffectorPosition.at(i).child;
+                for(auto it = childList.begin(); it != childList.end(); ++it){
+                    if(*it >= i){
+                        dart::gui::drawLine3D(endEffectorPosition.at(i).getPos(),
+                                              endEffectorPosition.at(*it).getPos());
+                    }
+                }
+            }
         }
     }
 
-    glColor3d(boxSolColor.r, boxSolColor.g, boxSolColor.b);
+    glColor4d(boxSolColor.r, boxSolColor.g, boxSolColor.b,0.2);
     for (int i = 0; i < solutionPositions.size(); ++i) {
         Eigen::Vector3d center = solutionPositions.at(i);
         glPushMatrix();
@@ -192,6 +204,7 @@ void MyWindow::drawTree()
         glutSolidCube(0.015);
         glPopMatrix();
     }
+
 
     glColor3d(boxDetachedColor.r, boxDetachedColor.g, boxDetachedColor.b);
     for (int i = 0; i < endEffectorPositionDetached.size(); ++i) {
@@ -201,6 +214,16 @@ void MyWindow::drawTree()
         glutSolidCube(0.0125);
         glPopMatrix();
     }
+
+    glColor3d(boxDAColor.r, boxDAColor.g, boxDAColor.b);
+    for (int i = 0; i < endEffectorPositionDynamicAdded.size(); ++i) {
+        Eigen::Vector3d center = endEffectorPositionDynamicAdded.at(i);
+        glPushMatrix();
+        glTranslatef(center[0], center[1], center[2]);
+        glutSolidCube(0.0125);
+        glPopMatrix();
+    }
+
     gluDeleteQuadric(c);
 
     /*
@@ -245,11 +268,16 @@ void MyWindow::initDrawTree()
             if (pdat.getVertex(i).getTag())
                 endEffectorPositionDetached.push_back(transform.translation());
             else
-                endEffectorPosition.push_back(transform.translation());
+            {
+                Node n(transform.translation());
+                pdat.getEdges(i, n.child);
+                endEffectorPosition.push_back(n);
+            }
         }
     }
 
     //std::cout<<motion_ ->getStateCount() << std::endl;
+
     if (motion_ != NULL) {
         for (int j(0); j < motion_->getStateCount(); j++) {
             double* jointSpace
@@ -267,6 +295,7 @@ void MyWindow::initDrawTree()
     }
 
     // Print the edges to file
+    /*
     std::vector<unsigned int> edge_list;
     for (unsigned int i(0); i < pdat.numVertices(); ++i) {
         unsigned int n_edge = pdat.getEdges(i, edge_list);
@@ -279,6 +308,7 @@ void MyWindow::initDrawTree()
             //printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(edge_list[i2]));
         }
     }
+    */
 }
 //==============================================================================
 
@@ -286,7 +316,7 @@ void MyWindow::updateDrawTree()
 {
 
     if (!ss_ || !ss_->haveSolutionPath()) {
-        std::cerr << "updateDrawTree: No solution =(" << std::endl;
+        //std::cerr << "updateDrawTree: No solution =(" << std::endl;
         // return;
     }
 
@@ -319,9 +349,10 @@ void MyWindow::updateDrawTree()
             if (pdat.getVertex(i).getTag())
                 endEffectorPositionDetached.push_back(transform.translation());
             else
-                endEffectorPosition.push_back(transform.translation());
+                endEffectorPosition.push_back(Node(transform.translation()));
 
             // edges handling
+            /*
             unsigned int n_edge = pdat.getEdges(i, edge_list);
             for (unsigned int i2(0); i2 < n_edge; ++i2) {
                 std::vector<Eigen::Vector3d> temp;
@@ -329,9 +360,12 @@ void MyWindow::updateDrawTree()
                 temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
                 edges.push_back(temp);
             }
+            */
         }
     }
     if(cfg->dynamicReplanning && cfg->cnt == 0){
+        endEffectorPositionDynamicAdded.clear();
+        endEffectorPositionDetached.clear();
         cfg->cnt++;
         for(size_t i(0); i < pdat.numVertices(); ++i){
             std::vector<double> reals;
@@ -342,8 +376,12 @@ void MyWindow::updateDrawTree()
                     staubli->setPosition(j + 2, reals[j]);
                 staubli->computeForwardKinematics(true, false, false);
                 Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-                endEffectorPositionDetached.push_back(transform.translation());
+                if(pdat.getVertex(i).getTag() == ompl::geometric::DRRTstarFN::NodeType::ORPHANED)
+                    endEffectorPositionDetached.push_back(transform.translation());
+                if(pdat.getVertex(i).getTag() == ompl::geometric::DRRTstarFN::NodeType::NEW_DYNAMIC)
+                    endEffectorPositionDynamicAdded.push_back(transform.translation());
             }
+
         }
     }
 }
@@ -440,6 +478,9 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         break;
     case 't':
         cfg->drawTree = !cfg->drawTree;
+        break;
+    case 'e':
+        cfg->drawTreeEdges = !cfg->drawTreeEdges;
         break;
     default:
         Win3D::keyboard(_key, _x, _y);

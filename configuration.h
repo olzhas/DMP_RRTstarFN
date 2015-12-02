@@ -28,6 +28,8 @@ public:
     bool planningDone;
 
     bool drawTree;
+    bool drawTreeEdges;
+    bool interpolate;
 
     int numObstacle;
 
