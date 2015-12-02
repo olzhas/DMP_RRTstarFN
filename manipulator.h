@@ -75,17 +75,15 @@ public:
     ObstacleType obstacleStatic[5] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE }; // FIXME number of obstacles is fixed
 
     void spawnDynamicObstacles();
+
+
 private:
     bool isStateValid(const ob::State* state);
 
     std::string dumpFileNameGenerate();
     dart::simulation::WorldPtr world_;
-
     dd::SkeletonPtr staubli_;
-
     boost::mutex mutex_;
-
-    dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
 
     void configurePlanner();
 
@@ -96,8 +94,6 @@ private:
     inline void setState(ob::ScopedState<> &state, std::vector<double> &set);
 
 };
-
-
 
 typedef std::shared_ptr<Manipulator> ManipulatorPtr;
 

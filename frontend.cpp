@@ -5,24 +5,24 @@ Frontend::Frontend() { ; }
 //==============================================================================
 void Frontend::init()
 {
-    window.setWorld(manipulator->getWorld()->clone());
+    window.setWorld(pManipulator->getWorld()->clone());
 
 }
 //==============================================================================
 void Frontend::setManipulator(ManipulatorPtr robot)
 {
-    manipulator = robot;
+    pManipulator = robot;
 }
 //==============================================================================
 void Frontend::exec(int* argcp, char** argv)
 {
-    while(!manipulator->cfg->planningDone);
-    og::PathGeometric* resultantMotion = manipulator->getResultantMotion();
+    while(!pManipulator->cfg->planningDone);
+    og::PathGeometric* resultantMotion = pManipulator->getResultantMotion();
 
     window.setMotion(resultantMotion);
-    window.ss_ = manipulator->ss_;
+    window.ss_ = pManipulator->ss_;
 
-    window.cfg = manipulator->cfg;
+    window.cfg = pManipulator->cfg;
     window.initGhostManipulators();
     glutInit(argcp, argv);
     window.initDrawTree(); // FIXME bottleneck

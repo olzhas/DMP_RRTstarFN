@@ -40,6 +40,7 @@ void Manipulator::spawnObstacle(std::string path)
 // FIXME reimplement it with spawnObstacle() method
 void Manipulator::spawnStaticObstacles()
 {
+    dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
     for (int i = 0; i < cfg->numObstacle; ++i) {
 
         std::string obstaclePath(SAFESPACE_DATA);
@@ -215,7 +216,15 @@ bool Manipulator::replan()
         return false;
     // generate a few solutions; all will be added to the goal;
     ss_->getProblemDefinition()->clearSolutionPaths();
+    og::PathGeometric& p = ss_->getSolutionPath();
 
+    bool* collisionMap = new bool[p.getStateCount()];
+
+    for(size_t i(0); i < p.getStateCount(); ++i){
+        collisionMap[i] = isStateValid(p.getState(i));
+
+    }
+    delete collisionMap;
 
     if (ss_->getPlanner()) {
         //ss_->getPlanner()->as<og::DRRTstarFN>()->
@@ -234,15 +243,15 @@ void Manipulator::updateObstacles()
 {
     // double avgSpeed = 0.05;// calculated from the average speed of walking, 5
     // kph
+    // FIXME introduce update for dynamic obstacles
+    //    double avgSpeed = 0.05;
+    //    Eigen::Isometry3d T;
+    //    T = myObstacle[1]->getBodyNode("box")->getTransform();
 
-    double avgSpeed = 0.05;
-    Eigen::Isometry3d T;
-    T = myObstacle[1]->getBodyNode("box")->getTransform();
+    //    T.translation()(0) -= avgSpeed;
 
-    T.translation()(0) -= avgSpeed;
-
-    myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-    myObstacle[1]->computeForwardKinematics(true, false, false);
+    //    myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
+    //    myObstacle[1]->computeForwardKinematics(true, false, false);
 }
 
 //==============================================================================
@@ -440,8 +449,8 @@ void Manipulator::spawnDynamicObstacles()
     Eigen::Matrix3d m;
 
     m  = Eigen::AngleAxisd(rpy[0][0], Eigen::Vector3d::UnitX())
-       * Eigen::AngleAxisd(rpy[0][1], Eigen::Vector3d::UnitY())
-       * Eigen::AngleAxisd(rpy[0][2], Eigen::Vector3d::UnitZ());
+            * Eigen::AngleAxisd(rpy[0][1], Eigen::Vector3d::UnitY())
+            * Eigen::AngleAxisd(rpy[0][2], Eigen::Vector3d::UnitZ());
 
     T = Eigen::Translation3d(pos[0][0], pos[0][1], pos[0][2]);
 

@@ -1,3 +1,4 @@
+
 #ifndef FRONTEND_H_
 #define FRONTEND_H_
 
@@ -13,8 +14,10 @@ public:
 
 private:
     MyWindow window;
-    ManipulatorPtr manipulator;
-    dart::simulation::WorldPtr renderWorld;
+    ManipulatorPtr pManipulator;
+    dart::simulation::WorldPtr pRenderWorld;
 };
 
-#endif // WIDGET_H_
+typedef std::shared_ptr<Frontend> FrontendPtr;
+
+#endif // FRONTEND_H_
