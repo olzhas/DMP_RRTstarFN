@@ -12,6 +12,7 @@ void Frontend::init()
 void Frontend::setManipulator(ManipulatorPtr robot)
 {
     pManipulator = robot;
+    pManipulator->pWindow = &window;
 }
 //==============================================================================
 void Frontend::exec(int* argcp, char** argv)

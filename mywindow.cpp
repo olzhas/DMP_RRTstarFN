@@ -198,6 +198,12 @@ void MyWindow::drawTree()
 
     glColor4d(boxSolColor.r, boxSolColor.g, boxSolColor.b,0.2);
     for (int i = 0; i < solutionPositions.size(); ++i) {
+        if(cfg->pathCollisionMap != NULL){
+            if(!cfg->pathCollisionMap[i])
+                glColor4d(boxSolColor.r, boxSolColor.g, boxSolColor.b,0.2);
+            else
+                glColor4d(boxSolColor.r, boxSolColor.g*0.1, boxSolColor.b*0.1, 0.2);
+        }
         Eigen::Vector3d center = solutionPositions.at(i);
         glPushMatrix();
         glTranslatef(center[0], center[1], center[2]);

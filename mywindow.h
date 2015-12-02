@@ -45,6 +45,8 @@ public:
     og::SimpleSetupPtr ss_;
     ConfigurationPtr cfg;
 
+    dart::simulation::WorldPtr getWorld() {return mWorld;}
+
 private:
     og::PathGeometric* motion_ = NULL;
 

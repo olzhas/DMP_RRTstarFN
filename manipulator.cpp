@@ -215,16 +215,23 @@ bool Manipulator::replan()
     if (!ss_)
         return false;
     // generate a few solutions; all will be added to the goal;
-    ss_->getProblemDefinition()->clearSolutionPaths();
+    //ss_->getProblemDefinition()->clearSolutionPaths();
     og::PathGeometric& p = ss_->getSolutionPath();
 
     bool* collisionMap = new bool[p.getStateCount()];
-
+    int startPos, endPos;
     for(size_t i(0); i < p.getStateCount(); ++i){
-        collisionMap[i] = isStateValid(p.getState(i));
+        collisionMap[i] = !isStateValid(p.getState(i));
+        if(collisionMap[i] == true && collisionMap[i-1] == false){
+            startPos = i;
+        }
 
+        if(collisionMap[i] == false && collisionMap[i-1] == true){
+            endPos = i;
+        }
     }
-    delete collisionMap;
+    cfg->pathCollisionMap = collisionMap;
+
 
     if (ss_->getPlanner()) {
         //ss_->getPlanner()->as<og::DRRTstarFN>()->
@@ -460,5 +467,6 @@ void Manipulator::spawnDynamicObstacles()
     dynamicObstacle->setName(genBoxName(2)); //FIXME hardcoded value
     dynamicObstacle->getBodyNode(0)->getVisualizationShape(0)->setAlpha(0.9);
 
+    pWindow->getWorld()->addSkeleton(dynamicObstacle);
     world_->addSkeleton(dynamicObstacle);
 }

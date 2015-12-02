@@ -35,6 +35,8 @@ public:
 
     std::vector<double> dynamicObstaclePosition;
 
+    bool *pathCollisionMap;
+
     //==============================================================================
 
     Configuration();

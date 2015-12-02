@@ -5,6 +5,7 @@ Configuration::Configuration()
     defaults();
 }
 
+
 void Configuration::readFile()
 {
     // TODO think about more general way to read configs
@@ -85,4 +86,5 @@ void Configuration::defaults()
     drawTree = false;
     drawTreeEdges = false;
     interpolate = false;
+    pathCollisionMap = NULL;
 }

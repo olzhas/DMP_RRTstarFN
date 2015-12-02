@@ -27,6 +27,7 @@
 #include <fstream>
 #include <mutex>
 
+#include "mywindow.h"
 #include "configuration.h"
 #include "weightedrealvectorstatespace.h"
 
@@ -76,6 +77,7 @@ public:
 
     void spawnDynamicObstacles();
 
+    MyWindow* pWindow;
 
 private:
     bool isStateValid(const ob::State* state);
