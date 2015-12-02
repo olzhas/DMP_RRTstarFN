@@ -285,6 +285,8 @@ void MyWindow::initDrawTree()
     //std::cout<<motion_ ->getStateCount() << std::endl;
 
     if (motion_ != NULL) {
+        solutionPositions.clear();
+        solutionPositions.reserve(motion_->getStateCount());
         for (int j(0); j < motion_->getStateCount(); j++) {
             double* jointSpace
                     = (double*)motion_->getState(j)

@@ -77,7 +77,7 @@ public:
 
     void spawnDynamicObstacles();
 
-    MyWindow* pWindow;
+    std::shared_ptr<MyWindow> pWindow;
 
 private:
     bool isStateValid(const ob::State* state);

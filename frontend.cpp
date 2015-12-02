@@ -12,7 +12,7 @@ void Frontend::init()
 void Frontend::setManipulator(ManipulatorPtr robot)
 {
     pManipulator = robot;
-    pManipulator->pWindow = &window;
+    pManipulator->pWindow = std::shared_ptr<MyWindow>(&window);
 }
 //==============================================================================
 void Frontend::exec(int* argcp, char** argv)

@@ -215,13 +215,20 @@ bool Manipulator::replan()
     if (!ss_)
         return false;
     // generate a few solutions; all will be added to the goal;
-    //ss_->getProblemDefinition()->clearSolutionPaths();
+
     og::PathGeometric& p = ss_->getSolutionPath();
 
+
+
     bool* collisionMap = new bool[p.getStateCount()];
-    int startPos, endPos;
+    int startPos=-1, endPos=-1;
+
+    std::vector<ompl::base::State*> partition;
     for(size_t i(0); i < p.getStateCount(); ++i){
         collisionMap[i] = !isStateValid(p.getState(i));
+        if(startPos > 0 && endPos < 0){
+            partition.push_back(p.getState(i));
+        }
         if(collisionMap[i] == true && collisionMap[i-1] == false){
             startPos = i;
         }
@@ -229,14 +236,38 @@ bool Manipulator::replan()
         if(collisionMap[i] == false && collisionMap[i-1] == true){
             endPos = i;
         }
+
     }
     cfg->pathCollisionMap = collisionMap;
 
-
     if (ss_->getPlanner()) {
         //ss_->getPlanner()->as<og::DRRTstarFN>()->
-        ss_->solve(0.5);
+
+        if(startPos > 0 && endPos > 0){
+
+            ob::ScopedState<> start(ss_->getStateSpace());
+            start = p.getState(startPos);
+
+            ob::ScopedState<> goal(ss_->getStateSpace());
+            goal = p.getState(endPos);
+
+            ss_->getProblemDefinition()->clearSolutionPaths();
+            ss_->setStartAndGoalStates(start, goal);
+            configurePlanner();
+
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.5);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
+
+        }
+        ss_->solve(30);
         cfg->dynamicReplanning = true;
+        pWindow->ss_ = ss_;
+        og::PathGeometric* resultantMotion = getResultantMotion();
+
+        pWindow->setMotion(resultantMotion);
+        pWindow->initDrawTree();
+        delete cfg->pathCollisionMap;
+        cfg->pathCollisionMap = NULL;
     }
 
     //ss_->getProblemDefinition()->clearSolutionPaths();
