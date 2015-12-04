@@ -29,10 +29,12 @@ public:
     // Documentation inherited
     virtual void keyboard(unsigned char _key, int _x, int _y);
 
-    void setMotion(og::PathGeometric* motion);
+    void setMotion(og::PathGeometric& motion);
 
     void initDrawTree();
     void updateDrawTree();
+
+    void drawSolutionPath();
     void drawTree();
     void drawManipulatorState(int state);
     void initGhostManipulators();
@@ -48,7 +50,6 @@ public:
     dart::simulation::WorldPtr getWorld() {return mWorld;}
 
 private:
-    og::PathGeometric* motion_ = NULL;
 
     int motionStep;
     int treeState;
@@ -93,5 +94,8 @@ typedef struct {
     double g;
     double b;
 } SimpleRGB;
+
+
+typedef std::shared_ptr<MyWindow> MyWindowPtr;
 
 #endif // MYWINDOW_H_

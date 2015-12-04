@@ -84,6 +84,7 @@ void Manipulator::spawnStaticObstacles()
 //==============================================================================
 void Manipulator::init(ConfigurationPtr &config)
 {
+    ompl::RNG::setSeed(10);
     cfg = config;
     ds::WorldPtr myWorld(du::SkelParser::readWorld(
                              dart::common::Uri::createFromString(
@@ -215,19 +216,19 @@ bool Manipulator::replan()
     if (!ss_)
         return false;
     // generate a few solutions; all will be added to the goal;
-
+    si_ = ss_->getSpaceInformation();
     og::PathGeometric& p = ss_->getSolutionPath();
-
-
 
     bool* collisionMap = new bool[p.getStateCount()];
     int startPos=-1, endPos=-1;
 
-    std::vector<ompl::base::State*> partition;
+    std::list<ompl::base::State*> partition;
     for(size_t i(0); i < p.getStateCount(); ++i){
         collisionMap[i] = !isStateValid(p.getState(i));
         if(startPos > 0 && endPos < 0){
-            partition.push_back(p.getState(i));
+            //ompl::base::State* copy = si_->allocState();
+            //si_->copyState(copy, p.getState(i));
+            partition.push_back(si_->cloneState(p.getState(i)));
         }
         if(collisionMap[i] == true && collisionMap[i-1] == false){
             startPos = i;
@@ -243,28 +244,26 @@ bool Manipulator::replan()
     if (ss_->getPlanner()) {
         //ss_->getPlanner()->as<og::DRRTstarFN>()->
 
-        if(startPos > 0 && endPos > 0){
+        if(startPos > 0 && endPos > 0) {
 
             ob::ScopedState<> start(ss_->getStateSpace());
-            start = p.getState(startPos);
+            start = si_->cloneState(p.getState(startPos));
 
             ob::ScopedState<> goal(ss_->getStateSpace());
-            goal = p.getState(endPos);
+            goal = si_->cloneState(p.getState(endPos));
 
             ss_->getProblemDefinition()->clearSolutionPaths();
             ss_->setStartAndGoalStates(start, goal);
             configurePlanner();
 
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.5);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.99);
             ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
 
         }
         ss_->solve(30);
         cfg->dynamicReplanning = true;
         pWindow->ss_ = ss_;
-        og::PathGeometric* resultantMotion = getResultantMotion();
 
-        pWindow->setMotion(resultantMotion);
         pWindow->initDrawTree();
         delete cfg->pathCollisionMap;
         cfg->pathCollisionMap = NULL;
@@ -425,45 +424,6 @@ void Manipulator::recordSolution()
         }
     }
 }
-
-//==============================================================================
-void Manipulator::setWorld(dart::simulation::WorldPtr &world)
-{
-    world_ = world;
-}
-
-//==============================================================================
-dart::simulation::WorldPtr Manipulator::getWorld()
-{
-    return world_;
-}
-//==============================================================================
-void Manipulator::setMaxNodes(int nodeNum)
-{
-#ifdef DEBUG
-    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
-#endif
-
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(nodeNum);
-
-#ifdef DEBUG
-    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
-#endif
-}
-//==============================================================================
-og::PathGeometric* Manipulator::getResultantMotion()
-{
-    if (!ss_ || !ss_->haveSolutionPath()) {
-        OMPL_WARN("No solution");
-        return NULL;
-    }
-
-    og::PathGeometric& p = ss_->getSolutionPath();
-    if(cfg->interpolate){
-        p.interpolate(cfg->pathNodes);
-    }
-    return &p;
-}
 //==============================================================================
 void Manipulator::spawnDynamicObstacles()
 {
@@ -473,7 +433,7 @@ void Manipulator::spawnDynamicObstacles()
                        { 0, 0, 0.7},
                        { 0, 0, 0}};
 
-    double pos[][3] = {{  0.850,  -0.423, 0.744},
+    double pos[][3] = {{  0.950,  -0.423, 1.844},
                        {  10.192,  0.701, 0.940},
                        {  10.916, -0.517, 1.230},
                        {  10.768, -0.282, 1.623},
