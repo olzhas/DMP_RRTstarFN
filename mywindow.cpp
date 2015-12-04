@@ -250,6 +250,7 @@ void MyWindow::drawTree()
 //==============================================================================
 void MyWindow::initDrawTree()
 {
+    boost::lock_guard<boost::mutex> guard(treeMutex_);
     if (!ss_ || !ss_->haveSolutionPath()) {
         std::cerr << "initDrawTree: No solution =(" << std::endl;
         // return;
@@ -329,7 +330,7 @@ void MyWindow::initDrawTree()
 
 void MyWindow::updateDrawTree()
 {
-
+    boost::lock_guard<boost::mutex> guard(treeMutex_);
     if (!ss_ || !ss_->haveSolutionPath()) {
         //std::cerr << "updateDrawTree: No solution =(" << std::endl;
         // return;
