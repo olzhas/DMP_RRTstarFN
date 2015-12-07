@@ -14,6 +14,7 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/base/PlannerDataStorage.h>
 #include <ompl/base/PlannerDataGraph.h>
+#include <ompl/util/RandomNumbers.h>
 
 #include <dart/dart.h>
 
@@ -27,6 +28,7 @@
 #include <fstream>
 #include <mutex>
 
+#include "mywindow.h"
 #include "configuration.h"
 #include "weightedrealvectorstatespace.h"
 
@@ -50,12 +52,21 @@ public:
     bool replan();
     void updateObstacles();
 
-    void setMaxNodes(int nodes);
+    void setMaxNodes(int nodeNum)
+    {
+#ifdef DEBUG
+        std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
+#endif
+
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(nodeNum);
+
+#ifdef DEBUG
+        std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
+#endif
+    }
 
     void printEdge(std::ostream& os, const ob::StateSpacePtr& space, const ob::PlannerDataVertex& vertex);
     void recordSolution();
-
-    og::PathGeometric* getResultantMotion();
 
     void setStartState(const std::vector<double>& st);
     void setFinalState(const std::vector<double>& st);
@@ -65,10 +76,10 @@ public:
     void store(const char* filename);
     void load(const char* filename);
 
-    dart::simulation::WorldPtr getWorld();
-    void setWorld(dart::simulation::WorldPtr &world);
-    ConfigurationPtr cfg;
+    dart::simulation::WorldPtr getWorld() {return world_;}
+    void setWorld(dart::simulation::WorldPtr &world){ world_ = world;}
 
+    ConfigurationPtr cfg;
     enum ObstacleType { WALL,
                         HUMAN_BBOX,
                         CUBE };
@@ -76,6 +87,7 @@ public:
 
     void spawnDynamicObstacles();
 
+    MyWindowPtr pWindow;
 
 private:
     bool isStateValid(const ob::State* state);

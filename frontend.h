@@ -10,10 +10,12 @@ public:
     Frontend();
     void init();
     void exec(int* argcp, char** argv);
-    void setManipulator(ManipulatorPtr robot);
+    void setManipulator(ManipulatorPtr& robot);
+
+    void loop();
 
 private:
-    MyWindow window;
+    MyWindowPtr pWindow;
     ManipulatorPtr pManipulator;
     dart::simulation::WorldPtr pRenderWorld;
 };

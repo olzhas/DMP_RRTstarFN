@@ -13,7 +13,6 @@ int PlanningProblem::solve(int argc, char* argv[])
 {
     boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
 
-
     frontend.setManipulator(manipulator);
     frontend.init();
 
@@ -43,12 +42,11 @@ void PlanningProblem::plan(int* argcp, char** argv)
         ;//std::cout << "wait for dynamic replanning" << std::endl;
     }
 
-    resultantMotion = manipulator->getResultantMotion();
-
     std::cout << "dynamic replanning was initiated" << std::endl;
     manipulator->spawnDynamicObstacles();
     manipulator->replan();
     cfg->dynamicReplanning = true;
 
+    while(true);
     return;
 }

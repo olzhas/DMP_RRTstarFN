@@ -84,6 +84,7 @@ void Manipulator::spawnStaticObstacles()
 //==============================================================================
 void Manipulator::init(ConfigurationPtr &config)
 {
+    ompl::RNG::setSeed(10);
     cfg = config;
     ds::WorldPtr myWorld(du::SkelParser::readWorld(
                              dart::common::Uri::createFromString(
@@ -215,21 +216,84 @@ bool Manipulator::replan()
     if (!ss_)
         return false;
     // generate a few solutions; all will be added to the goal;
-    ss_->getProblemDefinition()->clearSolutionPaths();
+    si_ = ss_->getSpaceInformation();
     og::PathGeometric& p = ss_->getSolutionPath();
 
     bool* collisionMap = new bool[p.getStateCount()];
+    int startPos=-1, endPos=-1;
 
+    std::list<ompl::base::State*> partition;
     for(size_t i(0); i < p.getStateCount(); ++i){
-        collisionMap[i] = isStateValid(p.getState(i));
+        collisionMap[i] = !isStateValid(p.getState(i));
+        if(startPos > 0 && endPos < 0){
+            //ompl::base::State* copy = si_->allocState();
+            //si_->copyState(copy, p.getState(i));
+            partition.push_back(si_->cloneState(p.getState(i)));
+        }
+        if(collisionMap[i] == true && collisionMap[i-1] == false){
+            startPos = i-1;
+        }
+
+        if(collisionMap[i] == false && collisionMap[i-1] == true){
+            endPos = i+1;
+        }
 
     }
-    delete collisionMap;
+    cfg->pathCollisionMap = collisionMap;
 
     if (ss_->getPlanner()) {
         //ss_->getPlanner()->as<og::DRRTstarFN>()->
-        ss_->solve(0.5);
+        int removed;
+        if(startPos > 0 && endPos > 0) {
+
+            ob::ScopedState<> start(ss_->getStateSpace());
+            start = si_->cloneState(p.getState(startPos));
+
+            ob::ScopedState<> goal(ss_->getStateSpace());
+            goal = si_->cloneState(p.getState(endPos));
+
+            ob::State* interimState = si_->allocState();
+            //ob::State* startState = &state;
+            //ob::State* goa
+            ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
+                    interpolate(p.getState(startPos), p.getState(endPos),
+                                0.5, interimState);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setInterimState(interimState);
+            double radius = ss_->getStateSpace()->
+                    as<ob::RealVectorStateSpace>()->
+                    distance(p.getState(startPos), p.getState(endPos));
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
+
+            ss_->getProblemDefinition()->clearSolutionPaths();
+            ss_->setStartAndGoalStates(start, goal);
+            configurePlanner();
+
+            removed =
+                    ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
+
+        }
+        ss_->solve(30);
         cfg->dynamicReplanning = true;
+
+
+        ob::ScopedState<> start(ss_->getStateSpace());
+        for (std::size_t i(0); i < cfg->startState.size(); ++i) {
+            start[i] = cfg->startState[i];
+        }
+
+        ob::ScopedState<> goal(ss_->getStateSpace());
+        for (std::size_t i(0); i < cfg->goalState.size(); ++i) {
+            goal[i] = cfg->goalState[i];
+        }
+        ss_->setStartAndGoalStates(start, goal);
+        pWindow->ss_ = ss_;
+
+        pWindow->initDrawTree();
+        delete cfg->pathCollisionMap;
+        cfg->pathCollisionMap = NULL;
     }
 
     //ss_->getProblemDefinition()->clearSolutionPaths();
@@ -387,45 +451,6 @@ void Manipulator::recordSolution()
         }
     }
 }
-
-//==============================================================================
-void Manipulator::setWorld(dart::simulation::WorldPtr &world)
-{
-    world_ = world;
-}
-
-//==============================================================================
-dart::simulation::WorldPtr Manipulator::getWorld()
-{
-    return world_;
-}
-//==============================================================================
-void Manipulator::setMaxNodes(int nodeNum)
-{
-#ifdef DEBUG
-    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
-#endif
-
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(nodeNum);
-
-#ifdef DEBUG
-    std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
-#endif
-}
-//==============================================================================
-og::PathGeometric* Manipulator::getResultantMotion()
-{
-    if (!ss_ || !ss_->haveSolutionPath()) {
-        OMPL_WARN("No solution");
-        return NULL;
-    }
-
-    og::PathGeometric& p = ss_->getSolutionPath();
-    if(cfg->interpolate){
-        p.interpolate(cfg->pathNodes);
-    }
-    return &p;
-}
 //==============================================================================
 void Manipulator::spawnDynamicObstacles()
 {
@@ -435,7 +460,7 @@ void Manipulator::spawnDynamicObstacles()
                        { 0, 0, 0.7},
                        { 0, 0, 0}};
 
-    double pos[][3] = {{  0.850,  -0.423, 0.744},
+    double pos[][3] = {{  0.950,  -0.423, 1.844},
                        {  10.192,  0.701, 0.940},
                        {  10.916, -0.517, 1.230},
                        {  10.768, -0.282, 1.623},
@@ -460,5 +485,6 @@ void Manipulator::spawnDynamicObstacles()
     dynamicObstacle->setName(genBoxName(2)); //FIXME hardcoded value
     dynamicObstacle->getBodyNode(0)->getVisualizationShape(0)->setAlpha(0.9);
 
+    pWindow->getWorld()->addSkeleton(dynamicObstacle);
     world_->addSkeleton(dynamicObstacle);
 }
