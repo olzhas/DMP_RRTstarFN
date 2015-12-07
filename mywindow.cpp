@@ -15,7 +15,7 @@ MyWindow::MyWindow()
     , treeState(0)
     , timer1("update")
     , timer2("draw")
-    , cameraReset(false)
+    , cameraReset(true)
     , prevSize(0)
 {
     mZoom = 0.3;
@@ -200,18 +200,23 @@ void MyWindow::drawTree()
     if(cfg->drawTree){
 
         for (int i = 0; i < endEffectorPosition.size(); ++i) {
-            glColor4d(boxColor.r, boxColor.g, boxColor.b, 0.2);
-            Node center = endEffectorPosition.at(i);
-            glPushMatrix();
-            glTranslatef(center.x(), center.y(), center.z());
-            glutSolidCube(0.01);
-            glPopMatrix();
-            if(cfg->drawTreeEdges){
-                std::vector<unsigned int> childList = endEffectorPosition.at(i).child;
-                for(auto it = childList.begin(); it != childList.end(); ++it){
-                    if(*it >= i){
-                        dart::gui::drawLine3D(endEffectorPosition.at(i).getPos(),
-                                              endEffectorPosition.at(*it).getPos());
+            Node &center = endEffectorPosition.at(i);
+            if(center.freshness > 0.2){
+                glColor4d(boxColor.r, boxColor.g, boxColor.b, center.freshness);
+                if (center.freshness > 0.2){
+                    endEffectorPosition.at(i).freshness -= 0.025;
+                }
+                glPushMatrix();
+                glTranslatef(center.x(), center.y(), center.z());
+                glutSolidCube(center.freshness/10.0);
+                glPopMatrix();
+                if(cfg->drawTreeEdges){
+                    std::vector<unsigned int> childList = endEffectorPosition.at(i).child;
+                    for(auto it = childList.begin(); it != childList.end(); ++it){
+                        if(*it >= i){
+                            dart::gui::drawLine3D(endEffectorPosition.at(i).getPos(),
+                                                  endEffectorPosition.at(*it).getPos());
+                        }
                     }
                 }
             }
@@ -283,6 +288,7 @@ void MyWindow::initDrawTree()
             else
             {
                 Node n(transform.translation());
+                n.freshness = 0.2;
                 pdat.getEdges(i, n.child);
                 endEffectorPosition.push_back(n);
             }

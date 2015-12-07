@@ -231,11 +231,11 @@ bool Manipulator::replan()
             partition.push_back(si_->cloneState(p.getState(i)));
         }
         if(collisionMap[i] == true && collisionMap[i-1] == false){
-            startPos = i;
+            startPos = i-1;
         }
 
         if(collisionMap[i] == false && collisionMap[i-1] == true){
-            endPos = i;
+            endPos = i+1;
         }
 
     }
@@ -243,7 +243,7 @@ bool Manipulator::replan()
 
     if (ss_->getPlanner()) {
         //ss_->getPlanner()->as<og::DRRTstarFN>()->
-
+        int removed;
         if(startPos > 0 && endPos > 0) {
 
             ob::ScopedState<> start(ss_->getStateSpace());
@@ -252,16 +252,43 @@ bool Manipulator::replan()
             ob::ScopedState<> goal(ss_->getStateSpace());
             goal = si_->cloneState(p.getState(endPos));
 
+            ob::State* interimState = si_->allocState();
+            //ob::State* startState = &state;
+            //ob::State* goa
+            ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
+                    interpolate(p.getState(startPos), p.getState(endPos),
+                                0.5, interimState);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setInterimState(interimState);
+            double radius = ss_->getStateSpace()->
+                    as<ob::RealVectorStateSpace>()->
+                    distance(p.getState(startPos), p.getState(endPos));
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
+
             ss_->getProblemDefinition()->clearSolutionPaths();
             ss_->setStartAndGoalStates(start, goal);
             configurePlanner();
 
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.99);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
+            removed =
+                    ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
 
         }
         ss_->solve(30);
         cfg->dynamicReplanning = true;
+
+
+        ob::ScopedState<> start(ss_->getStateSpace());
+        for (std::size_t i(0); i < cfg->startState.size(); ++i) {
+            start[i] = cfg->startState[i];
+        }
+
+        ob::ScopedState<> goal(ss_->getStateSpace());
+        for (std::size_t i(0); i < cfg->goalState.size(); ++i) {
+            goal[i] = cfg->goalState[i];
+        }
+        ss_->setStartAndGoalStates(start, goal);
         pWindow->ss_ = ss_;
 
         pWindow->initDrawTree();

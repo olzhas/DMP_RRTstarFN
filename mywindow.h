@@ -54,10 +54,11 @@ private:
     int treeState;
 
     class Node {
+    private:
         Eigen::Vector3d position;
 
     public:
-        Node(Eigen::Vector3d value) { position = value; }
+        Node(Eigen::Vector3d value) : position(value), freshness(1.0) {;}
 
         Node() { dtwarn << "null constructor\n"; }
         ~Node()
@@ -71,6 +72,7 @@ private:
         double z() { return position[2]; }
 
         std::vector<unsigned int> child;
+        double freshness;
 
         Eigen::Vector3d getPos() { return position; }
     };
