@@ -208,7 +208,7 @@ void MyWindow::drawTree()
                 }
                 glPushMatrix();
                 glTranslatef(center.x(), center.y(), center.z());
-                glutSolidCube(center.freshness/10.0);
+                glutSolidCube(center.freshness/20.0);
                 glPopMatrix();
                 if(cfg->drawTreeEdges){
                     std::vector<unsigned int> childList = endEffectorPosition.at(i).child;
