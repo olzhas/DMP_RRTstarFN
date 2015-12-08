@@ -37,6 +37,8 @@ public:
 
     bool *pathCollisionMap;
 
+    double randomSeed;
+
     //==============================================================================
 
     Configuration();

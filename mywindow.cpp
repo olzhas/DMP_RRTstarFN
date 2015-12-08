@@ -241,6 +241,15 @@ void MyWindow::drawTree()
         glPopMatrix();
     }
 
+    glColor3d(1.0, 0.2, 0.2);
+    for (int i = 0; i < subSolution.size(); ++i) {
+        Eigen::Vector3d center = subSolution.at(i);
+        glPushMatrix();
+        glTranslatef(center[0], center[1], center[2]);
+        glutSolidCube(0.01);
+        glPopMatrix();
+    }
+
     gluDeleteQuadric(c);
 
     /*
@@ -297,6 +306,7 @@ void MyWindow::initDrawTree()
 
     //std::cout<<motion_ ->getStateCount() << std::endl;
     og::PathGeometric& motion_ = ss_->getSolutionPath();
+
 
     if (motion_.getStateCount() > 0) {
         solutionPositions.clear();
