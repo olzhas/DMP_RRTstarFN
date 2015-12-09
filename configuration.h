@@ -36,6 +36,7 @@ public:
     std::vector<double> dynamicObstaclePosition;
 
     bool *pathCollisionMap;
+    size_t pathCollisionMapSize;
 
     double randomSeed;
 

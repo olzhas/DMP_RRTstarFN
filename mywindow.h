@@ -45,14 +45,20 @@ public:
     Eigen::Vector3d getVertex(const ob::PlannerDataVertex& vertex);
 
     og::SimpleSetupPtr ss_;
+    og::SimpleSetupPtr subSolutionSetup_;
+    og::SimpleSetupPtr ssBak_;
     ConfigurationPtr cfg;
 
     dart::simulation::WorldPtr getWorld() { return mWorld; }
 
     std::vector<Eigen::Vector3d> subSolution;
 
+    std::vector<Eigen::Vector6d> solutionStates;
+    std::vector<Eigen::Vector6d> subSolutionStates;
+
 private:
     int motionStep;
+    int subSolutionStep;
     int treeState;
 
     class Node {
@@ -85,6 +91,7 @@ private:
     std::vector<Eigen::Vector3d> solutionPositions;
 
 
+
     std::vector<std::vector<Eigen::Vector3d> > edges;
 
     dart::common::Timer timer1;
@@ -95,6 +102,8 @@ private:
     bool dynamicObstacle;
 
     boost::mutex treeMutex_;
+
+    //og::PathGeometric &a;
 };
 
 typedef struct {
