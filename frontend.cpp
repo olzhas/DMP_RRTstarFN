@@ -27,7 +27,7 @@ void Frontend::exec(int* argcp, char** argv)
     pWindow->initGhostManipulators();
     glutInit(argcp, argv);
     pWindow->initDrawTree(); // FIXME bottleneck
-    pWindow->initWindow(800, 600, "Staubli TX90XL");
+    pWindow->initWindow(1280, 800, "Staubli TX90XL");
     pWindow->refreshTimer(30);
     glutMainLoop();
 }

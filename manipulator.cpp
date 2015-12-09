@@ -243,8 +243,9 @@ bool Manipulator::replan()
     }
     cfg->pathCollisionMap = collisionMap;
 
-    ManipulatorPtr subProblem = ManipulatorPtr(new Manipulator());
-    ConfigurationPtr subConfig= ConfigurationPtr(new Configuration);
+    ConfigurationPtr subConfig(new Configuration);
+    ManipulatorPtr subProblem(new Manipulator());
+
 
     if (ss_->getPlanner()) {
         //ss_->getPlanner()->as<og::DRRTstarFN>()->
@@ -345,7 +346,7 @@ bool Manipulator::replan()
         cfg->pathCollisionMap = NULL;
     }
 
-    while(true);
+ //   while(true);
     //ss_->getProblemDefinition()->clearSolutionPaths();
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
     OMPL_INFORM("Found %d solutions", (int)ns);

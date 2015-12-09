@@ -307,6 +307,7 @@ void MyWindow::initDrawTree()
     //std::cout<<motion_ ->getStateCount() << std::endl;
     og::PathGeometric& motion_ = ss_->getSolutionPath();
 
+    motion_.interpolate(7500);
 
     if (motion_.getStateCount() > 0) {
         solutionPositions.clear();
