@@ -69,6 +69,11 @@ void Configuration::readFile()
     if(config["dynamic-obstacle-pos"]) {
 
     }
+
+    if(config["random-seed"]){
+        randomSeed = config["random-seed"].as<double>();
+    }
+
 }
 
 void Configuration::defaults()
@@ -87,4 +92,5 @@ void Configuration::defaults()
     drawTreeEdges = false;
     interpolate = false;
     pathCollisionMap = NULL;
+    randomSeed = 20;
 }

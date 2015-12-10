@@ -47,7 +47,7 @@ public:
 
     Manipulator();
 
-    virtual ~Manipulator();
+    //virtual ~Manipulator();
     bool plan();
     bool replan();
     void updateObstacles();
