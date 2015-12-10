@@ -29,12 +29,9 @@ public:
     // Documentation inherited
     virtual void keyboard(unsigned char _key, int _x, int _y);
 
-    void setMotion(og::PathGeometric& motion);
-
     void initDrawTree();
     void updateDrawTree();
 
-    void drawSolutionPath();
     void drawTree();
     void drawManipulatorState(int state);
     void initGhostManipulators();
@@ -57,6 +54,10 @@ public:
     std::vector<Eigen::Vector6d> subSolutionStates;
 
 private:
+
+    void drawSubSolutionPath();
+    void drawSolutionPath();
+
     int motionStep;
     int subSolutionStep;
     int treeState;
@@ -89,8 +90,6 @@ private:
     std::vector<Eigen::Vector3d> endEffectorPositionDetached;
     std::vector<Eigen::Vector3d> endEffectorPositionDynamicAdded;
     std::vector<Eigen::Vector3d> solutionPositions;
-
-
 
     std::vector<std::vector<Eigen::Vector3d> > edges;
 

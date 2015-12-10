@@ -1,14 +1,15 @@
 #include "frontend.h"
 
 //==============================================================================
-Frontend::Frontend():pWindow(new MyWindow) {
-
-    ; }
+Frontend::Frontend() :
+    pWindow(new MyWindow)
+{
+    ;
+}
 //==============================================================================
 void Frontend::init()
 {
     pWindow->setWorld(pManipulator->getWorld()->clone());
-
 }
 //==============================================================================
 void Frontend::setManipulator(ManipulatorPtr& robot)

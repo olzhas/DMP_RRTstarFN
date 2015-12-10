@@ -40,6 +40,8 @@ public:
 
     double randomSeed;
 
+    double motionCheckAccuracy;
+
     //==============================================================================
 
     Configuration();

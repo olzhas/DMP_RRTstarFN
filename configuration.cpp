@@ -93,4 +93,6 @@ void Configuration::defaults()
     interpolate = false;
     pathCollisionMap = NULL;
     randomSeed = 20;
+
+    motionCheckAccuracy = 0.05;
 }

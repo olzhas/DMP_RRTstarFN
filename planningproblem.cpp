@@ -1,11 +1,11 @@
 #include "planningproblem.h"
 
 //==============================================================================
-PlanningProblem::PlanningProblem()
+PlanningProblem::PlanningProblem():
+    cfg(new Configuration),
+    manipulator(new Manipulator)
 {
-    cfg = ConfigurationPtr(new Configuration);
     cfg->readFile();
-    manipulator = ManipulatorPtr(new Manipulator());
     manipulator->init(cfg);
 }
 //==============================================================================

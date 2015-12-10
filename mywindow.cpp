@@ -96,7 +96,9 @@ void MyWindow::timeStepping()
 
         if (motionStep < solutionStates.size() + subSolutionStates.size()) {
 
-            if (!cfg->pathCollisionMap[motionStep]) {
+            if (cfg->pathCollisionMap != NULL ||
+                    !cfg->pathCollisionMap[motionStep])
+            {
                 motionStep++;
                 subFlag = false;
             } else {
@@ -172,6 +174,7 @@ void MyWindow::drawSkels()
     //timer2.print();
     //timer2.stop();
     drawSolutionPath();
+    drawSubSolutionPath();
 }
 //==============================================================================
 void MyWindow::drawSolutionPath()
@@ -199,6 +202,25 @@ void MyWindow::drawSolutionPath()
         glutSolidCube(0.015);
         glPopMatrix();
     }
+    gluDeleteQuadric(c);
+}
+
+void MyWindow::drawSubSolutionPath()
+{
+    GLUquadricObj* c;
+    c = gluNewQuadric();
+    gluQuadricDrawStyle(c, GLU_FILL);
+    gluQuadricNormals(c, GLU_SMOOTH);
+
+    glColor3d(1.0, 0.2, 0.2);
+    for (int i = 0; i < subSolution.size(); ++i) {
+        Eigen::Vector3d center = subSolution.at(i);
+        glPushMatrix();
+        glTranslatef(center[0], center[1], center[2]);
+        glutSolidCube(0.01);
+        glPopMatrix();
+    }
+
     gluDeleteQuadric(c);
 }
 //==============================================================================
@@ -257,15 +279,6 @@ void MyWindow::drawTree()
         glPushMatrix();
         glTranslatef(center[0], center[1], center[2]);
         glutSolidCube(0.0125);
-        glPopMatrix();
-    }
-
-    glColor3d(1.0, 0.2, 0.2);
-    for (int i = 0; i < subSolution.size(); ++i) {
-        Eigen::Vector3d center = subSolution.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.01);
         glPopMatrix();
     }
 

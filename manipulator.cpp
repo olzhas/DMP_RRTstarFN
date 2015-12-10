@@ -207,10 +207,18 @@ void Manipulator::configurePlanner()
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
 }
 //==============================================================================
-// TODO
 std::string dumpFileNameGenerate()
 {
-
+    std::time_t now = std::time(nullptr);
+    std::string out;
+    char buffer[]="2015-12-06_01-23-40";
+    if(buffer == NULL){
+        return out; // FIXME come up with error messaging
+    }
+    if(strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", localtime(&now))){
+        out=buffer;
+    }
+    return out;
 }
 //==============================================================================
 bool Manipulator::replan()
@@ -268,6 +276,8 @@ bool Manipulator::replan()
 
             ob::ScopedState<> goal(ss_->getStateSpace());
             goal = si_->cloneState(p.getState(endPos));
+
+
             /* defining sub problem*/
 
             subConfig->readFile();
@@ -318,8 +328,7 @@ bool Manipulator::replan()
                 }
             }
 
-            //subProblem->cfg->goalBias = 0.6;
-            /*
+/*
             ob::State* interimState = si_->allocState();
 
             ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
@@ -340,7 +349,8 @@ bool Manipulator::replan()
 
             removed =
                     ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
-            */
+*/
+
         }
         /*
         ss_->solve(30);
