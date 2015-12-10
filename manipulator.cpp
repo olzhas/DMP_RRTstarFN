@@ -223,6 +223,11 @@ std::string dumpFileNameGenerate()
 //==============================================================================
 bool Manipulator::replan()
 {
+    return localReplanFromScratch();
+}
+//==============================================================================
+bool Manipulator::localReplanFromScratch()
+{
     if (!ss_)
         return false;
     // generate a few solutions; all will be added to the goal;
@@ -327,35 +332,7 @@ bool Manipulator::replan()
                     pWindow->subSolution.push_back(transform.translation());
                 }
             }
-
-/*
-            ob::State* interimState = si_->allocState();
-
-            ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
-                    interpolate(p.getState(startPos), p.getState(endPos),
-                                0.5, interimState);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setInterimState(interimState);
-            double radius = ss_->getStateSpace()->
-                    as<ob::RealVectorStateSpace>()->
-                    distance(p.getState(startPos), p.getState(endPos));
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
-
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
-
-            ss_->getProblemDefinition()->clearSolutionPaths();
-            ss_->setStartAndGoalStates(start, goal);
-            configurePlanner();
-
-            removed =
-                    ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
-*/
-
         }
-        /*
-        ss_->solve(30);
-        cfg->dynamicReplanning = true;
-        */
 
         ob::ScopedState<> start(ss_->getStateSpace());
         for (std::size_t i(0); i < cfg->startState.size(); ++i) {
@@ -381,6 +358,36 @@ bool Manipulator::replan()
 
     return ss_->haveSolutionPath();
 }
+//==============================================================================
+bool Manipulator::localReplan()
+{
+
+//    ob::State* interimState = si_->allocState();
+
+//    ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
+//            interpolate(p.getState(startPos), p.getState(endPos),
+//                        0.5, interimState);
+//    ss_->getPlanner()->as<og::DRRTstarFN>()->setInterimState(interimState);
+//    double radius = ss_->getStateSpace()->
+//            as<ob::RealVectorStateSpace>()->
+//            distance(p.getState(startPos), p.getState(endPos));
+//    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
+//    ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+
+//    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
+
+//    ss_->getProblemDefinition()->clearSolutionPaths();
+//    ss_->setStartAndGoalStates(start, goal);
+//    configurePlanner();
+
+//    removed =
+//            ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
+
+    ss_->solve(30);
+    cfg->dynamicReplanning = true;
+
+}
+
 //==============================================================================
 void Manipulator::updateObstacles()
 {

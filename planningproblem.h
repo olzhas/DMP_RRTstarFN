@@ -14,6 +14,7 @@
 #include "manipulator.h"
 #include "guimisc.h"
 #include "configuration.h"
+#include "solutionpath.h"
 
 class PlanningProblem {
 public:

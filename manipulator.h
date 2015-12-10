@@ -91,6 +91,8 @@ public:
 
 private:
     bool isStateValid(const ob::State* state);
+    bool localReplanFromScratch();
+    bool localReplan();
 
     std::string dumpFileNameGenerate();
     dart::simulation::WorldPtr world_;
