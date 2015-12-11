@@ -38,7 +38,7 @@ public:
     bool *pathCollisionMap;
     size_t pathCollisionMapSize;
 
-    double randomSeed;
+    uint32_t randomSeed;
 
     double motionCheckAccuracy;
 

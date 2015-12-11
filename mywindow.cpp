@@ -149,14 +149,14 @@ void MyWindow::drawSkels()
         Eigen::Quaterniond quat(mat);
         mTrackBall.setQuaternion(quat);
     }
-    else {
-        //dtwarn << mTrans;
 
-        Eigen::Matrix3d rotMat = mTrackBall.getRotationMatrix();
-        Eigen::Vector3d angles;
-        angles = dart::math::matrixToEulerXYZ(rotMat) / M_PI * 180.0;
-        //dtwarn << angles[0] << " " << angles[1] << " " << angles[2] << "\n";
-    }
+#ifdef DEBUG
+    dtwarn << mTrans;
+    Eigen::Matrix3d rotMat = mTrackBall.getRotationMatrix();
+    Eigen::Vector3d angles;
+    angles = dart::math::matrixToEulerXYZ(rotMat) / M_PI * 180.0;
+    dtwarn << angles[0] << " " << angles[1] << " " << angles[2] << "\n";
+#endif
 
     glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -175,6 +175,11 @@ void MyWindow::drawSkels()
     //timer2.stop();
     drawSolutionPath();
     drawSubSolutionPath();
+
+    for(auto it=drawables.begin(); it!= drawables.end(); ++it){
+        DrawableCollection* dc = *it;
+        dc->draw();
+    }
 }
 //==============================================================================
 void MyWindow::drawSolutionPath()

@@ -20,6 +20,9 @@ void Frontend::setManipulator(ManipulatorPtr& robot)
 //==============================================================================
 void Frontend::exec(int* argcp, char** argv)
 {
+
+    //dart::dynamics::SkeletonPtr pSkel(new dart::dynamics::Skeleton);
+    //pSkel->add
     while(!pManipulator->cfg->planningDone);
 
     pWindow->ss_ = pManipulator->ss_;

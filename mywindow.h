@@ -10,6 +10,7 @@
 
 #include "guimisc.h"
 #include "configuration.h"
+#include "drawable.h"
 
 namespace og = ompl::geometric;
 namespace ob = ompl::base;
@@ -53,6 +54,7 @@ public:
     std::vector<Eigen::Vector6d> solutionStates;
     std::vector<Eigen::Vector6d> subSolutionStates;
 
+    std::vector<DrawableCollection*> drawables;
 private:
 
     void drawSubSolutionPath();
@@ -103,6 +105,8 @@ private:
     boost::mutex treeMutex_;
 
     //og::PathGeometric &a;
+
+
 };
 
 typedef struct {

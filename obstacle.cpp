@@ -17,7 +17,7 @@ void Obstacle::setRollPitchYaw(const Eigen::Vector3d &angles)
 
 
 //TODO check if inline is appropriate here
-void Obstacle::setStatic()
+inline void Obstacle::setStatic()
 {
     dynamic = false;
 }
