@@ -21,6 +21,7 @@ MyWindow::MyWindow()
 {
     mZoom = 0.3;
     //mCapture = true;
+
 }
 //==============================================================================
 
@@ -170,7 +171,7 @@ void MyWindow::drawSkels()
     //timer1.stop();
 
     //timer2.start();
-    drawTree();
+
     //timer2.print();
     //timer2.stop();
     drawSolutionPath();
@@ -229,76 +230,6 @@ void MyWindow::drawSubSolutionPath()
     gluDeleteQuadric(c);
 }
 //==============================================================================
-void MyWindow::drawTree()
-{
-
-    dart::gui::SimpleRGB boxColor(255.0 / 255.0, 10.0 / 255.0, 0 / 255.0); // orange
-    //dart::gui::SimpleRGB boxColor(215.0/255.0, 225.0/255.0,43.0/255.0);
-    dart::gui::SimpleRGB boxDetachedColor(5.0 / 255.0, 55.0 / 255.0, 255.0 / 255.0);
-
-    dart::gui::SimpleRGB boxDAColor(190.0 / 255.0, 20.0 / 255.0, 20.0 / 255.0);
-
-    GLUquadricObj* c;
-    c = gluNewQuadric();
-    gluQuadricDrawStyle(c, GLU_FILL);
-    gluQuadricNormals(c, GLU_SMOOTH);
-    //glPushMatrix();
-    if (cfg->drawTree) {
-
-        for (int i = 0; i < endEffectorPosition.size(); ++i) {
-            Node& center = endEffectorPosition.at(i);
-            if (center.freshness > 0.2) {
-                glColor4d(boxColor.r, boxColor.g, boxColor.b, center.freshness);
-                if (center.freshness > 0.2) {
-                    endEffectorPosition.at(i).freshness -= 0.025;
-                }
-                glPushMatrix();
-                glTranslatef(center.x(), center.y(), center.z());
-                glutSolidCube(center.freshness / 20.0);
-                glPopMatrix();
-                if (cfg->drawTreeEdges) {
-                    std::vector<unsigned int> childList = endEffectorPosition.at(i).child;
-                    for (auto it = childList.begin(); it != childList.end(); ++it) {
-                        if (*it >= i) {
-                            dart::gui::drawLine3D(endEffectorPosition.at(i).getPos(),
-                                                  endEffectorPosition.at(*it).getPos());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    glColor3d(boxDetachedColor.r, boxDetachedColor.g, boxDetachedColor.b);
-    for (int i = 0; i < endEffectorPositionDetached.size(); ++i) {
-        Eigen::Vector3d center = endEffectorPositionDetached.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.0125);
-        glPopMatrix();
-    }
-
-    glColor3d(boxDAColor.r, boxDAColor.g, boxDAColor.b);
-    for (int i = 0; i < endEffectorPositionDynamicAdded.size(); ++i) {
-        Eigen::Vector3d center = endEffectorPositionDynamicAdded.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.0125);
-        glPopMatrix();
-    }
-
-    gluDeleteQuadric(c);
-
-    /*
-    for (int i = 0; i < edges.size(); ++i) {
-        Eigen::Vector3d start = edges[i][0];
-        Eigen::Vector3d end = edges[i][1];
-        dart::gui::drawLine3D(start, end);
-    }
-*/
-}
-
-//==============================================================================
 void MyWindow::initDrawTree()
 {
     boost::lock_guard<boost::mutex> guard(treeMutex_);
@@ -340,6 +271,33 @@ void MyWindow::initDrawTree()
         }
     }
 
+    if(pdat.numVertices() > 0){
+        DrawableCollection* dc = new DrawableCollection(pdat.numVertices());
+
+        dc->setCaption("initial");
+
+        for(int i=0; i<pdat.numVertices(); ++i){
+            Drawable* d = new Drawable;
+            std::vector<double> reals;
+            if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
+
+                ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
+
+                for (size_t j(0); j < reals.size(); ++j) {
+                    staubli->setPosition(j + 2, reals[j]);
+                }
+                staubli->computeForwardKinematics(true, false, false);
+                Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+                d->setPoint(transform.translation());
+                d->setType(Drawable::SPHERE);
+                d->setSize(0.005);
+                d->setColor(Eigen::Vector3d(0.5, 0.0, 0.5));
+                dc->add(d);
+            }
+        }
+        drawables.push_back(dc);
+    }
+
     //std::cout<<motion_ ->getStateCount() << std::endl;
     og::PathGeometric& motion_ = ss_->getSolutionPath();
 
@@ -378,6 +336,8 @@ void MyWindow::initDrawTree()
         }
     }
     */
+
+
 }
 //==============================================================================
 

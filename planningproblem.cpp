@@ -11,6 +11,7 @@ PlanningProblem::PlanningProblem():
 //==============================================================================
 int PlanningProblem::solve(int argc, char* argv[])
 {
+    //boost::thread dataUpdater(boost::bind());
     boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
 
     frontend.setManipulator(manipulator);

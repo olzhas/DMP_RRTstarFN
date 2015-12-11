@@ -32,7 +32,7 @@ void Frontend::exec(int* argcp, char** argv)
     glutInit(argcp, argv);
     pWindow->initDrawTree(); // FIXME bottleneck
     pWindow->initWindow(1280, 800, "Staubli TX90XL");
-    pWindow->refreshTimer(30);
+    pWindow->refreshTimer(10);
     glutMainLoop();
 }
 //==============================================================================

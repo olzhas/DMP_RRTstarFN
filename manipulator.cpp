@@ -207,16 +207,16 @@ void Manipulator::configurePlanner()
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
 }
 //==============================================================================
-static std::string& Manipulator::dumpFileNameGenerate()
+std::string& Manipulator::dumpFileNameGenerate()
 {
     std::time_t now = std::time(nullptr);
     std::string* out = new std::string;
     char buffer[]="2015-12-06_01-23-40";
     if(buffer == NULL){
-        return out; // FIXME come up with error messaging
+        return *out; // FIXME come up with error messaging
     }
     if(strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", localtime(&now))){
-        out=buffer;
+        out->assign(buffer);
     }
     return *out;
 }

@@ -33,7 +33,6 @@ public:
     void initDrawTree();
     void updateDrawTree();
 
-    void drawTree();
     void drawManipulatorState(int state);
     void initGhostManipulators();
     void setSkeletonCollidable(dart::dynamics::SkeletonPtr& sk, const bool& isCollidable);

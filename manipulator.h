@@ -94,7 +94,7 @@ private:
     bool localReplanFromScratch();
     bool localReplan();
 
-    static std::string& dumpFileNameGenerate();
+    std::string& dumpFileNameGenerate();
     dart::simulation::WorldPtr world_;
     dd::SkeletonPtr staubli_;
     boost::mutex mutex_;
