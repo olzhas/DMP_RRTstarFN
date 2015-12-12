@@ -54,6 +54,7 @@ public:
     std::vector<Eigen::Vector6d> subSolutionStates;
 
     std::vector<DrawableCollection*> drawables;
+    void initSolutionPath();
 private:
 
     void drawSubSolutionPath();

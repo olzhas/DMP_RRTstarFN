@@ -89,6 +89,7 @@ public:
 
     MyWindowPtr pWindow;
 
+    dd::SkeletonPtr staubli_;
 private:
     bool isStateValid(const ob::State* state);
     bool localReplanFromScratch();
@@ -96,7 +97,7 @@ private:
 
     std::string& dumpFileNameGenerate();
     dart::simulation::WorldPtr world_;
-    dd::SkeletonPtr staubli_;
+
     boost::mutex mutex_;
 
     void configurePlanner();

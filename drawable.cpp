@@ -1,13 +1,6 @@
 #include "drawable.h"
 
-Drawable::Drawable()
-    : size_(0.01)
-    , point_(0, 0, 0)
-    , color_(0.8, 0.8, 0.8)
-    , type_(BOX)
-    , visible_(true)
-{
-}
+
 
 void Drawable::draw()
 {
@@ -25,7 +18,7 @@ void Drawable::draw()
         glutSolidCube(size_);
         break;
     case SPHERE:
-        gluSphere(c, size_, 6, 6);
+        glutSolidSphere(size_, 6, 6);
         break;
     default:
         dtwarn << "DrawableType is no specified\n";

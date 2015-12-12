@@ -246,31 +246,6 @@ void MyWindow::initDrawTree()
 
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
-    endEffectorPosition.clear();
-    endEffectorPosition.reserve(pdat.numVertices());
-
-    for (unsigned int i(0); i < pdat.numVertices(); ++i) {
-        std::vector<double> reals;
-        if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
-
-            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
-
-            for (size_t j(0); j < reals.size(); ++j) {
-                staubli->setPosition(j + 2, reals[j]);
-            }
-            staubli->computeForwardKinematics(true, false, false);
-            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-            if (pdat.getVertex(i).getTag())
-                endEffectorPositionDetached.push_back(transform.translation());
-            else {
-                Node n(transform.translation());
-                n.freshness = 0.2;
-                pdat.getEdges(i, n.child);
-                endEffectorPosition.push_back(n);
-            }
-        }
-    }
-
     if(pdat.numVertices() > 0){
         DrawableCollection* dc = new DrawableCollection(pdat.numVertices());
 
@@ -288,8 +263,9 @@ void MyWindow::initDrawTree()
                 }
                 staubli->computeForwardKinematics(true, false, false);
                 Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+
                 d->setPoint(transform.translation());
-                d->setType(Drawable::SPHERE);
+                d->setType(Drawable::BOX);
                 d->setSize(0.005);
                 d->setColor(Eigen::Vector3d(0.5, 0.0, 0.5));
                 dc->add(d);
@@ -298,11 +274,7 @@ void MyWindow::initDrawTree()
         drawables.push_back(dc);
     }
 
-    //std::cout<<motion_ ->getStateCount() << std::endl;
-    og::PathGeometric& motion_ = ss_->getSolutionPath();
-
-    motion_.interpolate(5000);
-
+/*
     if (motion_.getStateCount() > 0) {
         solutionPositions.clear();
         solutionPositions.reserve(motion_.getStateCount());
@@ -320,7 +292,7 @@ void MyWindow::initDrawTree()
             solutionPositions.push_back(transform.translation());
         }
     }
-
+*/
     // Print the edges to file
     /*
     std::vector<unsigned int> edge_list;
@@ -336,8 +308,32 @@ void MyWindow::initDrawTree()
         }
     }
     */
+}
+//==============================================================================
+void MyWindow::initSolutionPath()
+{
+    /*
+    SolutionPath sp;
+    og::PathGeometric& motion_ = ss_->getSolutionPath();
 
+    motion_.interpolate(5000);
+    if (motion_.getStateCount() > 0) {
 
+        for (int j(0); j < motion_.getStateCount(); j++) {
+            double* jointSpace
+                    = (double*)motion_.getState(j)
+                    ->as<ob::RealVectorStateSpace::StateType>()
+                    ->values;
+
+            for (int i = 2; i < 8; ++i) {
+                staubli->setPosition(i, jointSpace[i - 2]);
+            }
+            staubli->computeForwardKinematics(true, false, false);
+            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+            solutionPositions.push_back(transform.translation());
+        }
+    }
+    */
 }
 //==============================================================================
 
@@ -508,7 +504,14 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         cfg->dynamicObstacle = !(cfg->dynamicObstacle);
         break;
     case 't':
-        cfg->drawTree = !cfg->drawTree;
+        std::string treeName = "initial";
+        for(auto it=drawables.begin(); it!= drawables.end(); ++it){
+            DrawableCollection dc = *it;
+
+            if(dc.getCaption() == treeName) {
+                dc.set
+            }
+        }
         break;
     case 'e':
         cfg->drawTreeEdges = !cfg->drawTreeEdges;

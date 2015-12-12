@@ -1,4 +1,5 @@
 #include "frontend.h"
+#include "solutionpath.h"
 
 //==============================================================================
 Frontend::Frontend() :
@@ -31,6 +32,13 @@ void Frontend::exec(int* argcp, char** argv)
     pWindow->initGhostManipulators();
     glutInit(argcp, argv);
     pWindow->initDrawTree(); // FIXME bottleneck
+
+    SolutionPath sp;
+    sp.set(pManipulator->ss_->getSolutionPath(),
+           pManipulator->ss_->getSpaceInformation(),
+           pManipulator->staubli_);
+    pWindow->drawables.push_back(&sp.getDrawables());
+
     pWindow->initWindow(1280, 800, "Staubli TX90XL");
     pWindow->refreshTimer(10);
     glutMainLoop();

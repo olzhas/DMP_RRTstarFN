@@ -12,20 +12,47 @@ public:
     enum DrawableType { BOX,
         SPHERE };
 
-    Drawable();
+    enum DrawableVisibility { VISIBLE = 1,
+        HIDDEN = 0 };
+
+    Drawable()
+        : size_(0.01)
+        , point_(0, 0, 0)
+        , color_(0.8, 0.8, 0.8)
+        , type_(BOX)
+        , visible_(DrawableVisibility::VISIBLE)
+    {
+    }
+
+    Drawable(Eigen::Vector3d point, Eigen::Vector3d color, double size, DrawableType type, DrawableVisibility visible)
+        : size_(size)
+        , type_(type)
+        , visible_(visible)
+    {
+        point_ = point;
+        color_ = color;
+    }
+
     void draw();
+
+    /* setters */
     void setType(DrawableType type) { type_ = type; }
     void setSize(double size) { size_ = size; }
     void setPoint(Eigen::Vector3d point) { point_ = point; }
     void setColor(Eigen::Vector3d color) { color_ = color; }
+
+    /* getters */
+    DrawableType getType() { return type_; }
+    double getSize() { return size_; }
+    Eigen::Vector3d getPoint() { return point_; }
+    Eigen::Vector3d getColor() { return color_; }
 
 private:
     Eigen::Vector3d point_;
     Eigen::Vector3d color_;
     double size_;
     DrawableType type_;
-
-    bool visible_;
+    DrawableVisibility visible_;
 };
 
 class DrawableCollection {
@@ -34,16 +61,35 @@ private:
     std::string caption_;
     uint32_t id_;
 
-    bool visible_ = true;
+    Drawable::DrawableVisibility visible_;
 
 public:
-    DrawableCollection() {;}
-    DrawableCollection(Drawable* d) { add(d); }
-    DrawableCollection(size_t size) { data_.reserve(size); }
+    DrawableCollection()
+        : visible_(Drawable::DrawableVisibility::VISIBLE)
+    {
+        caption_ = ""; // TODO use dart name server
+    }
+    DrawableCollection(Drawable* d)
+        : visible_(Drawable::DrawableVisibility::VISIBLE)
+    {
+        add(d);
+    }
+    DrawableCollection(size_t size)
+        : visible_(Drawable::DrawableVisibility::VISIBLE)
+    {
+        data_.reserve(size);
+    }
 
     void add(Drawable* d) { data_.push_back(d); }
     void draw();
 
+    /* setters */
     void setCaption(std::string caption) { caption_ = caption; }
+    void setVisibility(Drawable::DrawableVisibility visible) { visible_ = visible; }
+    void toggleVisibility() { visible_ = !visible_; }
+
+    /* getters */
+    std::string getCaption() { return caption_; }
+    Drawable::DrawableVisibility getVisibility() { return visible_; }
 };
 #endif // DRAWABLE_H

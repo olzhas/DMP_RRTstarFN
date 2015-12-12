@@ -2,6 +2,7 @@
 #include "manipulatormotionvalidator.h"
 
 #include "config/obstacle_config_blue.h"
+#include "solutionpath.h"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -110,13 +111,23 @@ void Manipulator::init(ConfigurationPtr &config)
 
     ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
 
-    // TODO make this configurable through config files
+    // first two are connection to the world and table
+    for(size_t i=0; i < staubli->getNumJoints(); ++i){
+        double lower = staubli->getJoint(i)->getPositionLowerLimit(0);
+        double upper = staubli->getJoint(i)->getPositionUpperLimit(0);
+        if(lower != upper){
+            jointSpace->addDimension(lower, upper);
+        }
+    }
+
+    /*
     jointSpace->addDimension(-M_PI, M_PI);
     jointSpace->addDimension(-130.0 / 180.0 * M_PI, 147.5 / 180.0 * M_PI);
     jointSpace->addDimension(-145.0 / 180.0 * M_PI, 145.0 / 180.0 * M_PI);
     jointSpace->addDimension(-270.0 / 180.0 * M_PI, 270.0 / 180.0 * M_PI);
     jointSpace->addDimension(-115.0 / 180.0 * M_PI, 140.0 / 180.0 * M_PI);
     jointSpace->addDimension(-270.0 / 180.0 * M_PI, 270.0 / 180.0 * M_PI);
+    */
 
     ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(jointSpace)));
     // set state validity checking for this space
@@ -196,6 +207,10 @@ bool Manipulator::plan()
 
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
     OMPL_INFORM("Found %d solutions", (int)ns);
+
+    SolutionPath sp;
+    sp.set(ss_->getSolutionPath(), si_, staubli_);
+
     return ss_->haveSolutionPath();
 }
 //==============================================================================
@@ -308,7 +323,7 @@ bool Manipulator::localReplanFromScratch()
             subProblem->plan();
 
             og::PathGeometric& subp = subProblem->ss_->getSolutionPath();
-            subp.interpolate(500);
+            subp.interpolate();
 
             if (subp.getStateCount() > 0) {
                 pWindow->subSolutionSetup_ = subProblem->ss_;
