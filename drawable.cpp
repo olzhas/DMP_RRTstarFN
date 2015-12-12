@@ -1,7 +1,5 @@
 #include "drawable.h"
 
-
-
 void Drawable::draw()
 {
     GLUquadricObj* c;
@@ -31,6 +29,9 @@ void Drawable::draw()
 
 void DrawableCollection::draw()
 {
+    if (getVisibility() == Drawable::DrawableVisibility::HIDDEN)
+        return;
+
     for (auto it = data_.begin(); it != data_.end(); ++it) {
         Drawable* d = *it;
         d->draw();

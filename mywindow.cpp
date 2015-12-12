@@ -504,12 +504,11 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         cfg->dynamicObstacle = !(cfg->dynamicObstacle);
         break;
     case 't':
-        std::string treeName = "initial";
         for(auto it=drawables.begin(); it!= drawables.end(); ++it){
-            DrawableCollection dc = *it;
-
-            if(dc.getCaption() == treeName) {
-                dc.set
+            DrawableCollection* dc = *it;
+            if(dc->getCaption() == "initial") {
+                dc->toggleVisibility();
+                break;
             }
         }
         break;

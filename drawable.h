@@ -10,10 +10,10 @@ class Drawable {
 
 public:
     enum DrawableType { BOX,
-        SPHERE };
+                        SPHERE };
 
-    enum DrawableVisibility { VISIBLE = 1,
-        HIDDEN = 0 };
+    enum DrawableVisibility : bool { VISIBLE = 1,
+                                     HIDDEN = 0 };
 
     Drawable()
         : size_(0.01)
@@ -86,7 +86,17 @@ public:
     /* setters */
     void setCaption(std::string caption) { caption_ = caption; }
     void setVisibility(Drawable::DrawableVisibility visible) { visible_ = visible; }
-    void toggleVisibility() { visible_ = !visible_; }
+    void toggleVisibility() {
+        switch(visible_) {
+        case Drawable::DrawableVisibility::VISIBLE:
+            visible_ = Drawable::DrawableVisibility::HIDDEN;
+            break;
+        case Drawable::DrawableVisibility::HIDDEN:
+            visible_ = Drawable::DrawableVisibility::VISIBLE;
+            break;
+
+        }
+    }
 
     /* getters */
     std::string getCaption() { return caption_; }
