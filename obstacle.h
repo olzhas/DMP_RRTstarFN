@@ -11,23 +11,23 @@ private:
                         HUMAN_BBOX,
                         CUBE };
 
-    Eigen::Vector3d pos;
-    Eigen::Vector3d rpy;
+    Eigen::Vector3d pos_;
+    Eigen::Vector3d rpy_;
 
-    ObstacleType type;
+    ObstacleType type_;
 
-    bool dynamic;
+    bool dynamic_;
 
 public:
     Obstacle();
 
-    void setPos(const Eigen::Vector3d &position);
-    void setRollPitchYaw(const Eigen::Vector3d &angles);
+    void setPos(const Eigen::Vector3d &pos) { pos_ = pos;}
+    void setRollPitchYaw(const Eigen::Vector3d &rpy) { rpy_ = rpy;}
 
-    void setStatic();
-    bool isStatic();
-    void setDynamic();
-    bool isDynamic();
+    void setStatic() { dynamic_ = false; }
+    bool isStatic() { return !dynamic_; }
+    void setDynamic() { dynamic_ = true; }
+    bool isDynamic() {return dynamic_; }
 
     void loadObstacleArray(std::string configFile);
 };
