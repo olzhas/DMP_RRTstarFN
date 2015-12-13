@@ -2,7 +2,7 @@
 #define DRAWABLE_H
 
 #include <vector>
-#include <dart/math/math.h>
+#include <dart/dart-core.h>
 
 #if WIN32
 #include <cstdlib> // To disable glut::exit() function
@@ -21,10 +21,10 @@ class Drawable {
 
 public:
     enum DrawableType { BOX,
-                        SPHERE };
+        SPHERE };
 
     enum DrawableVisibility : bool { VISIBLE = 1,
-                                     HIDDEN = 0 };
+        HIDDEN = 0 };
 
     Drawable()
         : size_(0.01)
@@ -94,12 +94,12 @@ public:
     void add(Drawable* d) { data_.push_back(d); }
     void draw();
 
-
     /* setters */
     void setCaption(std::string caption) { caption_ = caption; }
     void setVisibility(Drawable::DrawableVisibility visible) { visible_ = visible; }
-    void toggleVisibility() {
-        switch(visible_) {
+    void toggleVisibility()
+    {
+        switch (visible_) {
         case Drawable::DrawableVisibility::VISIBLE:
             visible_ = Drawable::DrawableVisibility::HIDDEN;
             break;
@@ -109,9 +109,27 @@ public:
         }
     }
 
-
     /* getters */
     std::string getCaption() { return caption_; }
     Drawable::DrawableVisibility getVisibility() { return visible_; }
 };
+
+namespace dart {
+namespace gui {
+    class SimpleRGB {
+    public:
+        double r;
+        double g;
+        double b;
+
+        SimpleRGB(double red, double green, double blue)
+        {
+            r = red;
+            g = green;
+            b = blue;
+        }
+    };
+}
+}
+
 #endif // DRAWABLE_H

@@ -5,7 +5,7 @@
 #include <vector>
 
 // dart includes
-#include <dart/dynamics/Skeleton.h>
+#include <dart/dart.h>
 #include <Eigen/Eigen>
 
 //OMPL includes

@@ -8,7 +8,6 @@
 
 #include <dart/dart.h>
 
-#include "guimisc.h"
 #include "configuration.h"
 #include "drawable.h"
 
