@@ -4,7 +4,11 @@ SolutionPath::SolutionPath()
 {
 }
 
-void SolutionPath::set(const og::PathGeometric& p, const ob::SpaceInformationPtr& si, const dd::SkeletonPtr& robot)
+void SolutionPath::set(const og::PathGeometric& p,
+                       const ob::SpaceInformationPtr& si,
+                       const dd::SkeletonPtr& robot,
+                       Eigen::Vector3d color,
+                       double size)
 {
     if (p.getStateCount() == 0) {
         // TODO here some error report
@@ -27,7 +31,7 @@ void SolutionPath::set(const og::PathGeometric& p, const ob::SpaceInformationPtr
         poses_.push_back(transform);
 
         Drawable* d = new Drawable(transform.translation(),
-                                   Eigen::Vector3d(0.3, 0.6, 0.9), 0.01,
+                                   color, size,
                                    Drawable::DrawableType::SPHERE,
                                    Drawable::DrawableVisibility::VISIBLE);
         dc_.add(d);

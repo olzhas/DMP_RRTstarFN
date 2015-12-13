@@ -32,7 +32,11 @@ private:
 public:
     SolutionPath();
 
-    void set(const og::PathGeometric &p, const ob::SpaceInformationPtr& si, const dd::SkeletonPtr& robot);
+    void set(const og::PathGeometric &p,
+             const ob::SpaceInformationPtr& si,
+             const dd::SkeletonPtr& robot,
+             Eigen::Vector3d color = {0.3, 0.6, 0.9},
+             double size=0.01);
 
     DrawableCollection& getDrawables() {
         return dc_;

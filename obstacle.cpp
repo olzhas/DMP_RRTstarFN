@@ -15,24 +15,22 @@ void Obstacle::setRollPitchYaw(const Eigen::Vector3d &angles)
     rpy = angles;
 }
 
-
-//TODO check if inline is appropriate here
 inline void Obstacle::setStatic()
 {
     dynamic = false;
 }
 
-bool Obstacle::isStatic()
+inline bool Obstacle::isStatic()
 {
     return !dynamic;
 }
 
-void Obstacle::setDynamic()
+inline void Obstacle::setDynamic()
 {
     dynamic = true;
 }
 
-bool Obstacle::isDynamic()
+inline bool Obstacle::isDynamic()
 {
     return dynamic;
 }
@@ -40,5 +38,4 @@ bool Obstacle::isDynamic()
 void Obstacle::loadObstacleArray(std::string configFile)
 {
     YAML::Node config = YAML::LoadFile(configFile);
-
 }
