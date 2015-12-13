@@ -8,7 +8,6 @@ Configuration::Configuration()
 
 void Configuration::readFile()
 {
-    // TODO think about more general way to read configs
     config = YAML::LoadFile("config/config.yaml");
 
     if (config["path-nodes"]) {

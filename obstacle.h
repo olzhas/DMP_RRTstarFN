@@ -2,7 +2,7 @@
 #define OBSTACLE_H
 
 #include <yaml-cpp/yaml.h>
-#include <dart/math/math.h>
+#include <dart/dart.h>
 
 class Obstacle
 {
@@ -18,8 +18,10 @@ private:
 
     bool dynamic_;
 
+    dart::simulation::WorldPtr world_;
+
 public:
-    Obstacle();
+    Obstacle() : dynamic_(false){;}
 
     void setPos(const Eigen::Vector3d &pos) { pos_ = pos;}
     void setRollPitchYaw(const Eigen::Vector3d &rpy) { rpy_ = rpy;}

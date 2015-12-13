@@ -17,7 +17,6 @@ MyWindow::MyWindow()
     , timer2("draw")
     , cameraReset(true)
     , prevSize(0)
-    , subSolutionStep(0)
 {
     mZoom = 0.3;
     //mCapture = true;
@@ -84,57 +83,6 @@ MyWindow::~MyWindow()
 void MyWindow::timeStepping()
 {
     mWorld->step();
-
-    //if
-    //og::PathGeometric& motion_ = ss_->getSolutionPath();
-    //motion_.interpolate(5000);
-
-    //if (motion_.getStateCount() > 0) {
-    bool subFlag=false;
-    if (solutionStates.size() > 0) {
-        double* jointSpace;
-        dart::dynamics::SkeletonPtr staubli = mWorld->getSkeleton("TX90XLHB");
-
-        if (motionStep < solutionStates.size() + subSolutionStates.size()) {
-
-            if (cfg->pathCollisionMap != NULL ||
-                    !cfg->pathCollisionMap[motionStep])
-            {
-                motionStep++;
-                subFlag = false;
-            } else {
-                subSolutionStep++;
-                subFlag = true;
-                if(subSolutionStates.size() == subSolutionStep)
-                {
-                    motionStep += cfg->pathCollisionMapSize+1;
-                }
-
-            }
-
-            for (int i = 2; i < 8; ++i) {
-                if(subFlag == false){
-                    staubli->setPosition(i, solutionStates[motionStep][i-2]);
-                } else {
-                    staubli->setPosition(i, subSolutionStates[subSolutionStep][i-2]);
-                }
-            }
-            staubli->computeForwardKinematics(true, false, false);
-
-            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-            Eigen::Vector3d mytest = Eigen::Vector3d(transform.translation());
-
-            // camera movement
-            /*
-            mTrans[0] = -mytest[0] * 1000.0;
-            mTrans[1] = -mytest[1] * 1000.0;
-            mTrans[2] = mytest[2] * 10.0;
-            */
-        }
-        else {
-            mSimulating = false;
-        }
-    }
 }
 
 //==============================================================================
@@ -174,60 +122,11 @@ void MyWindow::drawSkels()
 
     //timer2.print();
     //timer2.stop();
-    drawSolutionPath();
-    drawSubSolutionPath();
 
     for(auto it=drawables.begin(); it!= drawables.end(); ++it){
         DrawableCollection* dc = *it;
         dc->draw();
     }
-}
-//==============================================================================
-void MyWindow::drawSolutionPath()
-{
-    dart::gui::SimpleRGB boxSolColor(10.0 / 255.0, 200.0 / 255.0, 200.0 / 255.0);
-
-    GLUquadricObj* c;
-    c = gluNewQuadric();
-    gluQuadricDrawStyle(c, GLU_FILL);
-    gluQuadricNormals(c, GLU_SMOOTH);
-
-    glColor4d(boxSolColor.r, boxSolColor.g, boxSolColor.b, 0.2);
-    for (int i = 0; i < solutionPositions.size(); ++i) {
-        if (cfg->pathCollisionMap != NULL) {
-            if (!cfg->pathCollisionMap[i])
-                glColor4d(boxSolColor.r, boxSolColor.g, boxSolColor.b, 0.2);
-            else if (subSolution.size() == 0)
-                glColor4d(boxSolColor.r * 10, boxSolColor.g * 0.1, boxSolColor.b * 0.1, 0.2);
-            else
-                continue;
-        }
-        Eigen::Vector3d center = solutionPositions.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.015);
-        glPopMatrix();
-    }
-    gluDeleteQuadric(c);
-}
-
-void MyWindow::drawSubSolutionPath()
-{
-    GLUquadricObj* c;
-    c = gluNewQuadric();
-    gluQuadricDrawStyle(c, GLU_FILL);
-    gluQuadricNormals(c, GLU_SMOOTH);
-
-    glColor3d(1.0, 0.2, 0.2);
-    for (int i = 0; i < subSolution.size(); ++i) {
-        Eigen::Vector3d center = subSolution.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.01);
-        glPopMatrix();
-    }
-
-    gluDeleteQuadric(c);
 }
 //==============================================================================
 void MyWindow::initDrawTree()
@@ -274,25 +173,6 @@ void MyWindow::initDrawTree()
         drawables.push_back(dc);
     }
 
-/*
-    if (motion_.getStateCount() > 0) {
-        solutionPositions.clear();
-        solutionPositions.reserve(motion_.getStateCount());
-        for (int j(0); j < motion_.getStateCount(); j++) {
-            double* jointSpace
-                    = (double*)motion_.getState(j)
-                    ->as<ob::RealVectorStateSpace::StateType>()
-                    ->values;
-
-            for (int i = 2; i < 8; ++i) {
-                staubli->setPosition(i, jointSpace[i - 2]);
-            }
-            staubli->computeForwardKinematics(true, false, false);
-            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-            solutionPositions.push_back(transform.translation());
-        }
-    }
-*/
     // Print the edges to file
     /*
     std::vector<unsigned int> edge_list;
@@ -353,64 +233,6 @@ void MyWindow::updateDrawTree()
 
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
-    //endEffectorPosition.clear();
-    prevSize = endEffectorPosition.size();
-    endEffectorPosition.reserve(pdat.numVertices());
-
-    std::vector<unsigned int> edge_list;
-    edges.reserve(pdat.numVertices());
-    //std::cout << "vertices: " << pdat.numVertices() << std::endl;
-
-    for (unsigned int i(prevSize); i < pdat.numVertices(); ++i) {
-        std::vector<double> reals;
-        if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
-            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
-
-            for (size_t j(0); j < reals.size(); ++j)
-                staubli->setPosition(j + 2, reals[j]);
-
-            staubli->computeForwardKinematics(true, false, false);
-            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-            if (pdat.getVertex(i).getTag())
-                endEffectorPositionDetached.push_back(transform.translation());
-            else {
-                Node n(transform.translation());
-                pdat.getEdges(i, n.child);
-                endEffectorPosition.push_back(n);
-            }
-
-            // edges handling
-            /*
-            unsigned int n_edge = pdat.getEdges(i, edge_list);
-            for (unsigned int i2(0); i2 < n_edge; ++i2) {
-                std::vector<Eigen::Vector3d> temp;
-                temp.push_back(getVertex(pdat.getVertex(i)));
-                temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
-                edges.push_back(temp);
-            }
-            */
-        }
-    }
-    if (cfg->dynamicReplanning && cfg->cnt == 0) {
-        endEffectorPositionDynamicAdded.clear();
-        endEffectorPositionDetached.clear();
-        cfg->cnt++;
-        for (size_t i(0); i < pdat.numVertices(); ++i) {
-            std::vector<double> reals;
-            if (pdat.getVertex(i).getTag()) {
-                ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
-
-                for (size_t j(0); j < reals.size(); ++j)
-                    staubli->setPosition(j + 2, reals[j]);
-                staubli->computeForwardKinematics(true, false, false);
-                Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-                if (pdat.getVertex(i).getTag() == ompl::geometric::DRRTstarFN::NodeType::ORPHANED)
-                    endEffectorPositionDetached.push_back(transform.translation());
-                if (pdat.getVertex(i).getTag() == ompl::geometric::DRRTstarFN::NodeType::NEW_DYNAMIC)
-                    endEffectorPositionDynamicAdded.push_back(transform.translation());
-            }
-        }
-    }
 }
 //==============================================================================
 Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex& vertex)

@@ -6,6 +6,9 @@ PlanningProblem::PlanningProblem():
     manipulator(new Manipulator)
 {
     cfg->readFile();
+
+    ompl::RNG::setSeed(cfg->randomSeed);
+
     manipulator->init(cfg);
 }
 //==============================================================================

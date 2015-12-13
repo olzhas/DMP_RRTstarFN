@@ -11,7 +11,7 @@ void SolutionPath::set(const og::PathGeometric& p,
                        double size)
 {
     if (p.getStateCount() == 0) {
-        // TODO here some error report
+        dtwarn << "No solution found";
         return;
     }
 

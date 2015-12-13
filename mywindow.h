@@ -47,47 +47,13 @@ public:
 
     dart::simulation::WorldPtr getWorld() { return mWorld; }
 
-    std::vector<Eigen::Vector3d> subSolution;
-
-    std::vector<Eigen::Vector6d> solutionStates;
-    std::vector<Eigen::Vector6d> subSolutionStates;
-
     std::vector<DrawableCollection*> drawables;
     void initSolutionPath();
 private:
 
-    void drawSubSolutionPath();
-    void drawSolutionPath();
-
     int motionStep;
-    int subSolutionStep;
     int treeState;
 
-    class Node {
-    private:
-        Eigen::Vector3d position;
-
-    public:
-        Node(Eigen::Vector3d value) : position(value), freshness(1.0) {;}
-
-        Node() { dtwarn << "null constructor\n"; }
-        ~Node()
-        {
-            //dtwarn << "destructor call\n";
-            child.clear();
-        }
-
-        double x() { return position[0]; }
-        double y() { return position[1]; }
-        double z() { return position[2]; }
-
-        std::vector<unsigned int> child;
-        double freshness;
-
-        Eigen::Vector3d getPos() { return position; }
-    };
-
-    std::vector<Node> endEffectorPosition;
     std::vector<Eigen::Vector3d> endEffectorPositionDetached;
     std::vector<Eigen::Vector3d> endEffectorPositionDynamicAdded;
     std::vector<Eigen::Vector3d> solutionPositions;
@@ -107,12 +73,6 @@ private:
 
 
 };
-
-typedef struct {
-    double r;
-    double g;
-    double b;
-} SimpleRGB;
 
 typedef std::shared_ptr<MyWindow> MyWindowPtr;
 

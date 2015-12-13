@@ -15,12 +15,14 @@ public:
         : MotionValidator(si),
           cfg(new Configuration)
     {
-        cfg->readFile();
+        cfg->readFile(); // FIXME terrible hack
         defaultSettings();
     }
     ManipulatorMotionValidator(const ob::SpaceInformationPtr& si)
-        : MotionValidator(si)
+        : MotionValidator(si),
+          cfg(new Configuration)
     {
+        cfg->readFile(); // FIXME terrible hack
         defaultSettings();
     }
     virtual ~ManipulatorMotionValidator()
