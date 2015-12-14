@@ -20,27 +20,36 @@ namespace ob = ompl::base;
 namespace og = ompl::geometric;
 namespace dd = dart::dynamics;
 
-class SolutionPath
-{
+class SolutionPath {
 private:
     DrawableCollection dc_;
     std::vector<ob::State*> states_;
     std::vector<Eigen::Isometry3d> poses_;
 
     ob::SpaceInformationPtr si_;
+    std::string caption_;
+
+    size_t step = 0;
 
 public:
-    SolutionPath();
+    SolutionPath() : caption_("") { ;}
+    SolutionPath(std::string caption): caption_(caption) {; }
 
-    void set(const og::PathGeometric &p,
-             const ob::SpaceInformationPtr& si,
-             const dd::SkeletonPtr& robot,
-             Eigen::Vector3d color = {0.3, 0.6, 0.9},
-             double size=0.01);
+    // setters
 
-    DrawableCollection& getDrawables() {
-        return dc_;
-    }
+    void set(const og::PathGeometric& p,
+        const ob::SpaceInformationPtr& si,
+        const dd::SkeletonPtr& robot,
+        const Eigen::Vector3d& color = { 0.3, 0.6, 0.9 },
+        const double& size = 0.01);
+
+    void setCaption(const std::string& caption) { caption_ = caption; }
+
+    // getters
+    DrawableCollection& getDrawables() { return dc_; }
+    std::string& getCaption() { return caption_; }
+
+    std::vector<double>& getNextState();
 };
 
 #endif // SOLUTIONPATH_H

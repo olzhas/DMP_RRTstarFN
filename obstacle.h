@@ -4,6 +4,8 @@
 #include <yaml-cpp/yaml.h>
 #include <dart/dart.h>
 
+#define OBSTACLE_PATH "/home/olzhas/devel/staubli_dart/data/obstacles/config.yaml"
+
 class Obstacle
 {
 private:
@@ -31,7 +33,7 @@ public:
     void setDynamic() { dynamic_ = true; }
     bool isDynamic() {return dynamic_; }
 
-    void loadObstacleArray(std::string configFile);
+    void loadObstacleArray(std::string configFile=OBSTACLE_PATH);
 };
 
 #endif // OBSTACLE_H

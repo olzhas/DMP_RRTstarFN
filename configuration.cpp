@@ -5,7 +5,6 @@ Configuration::Configuration()
     defaults();
 }
 
-
 void Configuration::readFile()
 {
     config = YAML::LoadFile("config/config.yaml");

@@ -9,6 +9,7 @@
 #include <dart/dart.h>
 
 #include "configuration.h"
+#include "solutionpath.h"
 #include "drawable.h"
 
 namespace og = ompl::geometric;
@@ -46,9 +47,13 @@ public:
     ConfigurationPtr cfg;
 
     dart::simulation::WorldPtr getWorld() { return mWorld; }
+    void initSolutionPath();
 
     std::vector<DrawableCollection*> drawables;
-    void initSolutionPath();
+
+    // solutionPaths[0] is active solution
+    std::vector<SolutionPath*> solutionPaths;
+
 private:
 
     int motionStep;
@@ -68,10 +73,6 @@ private:
     bool dynamicObstacle;
 
     boost::mutex treeMutex_;
-
-    //og::PathGeometric &a;
-
-
 };
 
 typedef std::shared_ptr<MyWindow> MyWindowPtr;

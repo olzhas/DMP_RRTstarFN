@@ -42,11 +42,13 @@ void Frontend::exec(int* argcp, char** argv)
            Eigen::Vector3d(0.9, 0.6, 0.3), 0.025);
     pWindow->drawables.push_back(&sp.getDrawables());
 */
-    p.interpolate(9000);
-    SolutionPath spInterp;
+    p.interpolate(2000);
+    SolutionPath spInterp("main");
+
     spInterp.set(p, pManipulator->ss_->getSpaceInformation(),
                  pManipulator->staubli_);
     pWindow->drawables.push_back(&spInterp.getDrawables());
+    pWindow->solutionPaths.push_back(&spInterp);
 
     pWindow->initWindow(1280, 800, "Staubli TX90XL");
     pWindow->refreshTimer(10);

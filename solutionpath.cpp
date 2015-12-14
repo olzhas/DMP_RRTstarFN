@@ -1,15 +1,12 @@
 #include "solutionpath.h"
 
-SolutionPath::SolutionPath()
-{
-}
-
 void SolutionPath::set(const og::PathGeometric& p,
                        const ob::SpaceInformationPtr& si,
                        const dd::SkeletonPtr& robot,
-                       Eigen::Vector3d color,
-                       double size)
+                       const Eigen::Vector3d& color,
+                       const double& size)
 {
+    si_ = si;
     if (p.getStateCount() == 0) {
         dtwarn << "No solution found";
         return;
@@ -36,4 +33,20 @@ void SolutionPath::set(const og::PathGeometric& p,
                                    Drawable::DrawableVisibility::VISIBLE);
         dc_.add(d);
     }
+}
+
+std::vector<double>& SolutionPath::getNextState()
+{
+    std::vector<double>* r = new std::vector<double>;
+    if(si_ == NULL || step >= states_.size()){
+        return *r;
+    }
+
+    ob::State* s = states_[step];
+    double* jointSpace = (double*)s->as<ob::RealVectorStateSpace::StateType>()->values;
+    size_t dof = si_->getStateDimension();
+    r->assign(jointSpace, jointSpace + dof);
+    step++;
+
+    return *r;
 }

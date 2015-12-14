@@ -20,7 +20,6 @@ MyWindow::MyWindow()
 {
     mZoom = 0.3;
     //mCapture = true;
-
 }
 //==============================================================================
 
@@ -83,6 +82,20 @@ MyWindow::~MyWindow()
 void MyWindow::timeStepping()
 {
     mWorld->step();
+#define ROBOT_NAME "TX90XLHB"
+    SolutionPath* sp = solutionPaths[0];
+    std::vector<double>& st = sp->getNextState();
+    if (st.size() == 0) {
+        dtwarn << "No next state\n";
+        return;
+    }
+
+    dd::SkeletonPtr robot(mWorld->getSkeleton(ROBOT_NAME));
+
+    for (size_t i(0); i < st.size(); ++i) {
+        robot->setPosition(i + 2, st[i]);
+    }
+    robot->computeForwardKinematics(true, false, false);
 }
 
 //==============================================================================
@@ -93,8 +106,8 @@ void MyWindow::drawSkels()
         mTrans = Eigen::Vector3d(0, -50, -1500);
         Eigen::Matrix3d mat;
         mat = Eigen::AngleAxisd(-50.0 / 180.0 * M_PI, Eigen::Vector3d::UnitX())
-                * Eigen::AngleAxisd(4.0 / 180.0 * M_PI, Eigen::Vector3d::UnitY())
-                * Eigen::AngleAxisd(-61.0 / 180.0 * M_PI, Eigen::Vector3d::UnitZ());
+            * Eigen::AngleAxisd(4.0 / 180.0 * M_PI, Eigen::Vector3d::UnitY())
+            * Eigen::AngleAxisd(-61.0 / 180.0 * M_PI, Eigen::Vector3d::UnitZ());
         Eigen::Quaterniond quat(mat);
         mTrackBall.setQuaternion(quat);
     }
@@ -123,7 +136,7 @@ void MyWindow::drawSkels()
     //timer2.print();
     //timer2.stop();
 
-    for(auto it=drawables.begin(); it!= drawables.end(); ++it){
+    for (auto it = drawables.begin(); it != drawables.end(); ++it) {
         DrawableCollection* dc = *it;
         dc->draw();
     }
@@ -145,12 +158,12 @@ void MyWindow::initDrawTree()
 
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
-    if(pdat.numVertices() > 0){
+    if (pdat.numVertices() > 0) {
         DrawableCollection* dc = new DrawableCollection(pdat.numVertices());
 
         dc->setCaption("initial");
 
-        for(int i=0; i<pdat.numVertices(); ++i){
+        for (int i = 0; i < pdat.numVertices(); ++i) {
             Drawable* d = new Drawable;
             std::vector<double> reals;
             if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
@@ -232,7 +245,6 @@ void MyWindow::updateDrawTree()
     // Print the vertices to file
 
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
-
 }
 //==============================================================================
 Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex& vertex)
@@ -326,9 +338,9 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         cfg->dynamicObstacle = !(cfg->dynamicObstacle);
         break;
     case 't':
-        for(auto it=drawables.begin(); it!= drawables.end(); ++it){
+        for (auto it = drawables.begin(); it != drawables.end(); ++it) {
             DrawableCollection* dc = *it;
-            if(dc->getCaption() == "initial") {
+            if (dc->getCaption() == "initial") {
                 dc->toggleVisibility();
                 break;
             }
