@@ -7,6 +7,9 @@
 #include <boost/bind.hpp>
 
 #include <dart/dart.h>
+#include <ompl/geometric/SimpleSetup.h>
+#include <ompl/base/SpaceInformation.h>
+
 #include <string>
 #include <cmath>
 
@@ -21,8 +24,8 @@ public:
     void configure();
     void readFile();
     int solve(int argc, char* argv[]);
-    void setConfigFileName(std::string& filename);
     void plan(int* argcp, char** argv);
+    void treeUpdate();
 
 private:
     ManipulatorPtr manipulator; //

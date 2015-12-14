@@ -90,6 +90,11 @@ public:
     {
         data_.reserve(size);
     }
+    DrawableCollection(const std::string& caption)
+        : visible_(Drawable::DrawableVisibility::VISIBLE)
+        , caption_(caption)
+    {
+    }
 
     void add(Drawable* d) { data_.push_back(d); }
     void draw();
@@ -112,6 +117,8 @@ public:
     /* getters */
     std::string getCaption() { return caption_; }
     Drawable::DrawableVisibility getVisibility() { return visible_; }
+
+    size_t size() { return data_.size(); }
 };
 
 namespace dart {

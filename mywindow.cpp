@@ -37,7 +37,7 @@ void MyWindow::initGhostManipulators()
 
     //==========================================================================
 
-    dd::SkeletonPtr staubliFinalState(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
+    dd::SkeletonPtr staubliFinalState = staubliStartState->clone();
     staubliFinalState->setName("TX90XLHB-Final");
     for (int i = 2; i < 8; ++i) {
         staubliFinalState->setPosition(i, cfg->goalState[i - 2]);
@@ -83,6 +83,7 @@ void MyWindow::timeStepping()
 {
     mWorld->step();
 #define ROBOT_NAME "TX90XLHB"
+    // solutionPaths[0] is the active solution
     SolutionPath* sp = solutionPaths[0];
     std::vector<double>& st = sp->getNextState();
     if (st.size() == 0) {
@@ -286,6 +287,9 @@ void MyWindow::drawManipulatorState(int state)
     staubli->computeForwardKinematics(true, false, false);
 }
 //==============================================================================
+
+#define TREE_NAME "tree"
+
 void MyWindow::keyboard(unsigned char _key, int _x, int _y)
 {
     switch (_key) {
@@ -340,7 +344,7 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
     case 't':
         for (auto it = drawables.begin(); it != drawables.end(); ++it) {
             DrawableCollection* dc = *it;
-            if (dc->getCaption() == "initial") {
+            if (dc->getCaption() == TREE_NAME) {
                 dc->toggleVisibility();
                 break;
             }
