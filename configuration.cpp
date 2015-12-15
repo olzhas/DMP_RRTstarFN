@@ -5,10 +5,8 @@ Configuration::Configuration()
     defaults();
 }
 
-
 void Configuration::readFile()
 {
-    // TODO think about more general way to read configs
     config = YAML::LoadFile("config/config.yaml");
 
     if (config["path-nodes"]) {
@@ -93,4 +91,6 @@ void Configuration::defaults()
     interpolate = false;
     pathCollisionMap = NULL;
     randomSeed = 20;
+
+    motionCheckAccuracy = 0.05;
 }

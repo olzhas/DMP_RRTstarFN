@@ -3,6 +3,8 @@
 
 #include "config/obstacle_config_blue.h"
 
+#include "solutionpath.h"
+
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 namespace dc = dart::collision;
@@ -85,8 +87,6 @@ void Manipulator::spawnStaticObstacles()
 void Manipulator::init(ConfigurationPtr &config)
 {
     cfg = config;
-    ompl::RNG::setSeed(cfg->randomSeed);
-
     ds::WorldPtr myWorld(du::SkelParser::readWorld(
                              dart::common::Uri::createFromString(
                                  SAFESPACE_DATA "/ground_plane/ground.skel")));
@@ -110,20 +110,20 @@ void Manipulator::init(ConfigurationPtr &config)
 
     ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
 
-    // TODO make this configurable through config files
-    jointSpace->addDimension(-M_PI, M_PI);
-    jointSpace->addDimension(-130.0 / 180.0 * M_PI, 147.5 / 180.0 * M_PI);
-    jointSpace->addDimension(-145.0 / 180.0 * M_PI, 145.0 / 180.0 * M_PI);
-    jointSpace->addDimension(-270.0 / 180.0 * M_PI, 270.0 / 180.0 * M_PI);
-    jointSpace->addDimension(-115.0 / 180.0 * M_PI, 140.0 / 180.0 * M_PI);
-    jointSpace->addDimension(-270.0 / 180.0 * M_PI, 270.0 / 180.0 * M_PI);
+    // first two are connection to the world and table
+    for(size_t i=0; i < staubli->getNumJoints(); ++i){
+        double lower = staubli->getJoint(i)->getPositionLowerLimit(0);
+        double upper = staubli->getJoint(i)->getPositionUpperLimit(0);
+        if(lower != upper){
+            jointSpace->addDimension(lower, upper);
+        }
+    }
 
     ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(jointSpace)));
     // set state validity checking for this space
     ss_->setStateValidityChecker(boost::bind(&Manipulator::isStateValid, this, _1));
 
-    //    ss_->getSpaceInformation()
-    //            ->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
+    //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
 
     ss_->getSpaceInformation()
             ->setMotionValidator(
@@ -138,7 +138,6 @@ void Manipulator::init(ConfigurationPtr &config)
                 getPathLengthObjective(ss_->getSpaceInformation()));
 
     jointSpace->setup();
-    //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
 }
@@ -164,11 +163,10 @@ bool Manipulator::isStateValid(const ob::State* state)
 }
 
 //==============================================================================
-//Manipulator::~Manipulator()
-//{
-//    dtwarn << "good my\n";
-//    // TODO
-//}
+Manipulator::~Manipulator()
+{
+    dtwarn << "good my\n";
+}
 
 //==============================================================================
 bool Manipulator::plan()
@@ -196,181 +194,200 @@ bool Manipulator::plan()
 
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
     OMPL_INFORM("Found %d solutions", (int)ns);
+
+    SolutionPath* sp = new SolutionPath("main");
+    try {
+        og::PathGeometric& p = ss_->getSolutionPath();
+#ifdef INTERP
+        p.interpolate(2000);
+#endif
+        sp->set(p, ss_->getSpaceInformation(), staubli_);
+        pWindow->drawables.push_back(&sp->getDrawables());
+        pWindow->solutionPaths.push_back(sp);
+    }
+    catch (ompl::Exception e) {
+        delete sp;
+        dtwarn << "No solution, man\n";
+    }
+
     return ss_->haveSolutionPath();
 }
 //==============================================================================
 void Manipulator::configurePlanner()
 {
     ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(cfg->maxNumberNodes);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // FIXME configuation value
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // delay collision detection
     ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
 }
 //==============================================================================
-// TODO
-std::string dumpFileNameGenerate()
-{
-
-}
-//==============================================================================
 bool Manipulator::replan()
 {
-    if (!ss_)
-        return false;
-    // generate a few solutions; all will be added to the goal;
-    si_ = ss_->getSpaceInformation();
-    og::PathGeometric& p = ss_->getSolutionPath();
-
-    bool* collisionMap = new bool[p.getStateCount()];
-    int startPos=-1, endPos=-1;
-
-    std::list<ompl::base::State*> partition;
-    for(size_t i(0); i < p.getStateCount(); ++i){
-        double* jointSpace = (double*)p.getState(i)
-                ->as<ob::RealVectorStateSpace::StateType>()
-                ->values;
-
-        Eigen::Vector6d tempState;
-        for(size_t j(0); j<6; ++j){
-            tempState[j]=jointSpace[j];
-        }
-
-        pWindow->solutionStates.push_back(tempState);
-        collisionMap[i] = !isStateValid(p.getState(i));
-        if(startPos > 0 && endPos < 0){
-            //ompl::base::State* copy = si_->allocState();
-            //si_->copyState(copy, p.getState(i));
-            partition.push_back(si_->cloneState(p.getState(i)));
-        }
-        if(collisionMap[i] == true && collisionMap[i-1] == false){
-            startPos = i-1;
-        }
-
-        if(collisionMap[i] == false && collisionMap[i-1] == true){
-            endPos = i+1;
-        }
-
-    }
-    cfg->pathCollisionMap = collisionMap;
-    cfg->pathCollisionMapSize = partition.size();
-
-    ConfigurationPtr subConfig(new Configuration);
-    ManipulatorPtr subProblem(new Manipulator());
-
-
-    if (ss_->getPlanner()) {
-        //ss_->getPlanner()->as<og::DRRTstarFN>()->
-        int removed;
-        if(startPos > 0 && endPos > 0) {
-
-            ob::ScopedState<> start(ss_->getStateSpace());
-            start = si_->cloneState(p.getState(startPos));
-
-            ob::ScopedState<> goal(ss_->getStateSpace());
-            goal = si_->cloneState(p.getState(endPos));
-            /* defining sub problem*/
-
-            subConfig->readFile();
-
-            subProblem->init(subConfig);
-            subConfig->startState.clear();
-
-            double* tempStartState = (double*)p.getState(startPos)->
-                    as<ob::RealVectorStateSpace::StateType>()->values;
-
-            subConfig->startState.assign(tempStartState, tempStartState+6);
-
-            subConfig->goalState.clear();
-            double* tempGoalState = (double*)p.getState(endPos)->
-                    as<ob::RealVectorStateSpace::StateType>()->values;
-            subConfig->goalState.assign(tempGoalState, tempGoalState+6);
-            subConfig->planningTime = 70;
-            subConfig->rangeDeg = 50;
-            subConfig->rangeRad =  subConfig->rangeDeg / 180.0 * M_PI;
-
-            subProblem->cfg->goalBias = 0.25;
-            subProblem->spawnDynamicObstacles();
-            subProblem->plan();
-
-            og::PathGeometric& subp = subProblem->ss_->getSolutionPath();
-            subp.interpolate(500);
-
-            if (subp.getStateCount() > 0) {
-                pWindow->subSolutionSetup_ = subProblem->ss_;
-                pWindow->subSolution.clear();
-                pWindow->subSolution.reserve(subp.getStateCount());
-                for (int j(0); j < subp.getStateCount(); j++) {
-                    double* jointSpace = (double*)subp.getState(j)
-                            ->as<ob::RealVectorStateSpace::StateType>()
-                            ->values;
-                    Eigen::Vector6d tempState;
-                    for(size_t i(0); i<6; ++i){
-                        tempState[i] = jointSpace[i];
-                    }
-                    pWindow->subSolutionStates.push_back(tempState);
-
-                    for (int i = 2; i < 8; ++i) {
-                        staubli_->setPosition(i, jointSpace[i - 2]);
-                    }
-                    staubli_->computeForwardKinematics(true, false, false);
-                    Eigen::Isometry3d transform = staubli_->getBodyNode("toolflange_link")->getTransform();
-                    pWindow->subSolution.push_back(transform.translation());
-                }
-            }
-
-            //subProblem->cfg->goalBias = 0.6;
-            /*
-            ob::State* interimState = si_->allocState();
-
-            ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
-                    interpolate(p.getState(startPos), p.getState(endPos),
-                                0.5, interimState);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setInterimState(interimState);
-            double radius = ss_->getStateSpace()->
-                    as<ob::RealVectorStateSpace>()->
-                    distance(p.getState(startPos), p.getState(endPos));
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
-
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
-
-            ss_->getProblemDefinition()->clearSolutionPaths();
-            ss_->setStartAndGoalStates(start, goal);
-            configurePlanner();
-
-            removed =
-                    ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
-            */
-        }
-        /*
-        ss_->solve(30);
-        cfg->dynamicReplanning = true;
-        */
-
-        ob::ScopedState<> start(ss_->getStateSpace());
-        for (std::size_t i(0); i < cfg->startState.size(); ++i) {
-            start[i] = cfg->startState[i];
-        }
-
-        ob::ScopedState<> goal(ss_->getStateSpace());
-        for (std::size_t i(0); i < cfg->goalState.size(); ++i) {
-            goal[i] = cfg->goalState[i];
-        }
-        ss_->setStartAndGoalStates(start, goal);
-        pWindow->ss_ = ss_;
-
-        //pWindow->initDrawTree();
-        //delete cfg->pathCollisionMap;
-        //cfg->pathCollisionMap = NULL;
-    }
-
-    while(true); // FIXME crashes after this function is finished
-    //ss_->getProblemDefinition()->clearSolutionPaths();
-    const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
-    OMPL_INFORM("Found %d solutions", (int)ns);
-
-    return ss_->haveSolutionPath();
+    return localReplan();
+    return localReplanFromScratch();
 }
+//==============================================================================
+bool Manipulator::localReplanFromScratch()
+{
+
+    //    if (!ss_)
+    //        return false;
+    //    // generate a few solutions; all will be added to the goal;
+    //    si_ = ss_->getSpaceInformation();
+    //    og::PathGeometric& p = ss_->getSolutionPath();
+
+    //    bool* collisionMap = new bool[p.getStateCount()];
+    //    int startPos=-1, endPos=-1;
+
+    //    std::list<ompl::base::State*> partition;
+    //    for(size_t i(0); i < p.getStateCount(); ++i){
+    //        double* jointSpace = (double*)p.getState(i)
+    //                ->as<ob::RealVectorStateSpace::StateType>()
+    //                ->values;
+
+    //        Eigen::Vector6d tempState;
+    //        for(size_t j(0); j<6; ++j){
+    //            tempState[j]=jointSpace[j];
+    //        }
+
+    //        pWindow->solutionStates.push_back(tempState);
+    //        collisionMap[i] = !isStateValid(p.getState(i));
+    //        if(startPos > 0 && endPos < 0){
+    //            //ompl::base::State* copy = si_->allocState();
+    //            //si_->copyState(copy, p.getState(i));
+    //            partition.push_back(si_->cloneState(p.getState(i)));
+    //        }
+    //        if(collisionMap[i] == true && collisionMap[i-1] == false){
+    //            startPos = i-1;
+    //        }
+
+    //        if(collisionMap[i] == false && collisionMap[i-1] == true){
+    //            endPos = i+1;
+    //        }
+
+    //    }
+    //    cfg->pathCollisionMap = collisionMap;
+    //    cfg->pathCollisionMapSize = partition.size();
+
+    //    ConfigurationPtr subConfig(new Configuration);
+    //    ManipulatorPtr subProblem(new Manipulator());
+
+
+    //    if (ss_->getPlanner()) {
+    //        //ss_->getPlanner()->as<og::DRRTstarFN>()->
+    //        int removed;
+    //        if(startPos > 0 && endPos > 0) {
+
+    //            ob::ScopedState<> start(ss_->getStateSpace());
+    //            start = si_->cloneState(p.getState(startPos));
+
+    //            ob::ScopedState<> goal(ss_->getStateSpace());
+    //            goal = si_->cloneState(p.getState(endPos));
+
+
+    //            /* defining sub problem */
+
+    //            subConfig->readFile();
+
+    //            subProblem->init(subConfig);
+    //            subConfig->startState.clear();
+
+    //            double* tempStartState = (double*)p.getState(startPos)->
+    //                    as<ob::RealVectorStateSpace::StateType>()->values;
+
+    //            subConfig->startState.assign(tempStartState, tempStartState+6);
+
+    //            subConfig->goalState.clear();
+    //            double* tempGoalState = (double*)p.getState(endPos)->
+    //                    as<ob::RealVectorStateSpace::StateType>()->values;
+    //            subConfig->goalState.assign(tempGoalState, tempGoalState+6);
+    //            subConfig->planningTime = 70;
+    //            subConfig->rangeDeg = 50;
+    //            subConfig->rangeRad =  subConfig->rangeDeg / 180.0 * M_PI;
+
+    //            subProblem->cfg->goalBias = 0.25;
+    //            subProblem->spawnDynamicObstacles();
+    //            subProblem->plan();
+
+    //            og::PathGeometric& subp = subProblem->ss_->getSolutionPath();
+    //            subp.interpolate();
+
+    //            if (subp.getStateCount() > 0) {
+    //                pWindow->subSolutionSetup_ = subProblem->ss_;
+    //                pWindow->subSolution.clear();
+    //                pWindow->subSolution.reserve(subp.getStateCount());
+    //                for (int j(0); j < subp.getStateCount(); j++) {
+    //                    double* jointSpace = (double*)subp.getState(j)
+    //                            ->as<ob::RealVectorStateSpace::StateType>()
+    //                            ->values;
+    //                    Eigen::Vector6d tempState;
+    //                    for(size_t i(0); i<6; ++i){
+    //                        tempState[i] = jointSpace[i];
+    //                    }
+    //                    pWindow->subSolutionStates.push_back(tempState);
+
+    //                    for (int i = 2; i < 8; ++i) {
+    //                        staubli_->setPosition(i, jointSpace[i - 2]);
+    //                    }
+    //                    staubli_->computeForwardKinematics(true, false, false);
+    //                    Eigen::Isometry3d transform = staubli_->getBodyNode("toolflange_link")->getTransform();
+    //                    pWindow->subSolution.push_back(transform.translation());
+    //                }
+    //            }
+    //        }
+
+    //        ob::ScopedState<> start(ss_->getStateSpace());
+    //        for (std::size_t i(0); i < cfg->startState.size(); ++i) {
+    //            start[i] = cfg->startState[i];
+    //        }
+
+    //        ob::ScopedState<> goal(ss_->getStateSpace());
+    //        for (std::size_t i(0); i < cfg->goalState.size(); ++i) {
+    //            goal[i] = cfg->goalState[i];
+    //        }
+    //        ss_->setStartAndGoalStates(start, goal);
+    //        pWindow->ss_ = ss_;
+
+    //        //pWindow->initDrawTree();
+    //        //delete cfg->pathCollisionMap;
+    //        //cfg->pathCollisionMap = NULL;
+    //    }
+
+    //    while(true); // FIXME crashes after this function is finished
+    //    //ss_->getProblemDefinition()->clearSolutionPaths();
+    //    const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
+    //    OMPL_INFORM("Found %d solutions", (int)ns);
+
+    //    return ss_->haveSolutionPath();
+}
+//==============================================================================
+bool Manipulator::localReplan()
+{
+    ob::State* interimState = si_->allocState();
+    /*
+    ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
+            interpolate(p.getState(startPos), p.getState(endPos),
+                        0.5, interimState);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setInterimState(interimState);
+    double radius = ss_->getStateSpace()->
+            as<ob::RealVectorStateSpace>()->
+            distance(p.getState(startPos), p.getState(endPos));
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
+
+    ss_->getProblemDefinition()->clearSolutionPaths();
+    ss_->setStartAndGoalStates(start, goal);
+    configurePlanner();
+
+    removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
+    */
+    ss_->solve(30);
+    cfg->dynamicReplanning = true;
+
+}
+
 //==============================================================================
 void Manipulator::updateObstacles()
 {
@@ -399,7 +416,6 @@ void Manipulator::store(const char* filename)
     pdstorage.store(pdat, filename);
 }
 //==============================================================================
-// TODO
 inline void Manipulator::setState(ob::ScopedState<> &state, std::vector<double> &set)
 {
     for(size_t i(0); i<set.size(); ++i){
@@ -557,4 +573,19 @@ void Manipulator::spawnDynamicObstacles()
     if(pWindow)
         pWindow->getWorld()->addSkeleton(dynamicObstacle);
     world_->addSkeleton(dynamicObstacle);
+}
+//==============================================================================
+std::string& Manipulator::dumpFileNameGenerate()
+{
+    std::time_t now = std::time(nullptr);
+    std::string* out = new std::string;
+    char buffer[]="2015-12-06_01-23-40";
+    if(buffer == NULL){
+        dtwarn << "Could not generate dump file name\n";
+        return *out;
+    }
+    if(strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", localtime(&now))){
+        out->assign(buffer);
+    }
+    return *out;
 }

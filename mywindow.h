@@ -8,8 +8,9 @@
 
 #include <dart/dart.h>
 
-#include "guimisc.h"
 #include "configuration.h"
+#include "solutionpath.h"
+#include "drawable.h"
 
 namespace og = ompl::geometric;
 namespace ob = ompl::base;
@@ -29,13 +30,9 @@ public:
     // Documentation inherited
     virtual void keyboard(unsigned char _key, int _x, int _y);
 
-    void setMotion(og::PathGeometric& motion);
-
     void initDrawTree();
     void updateDrawTree();
 
-    void drawSolutionPath();
-    void drawTree();
     void drawManipulatorState(int state);
     void initGhostManipulators();
     void setSkeletonCollidable(dart::dynamics::SkeletonPtr& sk, const bool& isCollidable);
@@ -50,47 +47,21 @@ public:
     ConfigurationPtr cfg;
 
     dart::simulation::WorldPtr getWorld() { return mWorld; }
+    void initSolutionPath();
 
-    std::vector<Eigen::Vector3d> subSolution;
+    std::vector<DrawableCollection*> drawables;
 
-    std::vector<Eigen::Vector6d> solutionStates;
-    std::vector<Eigen::Vector6d> subSolutionStates;
+    // solutionPaths[0] is active solution
+    std::vector<SolutionPath*> solutionPaths;
 
 private:
+
     int motionStep;
-    int subSolutionStep;
     int treeState;
 
-    class Node {
-    private:
-        Eigen::Vector3d position;
-
-    public:
-        Node(Eigen::Vector3d value) : position(value), freshness(1.0) {;}
-
-        Node() { dtwarn << "null constructor\n"; }
-        ~Node()
-        {
-            //dtwarn << "destructor call\n";
-            child.clear();
-        }
-
-        double x() { return position[0]; }
-        double y() { return position[1]; }
-        double z() { return position[2]; }
-
-        std::vector<unsigned int> child;
-        double freshness;
-
-        Eigen::Vector3d getPos() { return position; }
-    };
-
-    std::vector<Node> endEffectorPosition;
     std::vector<Eigen::Vector3d> endEffectorPositionDetached;
     std::vector<Eigen::Vector3d> endEffectorPositionDynamicAdded;
     std::vector<Eigen::Vector3d> solutionPositions;
-
-
 
     std::vector<std::vector<Eigen::Vector3d> > edges;
 
@@ -102,15 +73,7 @@ private:
     bool dynamicObstacle;
 
     boost::mutex treeMutex_;
-
-    //og::PathGeometric &a;
 };
-
-typedef struct {
-    double r;
-    double g;
-    double b;
-} SimpleRGB;
 
 typedef std::shared_ptr<MyWindow> MyWindowPtr;
 

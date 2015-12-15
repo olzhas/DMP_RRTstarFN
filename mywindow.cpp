@@ -17,7 +17,6 @@ MyWindow::MyWindow()
     , timer2("draw")
     , cameraReset(true)
     , prevSize(0)
-    , subSolutionStep(0)
 {
     mZoom = 0.3;
     //mCapture = true;
@@ -38,7 +37,7 @@ void MyWindow::initGhostManipulators()
 
     //==========================================================================
 
-    dd::SkeletonPtr staubliFinalState(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
+    dd::SkeletonPtr staubliFinalState = staubliStartState->clone();
     staubliFinalState->setName("TX90XLHB-Final");
     for (int i = 2; i < 8; ++i) {
         staubliFinalState->setPosition(i, cfg->goalState[i - 2]);
@@ -83,55 +82,22 @@ MyWindow::~MyWindow()
 void MyWindow::timeStepping()
 {
     mWorld->step();
-
-    //if
-    //og::PathGeometric& motion_ = ss_->getSolutionPath();
-    //motion_.interpolate(5000);
-
-    //if (motion_.getStateCount() > 0) {
-    bool subFlag=false;
-    if (solutionStates.size() > 0) {
-        double* jointSpace;
-        dart::dynamics::SkeletonPtr staubli = mWorld->getSkeleton("TX90XLHB");
-
-        if (motionStep < solutionStates.size() + subSolutionStates.size()) {
-
-            if (!cfg->pathCollisionMap[motionStep]) {
-                motionStep++;
-                subFlag = false;
-            } else {
-                subSolutionStep++;
-                subFlag = true;
-                if(subSolutionStates.size() == subSolutionStep)
-                {
-                    motionStep += cfg->pathCollisionMapSize+1;
-                }
-
-            }
-
-            for (int i = 2; i < 8; ++i) {
-                if(subFlag == false){
-                    staubli->setPosition(i, solutionStates[motionStep][i-2]);
-                } else {
-                    staubli->setPosition(i, subSolutionStates[subSolutionStep][i-2]);
-                }
-            }
-            staubli->computeForwardKinematics(true, false, false);
-
-            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-            Eigen::Vector3d mytest = Eigen::Vector3d(transform.translation());
-
-            // camera movement
-            /*
-            mTrans[0] = -mytest[0] * 1000.0;
-            mTrans[1] = -mytest[1] * 1000.0;
-            mTrans[2] = mytest[2] * 10.0;
-            */
-        }
-        else {
-            mSimulating = false;
-        }
+#define ROBOT_NAME "TX90XLHB"
+    // solutionPaths[0] is the active solution
+    SolutionPath* sp = solutionPaths[0];
+    std::vector<double>& st = sp->getNextState();
+    if (st.size() == 0) {
+        mSimulating = false;
+        dtwarn << "No next state\n";
+        return;
     }
+
+    dd::SkeletonPtr robot(mWorld->getSkeleton(ROBOT_NAME));
+
+    for (size_t i(0); i < st.size(); ++i) {
+        robot->setPosition(i + 2, st[i]);
+    }
+    robot->computeForwardKinematics(true, false, false);
 }
 
 //==============================================================================
@@ -142,19 +108,19 @@ void MyWindow::drawSkels()
         mTrans = Eigen::Vector3d(0, -50, -1500);
         Eigen::Matrix3d mat;
         mat = Eigen::AngleAxisd(-50.0 / 180.0 * M_PI, Eigen::Vector3d::UnitX())
-                * Eigen::AngleAxisd(4.0 / 180.0 * M_PI, Eigen::Vector3d::UnitY())
-                * Eigen::AngleAxisd(-61.0 / 180.0 * M_PI, Eigen::Vector3d::UnitZ());
+            * Eigen::AngleAxisd(4.0 / 180.0 * M_PI, Eigen::Vector3d::UnitY())
+            * Eigen::AngleAxisd(-61.0 / 180.0 * M_PI, Eigen::Vector3d::UnitZ());
         Eigen::Quaterniond quat(mat);
         mTrackBall.setQuaternion(quat);
     }
-    else {
-        //dtwarn << mTrans;
 
-        Eigen::Matrix3d rotMat = mTrackBall.getRotationMatrix();
-        Eigen::Vector3d angles;
-        angles = dart::math::matrixToEulerXYZ(rotMat) / M_PI * 180.0;
-        //dtwarn << angles[0] << " " << angles[1] << " " << angles[2] << "\n";
-    }
+#ifdef DEBUG
+    dtwarn << mTrans;
+    Eigen::Matrix3d rotMat = mTrackBall.getRotationMatrix();
+    Eigen::Vector3d angles;
+    angles = dart::math::matrixToEulerXYZ(rotMat) / M_PI * 180.0;
+    dtwarn << angles[0] << " " << angles[1] << " " << angles[2] << "\n";
+#endif
 
     glEnable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -168,118 +134,15 @@ void MyWindow::drawSkels()
     //timer1.stop();
 
     //timer2.start();
-    drawTree();
+
     //timer2.print();
     //timer2.stop();
-    drawSolutionPath();
+    int end = drawables.size();
+    for (size_t i = 0; i < end; ++i) {
+        DrawableCollection* dc = drawables[i];
+        dc->draw();
+    }
 }
-//==============================================================================
-void MyWindow::drawSolutionPath()
-{
-    dart::gui::SimpleRGB boxSolColor(10.0 / 255.0, 200.0 / 255.0, 200.0 / 255.0);
-
-    GLUquadricObj* c;
-    c = gluNewQuadric();
-    gluQuadricDrawStyle(c, GLU_FILL);
-    gluQuadricNormals(c, GLU_SMOOTH);
-
-    glColor4d(boxSolColor.r, boxSolColor.g, boxSolColor.b, 0.2);
-    for (int i = 0; i < solutionPositions.size(); ++i) {
-        if (cfg->pathCollisionMap != NULL) {
-            if (!cfg->pathCollisionMap[i])
-                glColor4d(boxSolColor.r, boxSolColor.g, boxSolColor.b, 0.2);
-            else if (subSolution.size() == 0)
-                glColor4d(boxSolColor.r * 10, boxSolColor.g * 0.1, boxSolColor.b * 0.1, 0.2);
-            else
-                continue;
-        }
-        Eigen::Vector3d center = solutionPositions.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.015);
-        glPopMatrix();
-    }
-    gluDeleteQuadric(c);
-}
-//==============================================================================
-void MyWindow::drawTree()
-{
-
-    dart::gui::SimpleRGB boxColor(255.0 / 255.0, 10.0 / 255.0, 0 / 255.0); // orange
-    //dart::gui::SimpleRGB boxColor(215.0/255.0, 225.0/255.0,43.0/255.0);
-    dart::gui::SimpleRGB boxDetachedColor(5.0 / 255.0, 55.0 / 255.0, 255.0 / 255.0);
-
-    dart::gui::SimpleRGB boxDAColor(190.0 / 255.0, 20.0 / 255.0, 20.0 / 255.0);
-
-    GLUquadricObj* c;
-    c = gluNewQuadric();
-    gluQuadricDrawStyle(c, GLU_FILL);
-    gluQuadricNormals(c, GLU_SMOOTH);
-    //glPushMatrix();
-    if (cfg->drawTree) {
-
-        for (int i = 0; i < endEffectorPosition.size(); ++i) {
-            Node& center = endEffectorPosition.at(i);
-            if (center.freshness > 0.2) {
-                glColor4d(boxColor.r, boxColor.g, boxColor.b, center.freshness);
-                if (center.freshness > 0.2) {
-                    endEffectorPosition.at(i).freshness -= 0.025;
-                }
-                glPushMatrix();
-                glTranslatef(center.x(), center.y(), center.z());
-                glutSolidCube(center.freshness / 20.0);
-                glPopMatrix();
-                if (cfg->drawTreeEdges) {
-                    std::vector<unsigned int> childList = endEffectorPosition.at(i).child;
-                    for (auto it = childList.begin(); it != childList.end(); ++it) {
-                        if (*it >= i) {
-                            dart::gui::drawLine3D(endEffectorPosition.at(i).getPos(),
-                                                  endEffectorPosition.at(*it).getPos());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    glColor3d(boxDetachedColor.r, boxDetachedColor.g, boxDetachedColor.b);
-    for (int i = 0; i < endEffectorPositionDetached.size(); ++i) {
-        Eigen::Vector3d center = endEffectorPositionDetached.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.0125);
-        glPopMatrix();
-    }
-
-    glColor3d(boxDAColor.r, boxDAColor.g, boxDAColor.b);
-    for (int i = 0; i < endEffectorPositionDynamicAdded.size(); ++i) {
-        Eigen::Vector3d center = endEffectorPositionDynamicAdded.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.0125);
-        glPopMatrix();
-    }
-
-    glColor3d(1.0, 0.2, 0.2);
-    for (int i = 0; i < subSolution.size(); ++i) {
-        Eigen::Vector3d center = subSolution.at(i);
-        glPushMatrix();
-        glTranslatef(center[0], center[1], center[2]);
-        glutSolidCube(0.01);
-        glPopMatrix();
-    }
-
-    gluDeleteQuadric(c);
-
-    /*
-    for (int i = 0; i < edges.size(); ++i) {
-        Eigen::Vector3d start = edges[i][0];
-        Eigen::Vector3d end = edges[i][1];
-        dart::gui::drawLine3D(start, end);
-    }
-*/
-}
-
 //==============================================================================
 void MyWindow::initDrawTree()
 {
@@ -297,52 +160,32 @@ void MyWindow::initDrawTree()
 
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
 
-    endEffectorPosition.clear();
-    endEffectorPosition.reserve(pdat.numVertices());
+    if (pdat.numVertices() > 0) {
+        DrawableCollection* dc = new DrawableCollection(pdat.numVertices());
 
-    for (unsigned int i(0); i < pdat.numVertices(); ++i) {
-        std::vector<double> reals;
-        if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
+        dc->setCaption("initial");
 
-            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
+        for (int i = 0; i < pdat.numVertices(); ++i) {
+            Drawable* d = new Drawable;
+            std::vector<double> reals;
+            if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
 
-            for (size_t j(0); j < reals.size(); ++j) {
-                staubli->setPosition(j + 2, reals[j]);
-            }
-            staubli->computeForwardKinematics(true, false, false);
-            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-            if (pdat.getVertex(i).getTag())
-                endEffectorPositionDetached.push_back(transform.translation());
-            else {
-                Node n(transform.translation());
-                n.freshness = 0.2;
-                pdat.getEdges(i, n.child);
-                endEffectorPosition.push_back(n);
+                ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
+
+                for (size_t j(0); j < reals.size(); ++j) {
+                    staubli->setPosition(j + 2, reals[j]);
+                }
+                staubli->computeForwardKinematics(true, false, false);
+                Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+
+                d->setPoint(transform.translation());
+                d->setType(Drawable::BOX);
+                d->setSize(0.005);
+                d->setColor(Eigen::Vector3d(0.5, 0.0, 0.5));
+                dc->add(d);
             }
         }
-    }
-
-    //std::cout<<motion_ ->getStateCount() << std::endl;
-    og::PathGeometric& motion_ = ss_->getSolutionPath();
-
-    motion_.interpolate(5000);
-
-    if (motion_.getStateCount() > 0) {
-        solutionPositions.clear();
-        solutionPositions.reserve(motion_.getStateCount());
-        for (int j(0); j < motion_.getStateCount(); j++) {
-            double* jointSpace
-                    = (double*)motion_.getState(j)
-                    ->as<ob::RealVectorStateSpace::StateType>()
-                    ->values;
-
-            for (int i = 2; i < 8; ++i) {
-                staubli->setPosition(i, jointSpace[i - 2]);
-            }
-            staubli->computeForwardKinematics(true, false, false);
-            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-            solutionPositions.push_back(transform.translation());
-        }
+        drawables.push_back(dc);
     }
 
     // Print the edges to file
@@ -357,6 +200,32 @@ void MyWindow::initDrawTree()
             edges.push_back(temp);
             //printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(i));
             //printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(edge_list[i2]));
+        }
+    }
+    */
+}
+//==============================================================================
+void MyWindow::initSolutionPath()
+{
+    /*
+    SolutionPath sp;
+    og::PathGeometric& motion_ = ss_->getSolutionPath();
+
+    motion_.interpolate(5000);
+    if (motion_.getStateCount() > 0) {
+
+        for (int j(0); j < motion_.getStateCount(); j++) {
+            double* jointSpace
+                    = (double*)motion_.getState(j)
+                    ->as<ob::RealVectorStateSpace::StateType>()
+                    ->values;
+
+            for (int i = 2; i < 8; ++i) {
+                staubli->setPosition(i, jointSpace[i - 2]);
+            }
+            staubli->computeForwardKinematics(true, false, false);
+            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
+            solutionPositions.push_back(transform.translation());
         }
     }
     */
@@ -378,65 +247,6 @@ void MyWindow::updateDrawTree()
     // Print the vertices to file
 
     dart::dynamics::SkeletonPtr staubli(mWorld->getSkeleton("TX90XLHB")->clone());
-
-    //endEffectorPosition.clear();
-    prevSize = endEffectorPosition.size();
-    endEffectorPosition.reserve(pdat.numVertices());
-
-    std::vector<unsigned int> edge_list;
-    edges.reserve(pdat.numVertices());
-    //std::cout << "vertices: " << pdat.numVertices() << std::endl;
-
-    for (unsigned int i(prevSize); i < pdat.numVertices(); ++i) {
-        std::vector<double> reals;
-        if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
-            ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
-
-            for (size_t j(0); j < reals.size(); ++j)
-                staubli->setPosition(j + 2, reals[j]);
-
-            staubli->computeForwardKinematics(true, false, false);
-            Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-            if (pdat.getVertex(i).getTag())
-                endEffectorPositionDetached.push_back(transform.translation());
-            else {
-                Node n(transform.translation());
-                pdat.getEdges(i, n.child);
-                endEffectorPosition.push_back(n);
-            }
-
-            // edges handling
-            /*
-            unsigned int n_edge = pdat.getEdges(i, edge_list);
-            for (unsigned int i2(0); i2 < n_edge; ++i2) {
-                std::vector<Eigen::Vector3d> temp;
-                temp.push_back(getVertex(pdat.getVertex(i)));
-                temp.push_back(getVertex(pdat.getVertex(edge_list[i2])));
-                edges.push_back(temp);
-            }
-            */
-        }
-    }
-    if (cfg->dynamicReplanning && cfg->cnt == 0) {
-        endEffectorPositionDynamicAdded.clear();
-        endEffectorPositionDetached.clear();
-        cfg->cnt++;
-        for (size_t i(0); i < pdat.numVertices(); ++i) {
-            std::vector<double> reals;
-            if (pdat.getVertex(i).getTag()) {
-                ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
-
-                for (size_t j(0); j < reals.size(); ++j)
-                    staubli->setPosition(j + 2, reals[j]);
-                staubli->computeForwardKinematics(true, false, false);
-                Eigen::Isometry3d transform = staubli->getBodyNode("toolflange_link")->getTransform();
-                if (pdat.getVertex(i).getTag() == ompl::geometric::DRRTstarFN::NodeType::ORPHANED)
-                    endEffectorPositionDetached.push_back(transform.translation());
-                if (pdat.getVertex(i).getTag() == ompl::geometric::DRRTstarFN::NodeType::NEW_DYNAMIC)
-                    endEffectorPositionDynamicAdded.push_back(transform.translation());
-            }
-        }
-    }
 }
 //==============================================================================
 Eigen::Vector3d MyWindow::getVertex(const ob::PlannerDataVertex& vertex)
@@ -478,6 +288,9 @@ void MyWindow::drawManipulatorState(int state)
     staubli->computeForwardKinematics(true, false, false);
 }
 //==============================================================================
+
+#define TREE_NAME "tree"
+
 void MyWindow::keyboard(unsigned char _key, int _x, int _y)
 {
     switch (_key) {
@@ -530,7 +343,13 @@ void MyWindow::keyboard(unsigned char _key, int _x, int _y)
         cfg->dynamicObstacle = !(cfg->dynamicObstacle);
         break;
     case 't':
-        cfg->drawTree = !cfg->drawTree;
+        for (auto it = drawables.begin(); it != drawables.end(); ++it) {
+            DrawableCollection* dc = *it;
+            if (dc->getCaption() == TREE_NAME) {
+                dc->toggleVisibility();
+                break;
+            }
+        }
         break;
     case 'e':
         cfg->drawTreeEdges = !cfg->drawTreeEdges;

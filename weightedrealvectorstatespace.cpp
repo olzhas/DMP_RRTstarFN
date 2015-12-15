@@ -21,10 +21,10 @@ double ompl::base::WeightedRealVectorStateSpace::distance(const State *state1, c
         case 0:
         case 1:
         case 2:
-            k = 20;
+            k = 1.00;
             break;
         default:
-            k=0.01;
+            k = 0.01;
             break;
         }
         dist += (diff * diff) * k;

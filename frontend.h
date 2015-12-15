@@ -14,6 +14,8 @@ public:
 
     void loop();
 
+    MyWindowPtr& getWindow() { return pWindow; }
+
 private:
     MyWindowPtr pWindow;
     ManipulatorPtr pManipulator;

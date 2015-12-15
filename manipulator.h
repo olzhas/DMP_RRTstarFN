@@ -47,7 +47,7 @@ public:
 
     Manipulator();
 
-    //virtual ~Manipulator();
+    virtual ~Manipulator();
     bool plan();
     bool replan();
     void updateObstacles();
@@ -57,9 +57,7 @@ public:
 #ifdef DEBUG
         std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
 #endif
-
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(nodeNum);
-
 #ifdef DEBUG
         std::cout << ss_->getPlanner()->as<og::RRTstarFN>()->getMaxNodes() << std::endl;
 #endif
@@ -71,30 +69,34 @@ public:
     void setStartState(const std::vector<double>& st);
     void setFinalState(const std::vector<double>& st);
 
-    void init(ConfigurationPtr &config);
+    void init(ConfigurationPtr& config);
 
     void store(const char* filename);
     void load(const char* filename);
 
-    dart::simulation::WorldPtr getWorld() {return world_;}
-    void setWorld(dart::simulation::WorldPtr &world){ world_ = world;}
+    dart::simulation::WorldPtr getWorld() { return world_; }
+    void setWorld(dart::simulation::WorldPtr& world) { world_ = world; }
 
     ConfigurationPtr cfg;
     enum ObstacleType { WALL,
-                        HUMAN_BBOX,
-                        CUBE };
+        HUMAN_BBOX,
+        CUBE };
     ObstacleType obstacleStatic[5] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE }; // FIXME number of obstacles is fixed
 
     void spawnDynamicObstacles();
 
     MyWindowPtr pWindow;
 
+    dd::SkeletonPtr staubli_;
+
 private:
     bool isStateValid(const ob::State* state);
+    bool localReplanFromScratch();
+    bool localReplan();
 
-    std::string dumpFileNameGenerate();
+    std::string& dumpFileNameGenerate();
     dart::simulation::WorldPtr world_;
-    dd::SkeletonPtr staubli_;
+
     boost::mutex mutex_;
 
     void configurePlanner();
@@ -103,8 +105,7 @@ private:
 
     void spawnObstacle(std::string path);
 
-    inline void setState(ob::ScopedState<> &state, std::vector<double> &set);
-
+    void setState(ob::ScopedState<>& state, std::vector<double>& set);
 };
 
 typedef std::shared_ptr<Manipulator> ManipulatorPtr;
