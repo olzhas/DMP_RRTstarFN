@@ -136,9 +136,9 @@ void MyWindow::drawSkels()
 
     //timer2.print();
     //timer2.stop();
-
-    for (auto it = drawables.begin(); it != drawables.end(); ++it) {
-        DrawableCollection* dc = *it;
+    int end = drawables.size();
+    for (size_t i = 0; i < end; ++i) {
+        DrawableCollection* dc = drawables[i];
         dc->draw();
     }
 }

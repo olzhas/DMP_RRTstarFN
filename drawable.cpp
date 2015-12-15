@@ -34,9 +34,9 @@ void DrawableCollection::draw()
 {
     if (getVisibility() == Drawable::DrawableVisibility::HIDDEN)
         return;
-
-    for (auto it = data_.begin(); it != data_.end(); ++it) {
-        Drawable* d = *it;
+    size_t end = data_.size();
+    for (size_t i = 0; i < end; ++i) {
+        Drawable* d = data_[i];
         d->draw();
     }
 }
