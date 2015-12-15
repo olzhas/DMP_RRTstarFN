@@ -163,11 +163,10 @@ bool Manipulator::isStateValid(const ob::State* state)
 }
 
 //==============================================================================
-//Manipulator::~Manipulator()
-//{
-//    dtwarn << "good my\n";
-//    // TODO
-//}
+Manipulator::~Manipulator()
+{
+    dtwarn << "good my\n";
+}
 
 //==============================================================================
 bool Manipulator::plan()
@@ -199,8 +198,9 @@ bool Manipulator::plan()
     SolutionPath* sp = new SolutionPath("main");
     try {
         og::PathGeometric& p = ss_->getSolutionPath();
-        //p.interpolate(2000);
-
+#ifdef INTERP
+        p.interpolate(2000);
+#endif
         sp->set(p, ss_->getSpaceInformation(), staubli_);
         pWindow->drawables.push_back(&sp->getDrawables());
         pWindow->solutionPaths.push_back(sp);
@@ -223,6 +223,7 @@ void Manipulator::configurePlanner()
 //==============================================================================
 bool Manipulator::replan()
 {
+    return localReplan();
     return localReplanFromScratch();
 }
 //==============================================================================
@@ -362,28 +363,26 @@ bool Manipulator::localReplanFromScratch()
 //==============================================================================
 bool Manipulator::localReplan()
 {
+    ob::State* interimState = si_->allocState();
+    /*
+    ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
+            interpolate(p.getState(startPos), p.getState(endPos),
+                        0.5, interimState);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setInterimState(interimState);
+    double radius = ss_->getStateSpace()->
+            as<ob::RealVectorStateSpace>()->
+            distance(p.getState(startPos), p.getState(endPos));
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
 
-    //    ob::State* interimState = si_->allocState();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
 
-    //    ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
-    //            interpolate(p.getState(startPos), p.getState(endPos),
-    //                        0.5, interimState);
-    //    ss_->getPlanner()->as<og::DRRTstarFN>()->setInterimState(interimState);
-    //    double radius = ss_->getStateSpace()->
-    //            as<ob::RealVectorStateSpace>()->
-    //            distance(p.getState(startPos), p.getState(endPos));
-    //    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
-    //    ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+    ss_->getProblemDefinition()->clearSolutionPaths();
+    ss_->setStartAndGoalStates(start, goal);
+    configurePlanner();
 
-    //    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
-
-    //    ss_->getProblemDefinition()->clearSolutionPaths();
-    //    ss_->setStartAndGoalStates(start, goal);
-    //    configurePlanner();
-
-    //    removed =
-    //            ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
-
+    removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
+    */
     ss_->solve(30);
     cfg->dynamicReplanning = true;
 
@@ -417,7 +416,6 @@ void Manipulator::store(const char* filename)
     pdstorage.store(pdat, filename);
 }
 //==============================================================================
-// TODO
 inline void Manipulator::setState(ob::ScopedState<> &state, std::vector<double> &set)
 {
     for(size_t i(0); i<set.size(); ++i){
@@ -583,7 +581,8 @@ std::string& Manipulator::dumpFileNameGenerate()
     std::string* out = new std::string;
     char buffer[]="2015-12-06_01-23-40";
     if(buffer == NULL){
-        return *out; // FIXME come up with error messaging
+        dtwarn << "Could not generate dump file name\n";
+        return *out;
     }
     if(strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", localtime(&now))){
         out->assign(buffer);

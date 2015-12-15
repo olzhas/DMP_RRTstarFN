@@ -87,6 +87,7 @@ void MyWindow::timeStepping()
     SolutionPath* sp = solutionPaths[0];
     std::vector<double>& st = sp->getNextState();
     if (st.size() == 0) {
+        mSimulating = false;
         dtwarn << "No next state\n";
         return;
     }

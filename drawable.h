@@ -15,6 +15,8 @@
 #error "Load OpenGL Error: What's your operating system?"
 #endif
 
+//TODO think how to include edge drawing routine
+
 typedef Eigen::Vector4d Color;
 
 class Drawable {
