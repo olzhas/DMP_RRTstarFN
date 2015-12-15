@@ -97,7 +97,6 @@ void Manipulator::init(ConfigurationPtr &config)
 
     for (int i = 0; i < 8; ++i) {
         staubli->getJoint(i)->setActuatorType(dd::Joint::LOCKED);
-
 #ifdef DEBUG
         cout << staubli->getJoint(i)->isKinematic() << endl;
 #endif
@@ -130,7 +129,6 @@ void Manipulator::init(ConfigurationPtr &config)
                 ob::MotionValidatorPtr(
                     new ManipulatorMotionValidator(ss_->getSpaceInformation())));
 
-    //ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
     ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
 
     ss_->getProblemDefinition()
@@ -140,6 +138,8 @@ void Manipulator::init(ConfigurationPtr &config)
     jointSpace->setup();
 
     staubli_ = world_->getSkeleton("TX90XLHB");
+
+    obsManager.loadAll();
 }
 
 //==============================================================================
@@ -165,7 +165,7 @@ bool Manipulator::isStateValid(const ob::State* state)
 //==============================================================================
 Manipulator::~Manipulator()
 {
-    dtwarn << "good my\n";
+    dtwarn << "good\n";
 }
 
 //==============================================================================
@@ -364,6 +364,7 @@ bool Manipulator::localReplanFromScratch()
 bool Manipulator::localReplan()
 {
     ob::State* interimState = si_->allocState();
+    //pWindow
     /*
     ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
             interpolate(p.getState(startPos), p.getState(endPos),

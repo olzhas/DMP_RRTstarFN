@@ -1,15 +1,14 @@
 #include "obstacle.h"
 
-void Obstacle::loadObstacleArray(std::string configFile)
+Obstacle::Obstacle(const dd::SkeletonPtr& skel, const std::string& name, bool dynamic)
+    : skeleton_(skel)
+    , name_(name)
+    , dynamic_(dynamic)
 {
-    YAML::Node config = YAML::LoadFile(configFile);
+    ;
+}
 
-    if(config["active-obstacles"]){
-        if(config["active-obstacles"].size() > 0) {
-
-        }
-    } else {
-        dtwarn << "Possible error";
-        dtwarn << "No active obstacles";
-    }
+void Obstacle::spawn()
+{
+    ;
 }
