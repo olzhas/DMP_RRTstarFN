@@ -1,39 +1,55 @@
 #ifndef OBSTACLE_H
 #define OBSTACLE_H
 
-#include <yaml-cpp/yaml.h>
 #include <dart/dart.h>
 
-#define OBSTACLE_PATH "/home/olzhas/devel/staubli_dart/data/obstacles/config.yaml"
+namespace dd = dart::dynamics;
+namespace ds = dart::simulation;
 
-class Obstacle
-{
+class Obstacle {
 private:
     enum ObstacleType { WALL,
-                        HUMAN_BBOX,
-                        CUBE };
+        HUMAN_BBOX,
+        CUBE };
+
+    enum ObstacleCharacteristic : bool {
+        DYNAMIC,
+        STATIC
+    };
 
     Eigen::Vector3d pos_;
     Eigen::Vector3d rpy_;
 
+    std::string name_;
     ObstacleType type_;
 
     bool dynamic_;
 
-    dart::simulation::WorldPtr world_;
+    ds::WorldPtr world_;
+    dd::SkeletonPtr skeleton_;
 
 public:
-    Obstacle() : dynamic_(false){;}
+    Obstacle()
+        : dynamic_(false)
+    {
+        ;
+    }
 
-    void setPos(const Eigen::Vector3d &pos) { pos_ = pos;}
-    void setRollPitchYaw(const Eigen::Vector3d &rpy) { rpy_ = rpy;}
+    Obstacle(const dd::SkeletonPtr& skel, const std::string& name, bool dynamic = false);
+    void spawn();
+
+    // setters
+    void setPos(const Eigen::Vector3d& pos) { pos_ = pos; }
+    void setRollPitchYaw(const Eigen::Vector3d& rpy) { rpy_ = rpy; }
 
     void setStatic() { dynamic_ = false; }
-    bool isStatic() { return !dynamic_; }
     void setDynamic() { dynamic_ = true; }
-    bool isDynamic() {return dynamic_; }
 
-    void loadObstacleArray(std::string configFile=OBSTACLE_PATH);
+    // getters
+    std::string getName() { return name_; }
+    dd::SkeletonPtr getSkeleton() { return skeleton_; }
+    bool isStatic() { return !dynamic_; }
+    bool isDynamic() { return dynamic_; }
 };
 
 #endif // OBSTACLE_H

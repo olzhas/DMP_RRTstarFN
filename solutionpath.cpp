@@ -1,10 +1,10 @@
 #include "solutionpath.h"
 
 void SolutionPath::set(const og::PathGeometric& p,
-                       const ob::SpaceInformationPtr& si,
-                       const dd::SkeletonPtr& robot,
-                       const Eigen::Vector3d& color,
-                       const double& size)
+    const ob::SpaceInformationPtr& si,
+    const dd::SkeletonPtr& robot,
+    const Eigen::Vector3d& color,
+    const double& size)
 {
     si_ = si;
     if (p.getStateCount() == 0) {
@@ -17,7 +17,7 @@ void SolutionPath::set(const og::PathGeometric& p,
 
         states_.push_back(s);
 
-        double* jointSpace = (double*)s->as<ob::RealVectorStateSpace::StateType>()->values;
+        double* jointSpace = static_cast<double*>(s->as<ob::RealVectorStateSpace::StateType>()->values);
         size_t dof = si->getStateDimension();
 
         for (size_t j = 0; j < dof; ++j) {
@@ -28,9 +28,9 @@ void SolutionPath::set(const og::PathGeometric& p,
         poses_.push_back(transform);
 
         Drawable* d = new Drawable(transform.translation(),
-                                   color, size,
-                                   Drawable::DrawableType::SPHERE,
-                                   Drawable::DrawableVisibility::VISIBLE);
+            color, size,
+            Drawable::DrawableType::SPHERE,
+            Drawable::DrawableVisibility::VISIBLE);
         dc_.add(d);
     }
 }
@@ -38,7 +38,7 @@ void SolutionPath::set(const og::PathGeometric& p,
 std::vector<double>& SolutionPath::getNextState()
 {
     std::vector<double>* r = new std::vector<double>;
-    if(si_ == NULL || step >= states_.size()){
+    if (si_ == NULL || step >= states_.size()) {
         return *r;
     }
 

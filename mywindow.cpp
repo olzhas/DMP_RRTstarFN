@@ -18,7 +18,7 @@ MyWindow::MyWindow()
     , cameraReset(true)
     , prevSize(0)
 {
-    mZoom = 0.3;
+    mZoom = 0.3f;
     //mCapture = true;
 }
 //==============================================================================
@@ -27,7 +27,7 @@ void MyWindow::initGhostManipulators()
 {
     dd::SkeletonPtr staubliStartState(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
     staubliStartState->setName("TX90XLHB-Start");
-    for (int i = 2; i < 8; ++i) {
+    for (size_t i = 2; i < 8; ++i) {
         staubliStartState->setPosition(i, cfg->startState[i - 2]);
     }
 
@@ -39,7 +39,7 @@ void MyWindow::initGhostManipulators()
 
     dd::SkeletonPtr staubliFinalState = staubliStartState->clone();
     staubliFinalState->setName("TX90XLHB-Final");
-    for (int i = 2; i < 8; ++i) {
+    for (size_t i = 2; i < 8; ++i) {
         staubliFinalState->setPosition(i, cfg->goalState[i - 2]);
     }
     mWorld->addSkeleton(staubliFinalState);

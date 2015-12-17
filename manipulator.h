@@ -31,6 +31,7 @@
 #include "mywindow.h"
 #include "configuration.h"
 #include "weightedrealvectorstatespace.h"
+#include "obstaclemanager.h"
 
 #define NUM_OBSTACLE 5
 #define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
@@ -43,7 +44,7 @@ namespace dd = dart::dynamics;
 class Manipulator {
 public:
     og::SimpleSetupPtr ss_;
-    ob::SpaceInformationPtr si_;
+//    ob::SpaceInformationPtr si_;
 
     Manipulator();
 
@@ -86,8 +87,8 @@ public:
     void spawnDynamicObstacles();
 
     MyWindowPtr pWindow;
-
     dd::SkeletonPtr staubli_;
+    ObstacleManager obsManager;
 
 private:
     bool isStateValid(const ob::State* state);

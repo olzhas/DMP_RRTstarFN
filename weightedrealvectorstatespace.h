@@ -12,7 +12,7 @@ class WeightedRealVectorStateSpace : public RealVectorStateSpace
 {
 public:
 
-    double distance(const State *state1, const State *state2) const;
+    double distance(const State *state1, const State *state2) const override;
 };
 }
 }
