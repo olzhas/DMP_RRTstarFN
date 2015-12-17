@@ -72,10 +72,10 @@ void PlanningProblem::treeUpdate()
     dart::simulation::WorldPtr pWorld(manipulator->getWorld());
     dart::dynamics::SkeletonPtr robot(pWorld->getSkeleton("TX90XLHB")->clone());
     og::SimpleSetupPtr ss_(manipulator->ss_);
-    ob::PlannerData pdat(ss_->getSpaceInformation());
 
     while (true) {
         auto start = bc::system_clock::now() + bc::milliseconds(100);
+        ob::PlannerData pdat(ss_->getSpaceInformation());
         ss_->getPlannerData(pdat);
 
         if (pdat.numVertices() > 0) {

@@ -11,6 +11,7 @@ Frontend::Frontend()
 void Frontend::init()
 {
     pWindow->setWorld(pManipulator->getWorld()->clone());
+    pManipulator->obsManager.setVizWorld(pWindow->getWorld());
 }
 //==============================================================================
 void Frontend::setManipulator(ManipulatorPtr& robot)
@@ -49,7 +50,6 @@ void Frontend::exec(int* argcp, char** argv)
            Eigen::Vector3d(0.9, 0.6, 0.3), 0.025);
     pWindow->drawables.push_back(&sp.getDrawables());
     */
-
 
     pWindow->initWindow(1280, 800, "Staubli TX90XL");
     pWindow->refreshTimer(10);

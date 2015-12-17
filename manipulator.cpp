@@ -85,10 +85,9 @@ void Manipulator::init(ConfigurationPtr &config)
             ->setOptimizationObjective(
                 getPathLengthObjective(ss_->getSpaceInformation()));
 
-    //jointSpace->setup();
-
     staubli_ = world_->getSkeleton("TX90XLHB");
 
+    obsManager.setPlanWorld(myWorld);
     obsManager.loadAll();
 }
 
@@ -121,6 +120,8 @@ Manipulator::~Manipulator()
 //==============================================================================
 bool Manipulator::plan()
 {
+    obsManager.spawn("wall.skel");
+
     if (!ss_)
         return false;
 

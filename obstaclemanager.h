@@ -20,6 +20,7 @@ private:
     std::vector<Obstacle*> obstacles_;
     std::string configFileName_;
     ds::WorldPtr world_;
+    ds::WorldPtr vizWorld_;
 
 public:
     ObstacleManager(const std::string& configFileName = OBSTACLE_PATH "config.yaml")
@@ -30,6 +31,8 @@ public:
 
     void loadAll();
     void spawn(const std::string& name);
+    void setPlanWorld(const ds::WorldPtr& world) { world_ = world; }
+    void setVizWorld(const ds::WorldPtr& world) { vizWorld_ = world; }
 };
 
 #endif // OBSTACLEMANAGER_H

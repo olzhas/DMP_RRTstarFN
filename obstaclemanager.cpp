@@ -41,4 +41,5 @@ void ObstacleManager::spawn(const std::string& name)
         }
     }
     world_->addSkeleton(obstacle->getSkeleton());
+    vizWorld_->addSkeleton(obstacle->getSkeleton());
 }
