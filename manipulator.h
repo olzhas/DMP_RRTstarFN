@@ -44,7 +44,7 @@ namespace dd = dart::dynamics;
 class Manipulator {
 public:
     og::SimpleSetupPtr ss_;
-    ob::SpaceInformationPtr si_;
+//    ob::SpaceInformationPtr si_;
 
     Manipulator();
 

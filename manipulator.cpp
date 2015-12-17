@@ -34,56 +34,6 @@ inline std::string genBoxName(int i)
     return name;
 }
 //==============================================================================
-void Manipulator::spawnObstacle(std::string path)
-{
-    ;
-}
-//==============================================================================
-// FIXME reimplement it with spawnObstacle() method
-void Manipulator::spawnStaticObstacles()
-{
-    dd::SkeletonPtr myObstacle[NUM_OBSTACLE];
-    for (int i = 0; i < cfg->numObstacle; ++i) {
-
-        std::string obstaclePath(SAFESPACE_DATA);
-        switch (obstacleStatic[i]) {
-        case WALL:
-            obstaclePath += "/obstacles/wall.skel";
-            break;
-        case HUMAN_BBOX:
-            obstaclePath += "/obstacles/human_box.skel";
-            break;
-        case CUBE:
-            obstaclePath += "/obstacles/cube.skel";
-            break;
-        default:
-            std::cerr << "Incorrenct obstacle type\n";
-        }
-
-        myObstacle[i] = du::SkelParser::readSkeleton(obstaclePath);
-
-        Eigen::Isometry3d T;
-        Eigen::Matrix3d m;
-
-        m = Eigen::AngleAxisd(obstacle::rpy[i][0],
-                Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(obstacle::rpy[i][1],
-                Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(obstacle::rpy[i][2],
-                Eigen::Vector3d::UnitZ());
-
-        T = Eigen::Translation3d(obstacle::pos[i][0], obstacle::pos[i][1],
-                obstacle::pos[i][2]);
-
-        T.rotate(m);
-
-        myObstacle[i]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-        myObstacle[i]->setName(genBoxName(i));
-    }
-
-    for (int i = 0; i < cfg->numObstacle; ++i) {
-        world_->addSkeleton(myObstacle[i]);
-    }
-}
-//==============================================================================
 void Manipulator::init(ConfigurationPtr &config)
 {
     cfg = config;
@@ -105,19 +55,19 @@ void Manipulator::init(ConfigurationPtr &config)
     myWorld->setGravity(Eigen::Vector3d(0.0, 0.0, 0.0));
 
     setWorld(myWorld);
-    spawnStaticObstacles();
 
-    ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
+    //ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
+    ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
 
     // first two are connection to the world and table
     for(size_t i=0; i < staubli->getNumJoints(); ++i){
         double lower = staubli->getJoint(i)->getPositionLowerLimit(0);
         double upper = staubli->getJoint(i)->getPositionUpperLimit(0);
-        if(lower != upper){
+        if(upper - lower >= EPSILON){
             jointSpace->addDimension(lower, upper);
         }
     }
-
+    jointSpace->setup();
     ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(jointSpace)));
     // set state validity checking for this space
     ss_->setStateValidityChecker(boost::bind(&Manipulator::isStateValid, this, _1));
@@ -135,7 +85,7 @@ void Manipulator::init(ConfigurationPtr &config)
             ->setOptimizationObjective(
                 getPathLengthObjective(ss_->getSpaceInformation()));
 
-    jointSpace->setup();
+    //jointSpace->setup();
 
     staubli_ = world_->getSkeleton("TX90XLHB");
 
@@ -363,7 +313,7 @@ bool Manipulator::localReplanFromScratch()
 //==============================================================================
 bool Manipulator::localReplan()
 {
-    ob::State* interimState = si_->allocState();
+    //ob::State* interimState = si_->allocState();
     //pWindow
     /*
     ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
@@ -536,44 +486,6 @@ void Manipulator::recordSolution()
                   << std::endl;
         }
     }
-}
-//==============================================================================
-void Manipulator::spawnDynamicObstacles()
-{
-    double rpy[][3] = {{ 4.16858072, 3.14151269, 2.59488083},
-                       { 5.79539508, 4.12217189, 5.59803713},
-                       { 0, 0, 1.7},
-                       { 0, 0, 0.7},
-                       { 0, 0, 0}};
-
-    double pos[][3] = {{  0.950,  -0.423, 1.844},
-                       {  10.192,  0.701, 0.940},
-                       {  10.916, -0.517, 1.230},
-                       {  10.768, -0.282, 1.623},
-                       {  10.200, -0.700, 1.450}};
-
-    std::string obstaclePath(SAFESPACE_DATA "/obstacles/cube.skel");
-
-    dd::SkeletonPtr dynamicObstacle = du::SkelParser::readSkeleton(obstaclePath);
-
-    Eigen::Isometry3d T;
-    Eigen::Matrix3d m;
-
-    m  = Eigen::AngleAxisd(rpy[0][0], Eigen::Vector3d::UnitX())
-            * Eigen::AngleAxisd(rpy[0][1], Eigen::Vector3d::UnitY())
-            * Eigen::AngleAxisd(rpy[0][2], Eigen::Vector3d::UnitZ());
-
-    T = Eigen::Translation3d(pos[0][0], pos[0][1], pos[0][2]);
-
-    T.rotate(m);
-
-    dynamicObstacle->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-    dynamicObstacle->setName(genBoxName(2)); //FIXME hardcoded value
-    dynamicObstacle->getBodyNode(0)->getVisualizationShape(0)->setAlpha(0.9);
-
-    if(pWindow)
-        pWindow->getWorld()->addSkeleton(dynamicObstacle);
-    world_->addSkeleton(dynamicObstacle);
 }
 //==============================================================================
 std::string& Manipulator::dumpFileNameGenerate()

@@ -9,8 +9,8 @@ namespace ds = dart::simulation;
 class Obstacle {
 private:
     enum ObstacleType { WALL,
-                        HUMAN_BBOX,
-                        CUBE };
+        HUMAN_BBOX,
+        CUBE };
 
     enum ObstacleCharacteristic : bool {
         DYNAMIC,
@@ -36,16 +36,20 @@ public:
     }
 
     Obstacle(const dd::SkeletonPtr& skel, const std::string& name, bool dynamic = false);
+    void spawn();
 
+    // setters
     void setPos(const Eigen::Vector3d& pos) { pos_ = pos; }
     void setRollPitchYaw(const Eigen::Vector3d& rpy) { rpy_ = rpy; }
 
     void setStatic() { dynamic_ = false; }
-    bool isStatic() { return !dynamic_; }
     void setDynamic() { dynamic_ = true; }
-    bool isDynamic() { return dynamic_; }
 
-    void spawn();
+    // getters
+    std::string getName() { return name_; }
+    dd::SkeletonPtr getSkeleton() { return skeleton_; }
+    bool isStatic() { return !dynamic_; }
+    bool isDynamic() { return dynamic_; }
 };
 
 #endif // OBSTACLE_H

@@ -1,9 +1,9 @@
 #include "planningproblem.h"
 
 //==============================================================================
-PlanningProblem::PlanningProblem():
-    cfg(new Configuration),
-    manipulator(new Manipulator)
+PlanningProblem::PlanningProblem()
+    : cfg(new Configuration)
+    , manipulator(new Manipulator)
 {
     cfg->readFile();
 
@@ -41,16 +41,16 @@ void PlanningProblem::plan(int* argcp, char** argv)
     }
     cfg->planningDone = true;
 
-    while(!cfg->dynamicObstacle){
-        ;//std::cout << "wait for dynamic replanning" << std::endl;
+    while (!cfg->dynamicObstacle) {
+        ; //std::cout << "wait for dynamic replanning" << std::endl;
     }
 
     std::cout << "dynamic replanning was initiated" << std::endl;
-    manipulator->spawnDynamicObstacles();
     manipulator->replan();
     cfg->dynamicReplanning = true;
 
-    while(true);
+    while (true)
+        ;
     return;
 }
 //==============================================================================
@@ -62,31 +62,31 @@ void PlanningProblem::treeUpdate()
 {
     // assume that eventually world will be initialized
     //while(manipulator->getWorld() == nullptr){
-    auto start = bc::system_clock::now() + bc::milliseconds(1500);
-    boost::this_thread::sleep_until(start);
+    auto pre_wait = bc::system_clock::now() + bc::seconds(2);
+    boost::this_thread::sleep_until(pre_wait);
     //}
 
     DrawableCollection tree("tree");
     frontend.getWindow()->drawables.push_back(&tree);
 
-    dart::simulation::WorldPtr pWorld = manipulator->getWorld();
+    dart::simulation::WorldPtr pWorld(manipulator->getWorld());
     dart::dynamics::SkeletonPtr robot(pWorld->getSkeleton("TX90XLHB")->clone());
+    og::SimpleSetupPtr ss_(manipulator->ss_);
+    ob::PlannerData pdat(ss_->getSpaceInformation());
 
-    while(true){
+    while (true) {
         auto start = bc::system_clock::now() + bc::milliseconds(100);
-        og::SimpleSetupPtr& ss_ = manipulator->ss_;
-        ob::PlannerData pdat(ss_->getSpaceInformation());
         ss_->getPlannerData(pdat);
 
         if (pdat.numVertices() > 0) {
             size_t prevTreeSize = tree.size();
             size_t pdatNumVerticies = pdat.numVertices();
-            for (int i = prevTreeSize; i < pdatNumVerticies; ++i) {
+            for (size_t i = prevTreeSize; i < pdatNumVerticies; ++i) {
                 Drawable* d = new Drawable;
                 std::vector<double> reals;
                 if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
-
-                    ss_->getStateSpace()->copyToReals(reals, pdat.getVertex(i).getState());
+                    const ob::State* s = pdat.getVertex(i).getState();
+                    ss_->getStateSpace()->copyToReals(reals, s);
 
                     for (size_t j(0); j < reals.size(); ++j) {
                         robot->setPosition(j + 2, reals[j]);

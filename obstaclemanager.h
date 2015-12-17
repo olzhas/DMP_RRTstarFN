@@ -13,11 +13,13 @@
 
 namespace du = dart::utils;
 namespace dd = dart::dynamics;
+namespace ds = dart::simulation;
 
 class ObstacleManager {
 private:
     std::vector<Obstacle*> obstacles_;
     std::string configFileName_;
+    ds::WorldPtr world_;
 
 public:
     ObstacleManager(const std::string& configFileName = OBSTACLE_PATH "config.yaml")
@@ -27,6 +29,7 @@ public:
     }
 
     void loadAll();
+    void spawn(const std::string& name);
 };
 
 #endif // OBSTACLEMANAGER_H
