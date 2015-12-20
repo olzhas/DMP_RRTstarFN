@@ -26,6 +26,11 @@ Manipulator::Manipulator()
 {
     ;
 }
+//==============================================================================
+Manipulator::~Manipulator()
+{
+    dtwarn << "good\n";
+}
 
 inline std::string genBoxName(int i)
 {
@@ -56,8 +61,9 @@ void Manipulator::init(ConfigurationPtr &config)
 
     setWorld(myWorld);
 
-    //ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
-    ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
+    ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
+    jointSpace->localCost = boost::bind(&Manipulator::cost, this, _1, _2);
+    //ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
 
     // first two are connection to the world and table
     for(size_t i=0; i < staubli->getNumJoints(); ++i){
@@ -110,18 +116,45 @@ bool Manipulator::isStateValid(const ob::State* state)
 
     return true;
 }
-
 //==============================================================================
-Manipulator::~Manipulator()
+double Manipulator::cost(const ob::State* st1, const ob::State* st2)
 {
-    dtwarn << "good\n";
+    boost::lock_guard<boost::mutex> guard(mutex_);
+
+    double* js1 = (double*)st1->as<ob::RealVectorStateSpace::StateType>()->values;
+
+    for (int i = 2; i < 8; ++i) {
+        staubli_->setPosition(i, js1[i - 2]);
+        //std::cout << i << "=" <<jointSpace[i-2] << std::endl;
+    }
+    staubli_->computeForwardKinematics(true, false, false);
+    for (int i =2; i < 8; ++i) {
+        Eigen::Isometry3d transform1 = staubli_->getBodyNode("toolflange_link")->getTransform();
+    }
+
+    Eigen::Vector3d t1 = transform1.translation();
+
+    double* js2 = (double*)st2->as<ob::RealVectorStateSpace::StateType>()->values;
+
+    for (int i = 2; i < 8; ++i) {
+        staubli_->setPosition(i, js2[i - 2]);
+        //std::cout << i << "=" <<jointSpace[i-2] << std::endl;
+    }
+    staubli_->computeForwardKinematics(true, false, false);
+    Eigen::Isometry3d transform2 = staubli_->getBodyNode("toolflange_link")->getTransform();
+    Eigen::Vector3d t2 = transform2.translation();
+
+    double c = 0.0;
+    for(int i=0; i<3; ++i){
+        double diff = t1[i] - t2[i];
+        c += diff*diff;
+    }
+    return sqrt(c);
 }
 
 //==============================================================================
 bool Manipulator::plan()
 {
-    obsManager.spawn("wall.skel");
-
     if (!ss_)
         return false;
 
@@ -167,7 +200,7 @@ bool Manipulator::plan()
 void Manipulator::configurePlanner()
 {
     ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(cfg->maxNumberNodes);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(false); // delay collision detection
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(true); // delay collision detection
     ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
 }
@@ -178,6 +211,7 @@ bool Manipulator::replan()
     return localReplanFromScratch();
 }
 //==============================================================================
+#ifdef LOCAL_SUB_REPLAN
 bool Manipulator::localReplanFromScratch()
 {
 
@@ -311,11 +345,20 @@ bool Manipulator::localReplanFromScratch()
 
     //    return ss_->haveSolutionPath();
 }
+#endif
 //==============================================================================
 bool Manipulator::localReplan()
 {
-    //ob::State* interimState = si_->allocState();
-    //pWindow
+    ob::SpaceInformationPtr si(ss_->getSpaceInformation());
+    ob::State* interimState = si->allocState();
+
+    og::PathGeometric &p = ss_->getSolutionPath();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->stepOne();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes();
+
+    //for
+
     /*
     ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
             interpolate(p.getState(startPos), p.getState(endPos),
@@ -325,8 +368,6 @@ bool Manipulator::localReplan()
             as<ob::RealVectorStateSpace>()->
             distance(p.getState(startPos), p.getState(endPos));
     ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
-
     ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
 
     ss_->getProblemDefinition()->clearSolutionPaths();
@@ -334,7 +375,7 @@ bool Manipulator::localReplan()
     configurePlanner();
 
     removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
-    */
+*/
     ss_->solve(30);
     cfg->dynamicReplanning = true;
 

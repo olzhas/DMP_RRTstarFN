@@ -11,7 +11,8 @@ namespace base
 class WeightedRealVectorStateSpace : public RealVectorStateSpace
 {
 public:
-
+    boost::function <double (const State *state1, const State *state2)> localCost;
+    //double (*localCost)(const State *state1, const State *state2);
     double distance(const State *state1, const State *state2) const override;
 };
 }

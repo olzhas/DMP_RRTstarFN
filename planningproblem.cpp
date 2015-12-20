@@ -28,6 +28,9 @@ int PlanningProblem::solve(int argc, char* argv[])
 //==============================================================================
 void PlanningProblem::plan(int* argcp, char** argv)
 {
+    manipulator->obsManager.spawn("wall.skel");
+    manipulator->obsManager.spawn("human_box.skel");
+
     if (!cfg->loadData) {
         std::cout << "Planning time is set to " << cfg->planningTime << " sec\n";
         if (manipulator->plan()) {
@@ -42,10 +45,13 @@ void PlanningProblem::plan(int* argcp, char** argv)
     cfg->planningDone = true;
 
     while (!cfg->dynamicObstacle) {
-        ; //std::cout << "wait for dynamic replanning" << std::endl;
+        auto keyWait = boost::chrono::system_clock::now() + boost::chrono::milliseconds(100);
+        boost::this_thread::sleep_until(keyWait);
+        //std::cout << "wait for dynamic replanning" << std::endl;
     }
 
     std::cout << "dynamic replanning was initiated" << std::endl;
+    manipulator->obsManager.spawn("cube.skel");
     manipulator->replan();
     cfg->dynamicReplanning = true;
 

@@ -107,6 +107,8 @@ private:
     void spawnObstacle(std::string path);
 
     void setState(ob::ScopedState<>& state, std::vector<double>& set);
+
+    double cost(const ob::State*, const ob::State*);
 };
 
 typedef std::shared_ptr<Manipulator> ManipulatorPtr;
