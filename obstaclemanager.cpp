@@ -17,7 +17,6 @@ void ObstacleManager::loadAll()
         dtwarn << "No active obstacles";
     }
 
-
     for (size_t i = 0; i < obsNames.size(); ++i) {
         dd::SkeletonPtr obsSkel(du::SkelParser::readSkeleton(OBSTACLE_PATH + obsNames[i]));
         if(obsSkel != nullptr){
