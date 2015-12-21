@@ -62,7 +62,7 @@ void Manipulator::init(ConfigurationPtr &config)
     setWorld(myWorld);
 
     ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
-    jointSpace->localCost = boost::bind(&Manipulator::cost, this, _1, _2);
+    //jointSpace->localCost = boost::bind(&Manipulator::cost, this, _1, _2);
     //ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
 
     // first two are connection to the world and table
@@ -128,10 +128,7 @@ double Manipulator::cost(const ob::State* st1, const ob::State* st2)
         //std::cout << i << "=" <<jointSpace[i-2] << std::endl;
     }
     staubli_->computeForwardKinematics(true, false, false);
-    for (int i =2; i < 8; ++i) {
-        Eigen::Isometry3d transform1 = staubli_->getBodyNode("toolflange_link")->getTransform();
-    }
-
+    Eigen::Isometry3d transform1 = staubli_->getBodyNode("toolflange_link")->getTransform();
     Eigen::Vector3d t1 = transform1.translation();
 
     double* js2 = (double*)st2->as<ob::RealVectorStateSpace::StateType>()->values;
