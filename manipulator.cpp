@@ -431,50 +431,21 @@ void Manipulator::load(const char* filename)
     configurePlanner();
     ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg->loadDataFile.c_str());
 
-    /*
-    ob::PlannerData pdat(ss_->getSpaceInformation());
-    ob::PlannerDataStorage pdstorage;
-    pdstorage.load(filename, pdat);
-
-    std::vector<unsigned int> edgeList;
-    unsigned int test = 0;
-    for (int i = 0; i < pdat.numVertices(); ++i) {
-        if (pdat.isStartVertex(i)) {
-            std::cout << "start vertex " << i << std::endl;
-        }
-
-        pdat.getEdges(i, edgeList);
-        for(int j = 0; j < edgeList.size(); ++j) {
-            std::cout << edgeList[j] << " ";
-        }
-        if(edgeList.size() > 0)
-            std::cout << "\n";
-        test += edgeList.size();
+    SolutionPath* sp = new SolutionPath("main");
+    try {
+        og::PathGeometric& p = ss_->getSolutionPath();
+#ifdef INTERP
+        p.interpolate(2000);
+#endif
+        sp->set(p, ss_->getSpaceInformation(), staubli_);
+        pWindow->solutionPaths.push_back(sp);
+        pWindow->drawables.push_back(&sp->getDrawables());
     }
-    std::cout << test << " = " << pdat.numVertices() << std::endl;
-*/
-
-    //graph = pdat.toBoostGraph();
-
-    /*
-    std::vector<unsigned int> edgeList;
-    for (int i = 0; i < pdat.numVertices(); ++i) {
-        if (  pdat.getVertex(i) != ob::PlannerData::NO_VERTEX){
-            pdat.getIncomingEdges(i,edgeList);
-            std::cout << edgeList.length() << std::endl;
-           for (int j = 0; j < edgeList.length(); ++j) {
-
-            }
-
-       }
-        else
-            std::cout << "we've got a right node\n";
+    catch (ompl::Exception e) {
+        delete sp;
+        dtwarn << "No solution, man\n";
     }
-*/
-    //ss_->getPlanner()->as<og::DRRTstarFN>()
 }
-
-
 
 //==============================================================================
 void Manipulator::printEdge(std::ostream& os, const ob::StateSpacePtr& space,

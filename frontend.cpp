@@ -30,25 +30,20 @@ void Frontend::exec(int* argcp, char** argv)
     pWindow->initGhostManipulators();
     glutInit(argcp, argv);
 
+    /*
+    SolutionPath* spInterp = new SolutionPath("main");
+
     try {
         og::PathGeometric& p = pManipulator->ss_->getSolutionPath();
         p.interpolate(2000);
-        SolutionPath spInterp("main");
-
-        spInterp.set(p, pManipulator->ss_->getSpaceInformation(),
+        spInterp->set(p, pManipulator->ss_->getSpaceInformation(),
             pManipulator->staubli_);
-        pWindow->drawables.push_back(&spInterp.getDrawables());
-        pWindow->solutionPaths.push_back(&spInterp);
+        pWindow->drawables.push_back(&spInterp->getDrawables());
+        pWindow->solutionPaths.push_back(spInterp);
     }
     catch (ompl::Exception e) {
         ;
     }
-    /*
-    SolutionPath sp;
-    sp.set(p, pManipulator->ss_->getSpaceInformation(),
-           pManipulator->staubli_,
-           Eigen::Vector3d(0.9, 0.6, 0.3), 0.025);
-    pWindow->drawables.push_back(&sp.getDrawables());
     */
 
     pWindow->initWindow(1280, 800, "Staubli TX90XL");
