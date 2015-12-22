@@ -2,7 +2,6 @@
 #define MANIPULATOR_H_
 
 #include <ompl/geometric/SimpleSetup.h>
-#include <ompl/geometric/planners/rrt/DRRTstarFN.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/util/Exception.h>
 #include <ompl/config.h>
@@ -32,6 +31,7 @@
 #include "configuration.h"
 #include "weightedrealvectorstatespace.h"
 #include "obstaclemanager.h"
+#include "DRRTstarFN.h"
 
 #define NUM_OBSTACLE 5
 #define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
