@@ -86,6 +86,7 @@ void PlanningProblem::treeUpdate()
 
         if (pdat.numVertices() > 0) {
             size_t prevTreeSize = tree.size();
+            //size_t prevTreeSize = 0;
             size_t pdatNumVerticies = pdat.numVertices();
             for (size_t i = prevTreeSize; i < pdatNumVerticies; ++i) {
                 Drawable* d = new Drawable;

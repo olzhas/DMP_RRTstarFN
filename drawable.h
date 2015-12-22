@@ -19,6 +19,7 @@
 
 typedef Eigen::Vector4d Color;
 
+//==============================================================================
 class Drawable {
 
 public:
@@ -46,7 +47,7 @@ public:
         color_ = color;
     }
 
-    void draw();
+    virtual void draw();
 
     /* setters */
     void setType(DrawableType type) { type_ = type; }
@@ -60,14 +61,30 @@ public:
     Eigen::Vector3d getPoint() { return point_; }
     Eigen::Vector3d getColor() { return color_; }
 
-private:
+protected:
     Eigen::Vector3d point_;
     Eigen::Vector3d color_;
     double size_;
     DrawableType type_;
     DrawableVisibility visible_;
 };
+//==============================================================================
+class DrawableLiveTime : public Drawable {
+    double liveTime_;
+    double stepSize_;
+    double sizeLimit_;
 
+public:
+    void draw() override;
+
+    double calcSize()
+    {
+        if (liveTime_ > sizeLimit_)
+            liveTime_ -= stepSize_;
+        return liveTime_;
+    }
+};
+//==============================================================================
 class DrawableCollection {
 private:
     std::vector<Drawable*> data_;
@@ -140,5 +157,4 @@ namespace gui {
     };
 }
 }
-
 #endif // DRAWABLE_H

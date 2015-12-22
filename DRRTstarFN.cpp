@@ -35,7 +35,7 @@
 /* Authors: Alejandro Perez, Sertac Karaman, Ryan Luna, Luis G. Torres, Ioan
  * Sucan, Javier V Gomez */
 
-#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
+#include "DRRTstarFN.h"
 #include "ompl/base/goals/GoalSampleableRegion.h"
 #include "ompl/tools/config/SelfConfig.h"
 #include "ompl/base/objectives/PathLengthOptimizationObjective.h"
@@ -215,6 +215,7 @@ void ompl::geometric::DRRTstarFN::stepOne()
 ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
         const base::PlannerTerminationCondition& ptc)
 {
+    OMPL_ERROR("random seed = %f\n", ompl::RNG::getSeed());
     int removedNodes = 0;
 
     checkValidity();
