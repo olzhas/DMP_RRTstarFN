@@ -1,7 +1,6 @@
 #include "mywindow.h"
 
 #include <fstream>
-#include <ompl/geometric/planners/rrt/DRRTstarFN.h>
 
 namespace dd = dart::dynamics;
 namespace du = dart::utils;

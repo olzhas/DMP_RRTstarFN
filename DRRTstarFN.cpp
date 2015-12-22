@@ -215,7 +215,6 @@ void ompl::geometric::DRRTstarFN::stepOne()
 ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
         const base::PlannerTerminationCondition& ptc)
 {
-    OMPL_ERROR("random seed = %f\n", ompl::RNG::getSeed());
     int removedNodes = 0;
 
     checkValidity();

@@ -1,10 +1,10 @@
 #ifndef MANIPULATORMOTIONVALIDATOR_H
 #define MANIPULATORMOTIONVALIDATOR_H
 
-#include <ompl/geometric/planners/rrt/DRRTstarFN.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
 #include "configuration.h"
+#include "DRRTstarFN.h"
 
 namespace ob = ompl::base;
 
