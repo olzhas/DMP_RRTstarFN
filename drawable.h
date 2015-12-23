@@ -24,10 +24,10 @@ class Drawable {
 
 public:
     enum DrawableType { BOX,
-        SPHERE };
+                        SPHERE };
 
     enum DrawableVisibility : bool { VISIBLE = 1,
-        HIDDEN = 0 };
+                                     HIDDEN = 0 };
 
     Drawable()
         : size_(0.01)
@@ -75,7 +75,14 @@ class DrawableLiveTime : public Drawable {
     double sizeLimit_;
 
 public:
-    void draw() override;
+    DrawableLiveTime()
+        : stepSize_(0.001)
+        , sizeLimit_(0.001)
+        , liveTime_(size_)
+    {
+        ;
+    }
+    virtual void draw() override;
 
     double calcSize()
     {
@@ -83,6 +90,8 @@ public:
             liveTime_ -= stepSize_;
         return liveTime_;
     }
+
+    void setLiveTime(double l) { liveTime_ = l;}
 };
 //==============================================================================
 class DrawableCollection {
@@ -142,19 +151,19 @@ public:
 
 namespace dart {
 namespace gui {
-    class SimpleRGB {
-    public:
-        double r;
-        double g;
-        double b;
+class SimpleRGB {
+public:
+    double r;
+    double g;
+    double b;
 
-        SimpleRGB(double red, double green, double blue)
-        {
-            r = red;
-            g = green;
-            b = blue;
-        }
-    };
+    SimpleRGB(double red, double green, double blue)
+    {
+        r = red;
+        g = green;
+        b = blue;
+    }
+};
 }
 }
 #endif // DRAWABLE_H

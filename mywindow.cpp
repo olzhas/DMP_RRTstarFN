@@ -18,7 +18,6 @@ MyWindow::MyWindow()
     , prevSize(0)
 {
     mZoom = 0.3f;
-    //mCapture = true;
 }
 //==============================================================================
 
@@ -107,8 +106,8 @@ void MyWindow::drawSkels()
         mTrans = Eigen::Vector3d(0, -50, -1500);
         Eigen::Matrix3d mat;
         mat = Eigen::AngleAxisd(-50.0 / 180.0 * M_PI, Eigen::Vector3d::UnitX())
-            * Eigen::AngleAxisd(4.0 / 180.0 * M_PI, Eigen::Vector3d::UnitY())
-            * Eigen::AngleAxisd(-61.0 / 180.0 * M_PI, Eigen::Vector3d::UnitZ());
+                * Eigen::AngleAxisd(4.0 / 180.0 * M_PI, Eigen::Vector3d::UnitY())
+                * Eigen::AngleAxisd(-61.0 / 180.0 * M_PI, Eigen::Vector3d::UnitZ());
         Eigen::Quaterniond quat(mat);
         mTrackBall.setQuaternion(quat);
     }

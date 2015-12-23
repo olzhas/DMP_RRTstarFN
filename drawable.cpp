@@ -41,7 +41,7 @@ void DrawableLiveTime::draw()
     gluQuadricDrawStyle(c, GLU_FILL);
     gluQuadricNormals(c, GLU_SMOOTH);
 
-    glColor3d(color_[0], color_[1], color_[2]);
+    glColor4d(color_[0], color_[1], color_[2], 0.5);
 
     glPushMatrix();
     glTranslatef(point_[0], point_[1], point_[2]);

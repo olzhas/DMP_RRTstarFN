@@ -205,10 +205,10 @@ namespace geometric {
 
         //void loadTree(const char *filename);
 
-        enum NodeType { NORMAL,
-            ORPHANED,
-            NEW_DYNAMIC,
-            REMOVED };
+        enum NodeType : char { NORMAL = 0,
+            ORPHANED = 1,
+            NEW_DYNAMIC = 2,
+            REMOVED = 3 };
 
     protected:
         /** \brief Representation of a motion */

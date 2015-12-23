@@ -13,7 +13,7 @@ class WeightedRealVectorStateSampler : public RealVectorStateSampler {
 public:
     WeightedRealVectorStateSampler(const StateSpace *space) : RealVectorStateSampler(space)
     {
-        rng_.setLocalSeed(100);
+        rng_.setLocalSeed(200390);
     }
 };
 

@@ -210,6 +210,7 @@ void ompl::geometric::DRRTstarFN::stepOne()
             orphanedNodes_.push_back(m);
         }
     }
+    OMPL_INFORM("number of orphaned nodes: %d", orphanedNodes_.size());
 }
 
 ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
@@ -309,13 +310,13 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
         Motion* nmotion = nn_->nearest(rmotion);
         if(nmotion->nodeType == ORPHANED)
         {
-            OMPL_ERROR("tried to connect ORPHANED node %d\n", nmotion->nodeType);
+            OMPL_ERROR("tried to connect to an ORPHANED node %d\n", nmotion->nodeType);
             continue;
         }
 
         if(nmotion->nodeType == REMOVED)
         {
-            OMPL_ERROR("tried to connect REMOVED node %d\n", nmotion->nodeType);
+            OMPL_ERROR("tried to connect to a REMOVED node %d\n", nmotion->nodeType);
             continue;
         }
 
