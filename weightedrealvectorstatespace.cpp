@@ -34,5 +34,9 @@ double ompl::base::WeightedRealVectorStateSpace::distance(const State *state1, c
     //return dist;
     return sqrt(dist);
 }
+ompl::base::StateSamplerPtr ompl::base::WeightedRealVectorStateSpace::allocDefaultStateSampler() const
+{
+    return StateSamplerPtr(new WeightedRealVectorStateSampler(this));
+}
 }
 }

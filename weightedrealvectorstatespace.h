@@ -8,12 +8,22 @@ namespace ompl
 {
 namespace base
 {
+
+class WeightedRealVectorStateSampler : public RealVectorStateSampler {
+public:
+    WeightedRealVectorStateSampler(const StateSpace *space) : RealVectorStateSampler(space)
+    {
+        rng_.setLocalSeed(100);
+    }
+};
+
 class WeightedRealVectorStateSpace : public RealVectorStateSpace
 {
 public:
+    double distance(const State *state1, const State *state2) const;
+    ompl::base::StateSamplerPtr allocDefaultStateSampler() const;
+
     boost::function <double (const State *state1, const State *state2)> localCost;
-    //double (*localCost)(const State *state1, const State *state2);
-    double distance(const State *state1, const State *state2) const override;
 };
 }
 }
