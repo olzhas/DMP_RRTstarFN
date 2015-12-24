@@ -62,7 +62,7 @@ void Manipulator::init(ConfigurationPtr &config)
     setWorld(myWorld);
 
     ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
-    jointSpace->localCost = boost::bind(&Manipulator::cost, this, _1, _2);
+    //jointSpace->localCost = boost::bind(&Manipulator::cost, this, _1, _2);
     //ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
 
     // first two are connection to the world and table
@@ -128,10 +128,7 @@ double Manipulator::cost(const ob::State* st1, const ob::State* st2)
         //std::cout << i << "=" <<jointSpace[i-2] << std::endl;
     }
     staubli_->computeForwardKinematics(true, false, false);
-    for (int i =2; i < 8; ++i) {
-        Eigen::Isometry3d transform1 = staubli_->getBodyNode("toolflange_link")->getTransform();
-    }
-
+    Eigen::Isometry3d transform1 = staubli_->getBodyNode("toolflange_link")->getTransform();
     Eigen::Vector3d t1 = transform1.translation();
 
     double* js2 = (double*)st2->as<ob::RealVectorStateSpace::StateType>()->values;
@@ -353,9 +350,11 @@ bool Manipulator::localReplan()
     ob::State* interimState = si->allocState();
 
     og::PathGeometric &p = ss_->getSolutionPath();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(45.0/180.0 * M_PI);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
     ss_->getPlanner()->as<og::DRRTstarFN>()->stepOne();
     ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
 
     //for
 
@@ -376,8 +375,25 @@ bool Manipulator::localReplan()
 
     removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
 */
-    ss_->solve(30);
+    ss_->getProblemDefinition()->clearSolutionPaths();
+    ss_->solve(90);
     cfg->dynamicReplanning = true;
+
+
+    SolutionPath* sp = new SolutionPath("sub");
+    try {
+        og::PathGeometric& p = ss_->getSolutionPath();
+
+        p.interpolate(200);
+
+        sp->set(p, ss_->getSpaceInformation(), staubli_);
+        pWindow->drawables.push_back(&sp->getDrawables());
+        pWindow->solutionPaths.push_back(sp);
+    }
+    catch (ompl::Exception e) {
+        delete sp;
+        dtwarn << "No solution, man\n";
+    }
 
 }
 
@@ -434,50 +450,21 @@ void Manipulator::load(const char* filename)
     configurePlanner();
     ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg->loadDataFile.c_str());
 
-    /*
-    ob::PlannerData pdat(ss_->getSpaceInformation());
-    ob::PlannerDataStorage pdstorage;
-    pdstorage.load(filename, pdat);
-
-    std::vector<unsigned int> edgeList;
-    unsigned int test = 0;
-    for (int i = 0; i < pdat.numVertices(); ++i) {
-        if (pdat.isStartVertex(i)) {
-            std::cout << "start vertex " << i << std::endl;
-        }
-
-        pdat.getEdges(i, edgeList);
-        for(int j = 0; j < edgeList.size(); ++j) {
-            std::cout << edgeList[j] << " ";
-        }
-        if(edgeList.size() > 0)
-            std::cout << "\n";
-        test += edgeList.size();
+    SolutionPath* sp = new SolutionPath("main");
+    try {
+        og::PathGeometric& p = ss_->getSolutionPath();
+#ifdef INTERP
+        p.interpolate(2000);
+#endif
+        sp->set(p, ss_->getSpaceInformation(), staubli_);
+        pWindow->solutionPaths.push_back(sp);
+        pWindow->drawables.push_back(&sp->getDrawables());
     }
-    std::cout << test << " = " << pdat.numVertices() << std::endl;
-*/
-
-    //graph = pdat.toBoostGraph();
-
-    /*
-    std::vector<unsigned int> edgeList;
-    for (int i = 0; i < pdat.numVertices(); ++i) {
-        if (  pdat.getVertex(i) != ob::PlannerData::NO_VERTEX){
-            pdat.getIncomingEdges(i,edgeList);
-            std::cout << edgeList.length() << std::endl;
-           for (int j = 0; j < edgeList.length(); ++j) {
-
-            }
-
-       }
-        else
-            std::cout << "we've got a right node\n";
+    catch (ompl::Exception e) {
+        delete sp;
+        dtwarn << "No solution, man\n";
     }
-*/
-    //ss_->getPlanner()->as<og::DRRTstarFN>()
 }
-
-
 
 //==============================================================================
 void Manipulator::printEdge(std::ostream& os, const ob::StateSpacePtr& space,

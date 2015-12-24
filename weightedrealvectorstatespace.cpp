@@ -8,8 +8,8 @@ namespace base
 
 double ompl::base::WeightedRealVectorStateSpace::distance(const State *state1, const State *state2) const
 {
-    return localCost(state1, state2);
-/*
+    //return localCost(state1, state2);
+
     double dist = 0.0;
     const double *s1 = static_cast<const StateType*>(state1)->values;
     const double *s2 = static_cast<const StateType*>(state2)->values;
@@ -31,9 +31,12 @@ double ompl::base::WeightedRealVectorStateSpace::distance(const State *state1, c
         }
         dist += (diff * diff) * k;
     }
-    return dist;
-    //return sqrt(dist);
-*/
+    //return dist;
+    return sqrt(dist);
+}
+ompl::base::StateSamplerPtr ompl::base::WeightedRealVectorStateSpace::allocDefaultStateSampler() const
+{
+    return StateSamplerPtr(new WeightedRealVectorStateSampler(this));
 }
 }
 }

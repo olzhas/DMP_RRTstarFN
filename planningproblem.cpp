@@ -55,6 +55,8 @@ void PlanningProblem::plan(int* argcp, char** argv)
     manipulator->replan();
     cfg->dynamicReplanning = true;
 
+
+
     while (true)
         ;
     return;
@@ -79,13 +81,16 @@ void PlanningProblem::treeUpdate()
     dart::dynamics::SkeletonPtr robot(pWorld->getSkeleton("TX90XLHB")->clone());
     og::SimpleSetupPtr ss_(manipulator->ss_);
 
+    bool once = false;
+
     while (true) {
-        auto start = bc::system_clock::now() + bc::milliseconds(100);
+        auto start = bc::system_clock::now() + bc::milliseconds(50);
         ob::PlannerData pdat(ss_->getSpaceInformation());
         ss_->getPlannerData(pdat);
 
         if (pdat.numVertices() > 0) {
             size_t prevTreeSize = tree.size();
+            //size_t prevTreeSize = 0;
             size_t pdatNumVerticies = pdat.numVertices();
             for (size_t i = prevTreeSize; i < pdatNumVerticies; ++i) {
                 Drawable* d = new Drawable;
@@ -107,6 +112,31 @@ void PlanningProblem::treeUpdate()
                     tree.add(d);
                 }
             }
+            //if(!once){
+                for(size_t i=0; i<pdatNumVerticies; ++i){
+                    DrawableLiveTime* d = new DrawableLiveTime;
+                    std::vector<double> reals;
+                    if(pdat.getVertex(i) != ob::PlannerData::NO_VERTEX){
+                        if(pdat.getVertex(i).getTag() == 1) {
+                            once = true;
+                            const ob::State* s = pdat.getVertex(i).getState();
+                            ss_->getStateSpace()->copyToReals(reals, s);
+
+                            for (size_t j(0); j < reals.size(); ++j) {
+                                robot->setPosition(j + 2, reals[j]);
+                            }
+                            robot->computeForwardKinematics(true, false, false);
+                            Eigen::Isometry3d transform = robot->getBodyNode("toolflange_link")->getTransform();
+
+                            d->setPoint(transform.translation());
+                            d->setType(Drawable::BOX);
+                            d->setLiveTime(0.15);
+                            d->setColor(Eigen::Vector3d(0.5, 0.0, 0.25));
+                            tree.add(d);
+                        }
+                    }
+                }
+           // }
         }
         boost::this_thread::sleep_until(start);
     }

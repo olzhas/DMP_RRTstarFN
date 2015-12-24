@@ -1,5 +1,6 @@
 #include "drawable.h"
 
+//==============================================================================
 void Drawable::draw()
 {
     if(visible_ == Drawable::DrawableVisibility::HIDDEN)
@@ -29,7 +30,38 @@ void Drawable::draw()
 
     gluDeleteQuadric(c);
 }
+//==============================================================================
+void DrawableLiveTime::draw()
+{
+    if(visible_ == Drawable::DrawableVisibility::HIDDEN)
+        return;
 
+    GLUquadricObj* c;
+    c = gluNewQuadric();
+    gluQuadricDrawStyle(c, GLU_FILL);
+    gluQuadricNormals(c, GLU_SMOOTH);
+
+    glColor4d(color_[0], color_[1], color_[2], 0.5);
+
+    glPushMatrix();
+    glTranslatef(point_[0], point_[1], point_[2]);
+    size_ = calcSize();
+    switch (type_) {
+    case BOX:
+        glutSolidCube(size_);
+        break;
+    case SPHERE:
+        glutSolidSphere(size_, 6, 6);
+        break;
+    default:
+        dtwarn << "DrawableType is no specified\n";
+    }
+
+    glPopMatrix();
+
+    gluDeleteQuadric(c);
+}
+//==============================================================================
 void DrawableCollection::draw()
 {
     if (getVisibility() == Drawable::DrawableVisibility::HIDDEN)
@@ -40,8 +72,7 @@ void DrawableCollection::draw()
         d->draw();
     }
 }
-
-
+//==============================================================================
 void drawLine3D(const Eigen::Vector3d start, const Eigen::Vector3d end)
 {
     double _thickness = 0.001;
@@ -68,4 +99,3 @@ void drawLine3D(const Eigen::Vector3d start, const Eigen::Vector3d end)
 
     gluDeleteQuadric(c);
 }
-

@@ -19,14 +19,15 @@
 
 typedef Eigen::Vector4d Color;
 
+//==============================================================================
 class Drawable {
 
 public:
     enum DrawableType { BOX,
-        SPHERE };
+                        SPHERE };
 
     enum DrawableVisibility : bool { VISIBLE = 1,
-        HIDDEN = 0 };
+                                     HIDDEN = 0 };
 
     Drawable()
         : size_(0.01)
@@ -46,7 +47,7 @@ public:
         color_ = color;
     }
 
-    void draw();
+    virtual void draw();
 
     /* setters */
     void setType(DrawableType type) { type_ = type; }
@@ -60,14 +61,39 @@ public:
     Eigen::Vector3d getPoint() { return point_; }
     Eigen::Vector3d getColor() { return color_; }
 
-private:
+protected:
     Eigen::Vector3d point_;
     Eigen::Vector3d color_;
     double size_;
     DrawableType type_;
     DrawableVisibility visible_;
 };
+//==============================================================================
+class DrawableLiveTime : public Drawable {
+    double liveTime_;
+    double stepSize_;
+    double sizeLimit_;
 
+public:
+    DrawableLiveTime()
+        : stepSize_(0.001)
+        , sizeLimit_(0.001)
+        , liveTime_(size_)
+    {
+        ;
+    }
+    virtual void draw() override;
+
+    double calcSize()
+    {
+        if (liveTime_ > sizeLimit_)
+            liveTime_ -= stepSize_;
+        return liveTime_;
+    }
+
+    void setLiveTime(double l) { liveTime_ = l;}
+};
+//==============================================================================
 class DrawableCollection {
 private:
     std::vector<Drawable*> data_;
@@ -125,20 +151,19 @@ public:
 
 namespace dart {
 namespace gui {
-    class SimpleRGB {
-    public:
-        double r;
-        double g;
-        double b;
+class SimpleRGB {
+public:
+    double r;
+    double g;
+    double b;
 
-        SimpleRGB(double red, double green, double blue)
-        {
-            r = red;
-            g = green;
-            b = blue;
-        }
-    };
+    SimpleRGB(double red, double green, double blue)
+    {
+        r = red;
+        g = green;
+        b = blue;
+    }
+};
 }
 }
-
 #endif // DRAWABLE_H
