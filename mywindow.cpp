@@ -82,7 +82,7 @@ void MyWindow::timeStepping()
     mWorld->step();
 #define ROBOT_NAME "TX90XLHB"
     // solutionPaths[0] is the active solution
-    SolutionPath* sp = solutionPaths[0];
+    SolutionPath* sp = solutionPaths.back();
     std::vector<double>& st = sp->getNextState();
     if (st.size() == 0) {
         mSimulating = false;

@@ -197,6 +197,9 @@ namespace geometric {
         /** \brief here the algorithm will find invalid nodes and mark/remove them from the tree */
         void stepOne();
 
+        /** \brief here the algorithm will try to connect orphaned nodes to the rest of the tree */
+        void stepTwo();
+
         /** \brief Save the state of the tree */
 
         void restoreTree(const char* filename);

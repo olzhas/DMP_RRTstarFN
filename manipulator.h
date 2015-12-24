@@ -79,12 +79,6 @@ public:
     void setWorld(dart::simulation::WorldPtr& world) { world_ = world; }
 
     ConfigurationPtr cfg;
-    enum ObstacleType { WALL,
-        HUMAN_BBOX,
-        CUBE };
-    ObstacleType obstacleStatic[5] = { WALL, HUMAN_BBOX, CUBE, CUBE, CUBE }; // FIXME number of obstacles is fixed
-
-    void spawnDynamicObstacles();
 
     MyWindowPtr pWindow;
     dd::SkeletonPtr staubli_;

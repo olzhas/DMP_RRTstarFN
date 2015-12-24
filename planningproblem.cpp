@@ -55,6 +55,8 @@ void PlanningProblem::plan(int* argcp, char** argv)
     manipulator->replan();
     cfg->dynamicReplanning = true;
 
+
+
     while (true)
         ;
     return;

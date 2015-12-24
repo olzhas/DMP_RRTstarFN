@@ -163,6 +163,9 @@ int ompl::geometric::DRRTstarFN::removeNodes()
         Motion* m = *itMotion;
 
         if(m->nodeType == REMOVED){
+            m->parent->children.erase(std::find(m->parent->children.begin(),
+                                                m->parent->children.end(),
+                                                m));
             if(!nn_->remove(m)){
                 OMPL_ERROR("Cannot remove the node");
             };
@@ -213,6 +216,67 @@ void ompl::geometric::DRRTstarFN::stepOne()
     OMPL_INFORM("number of orphaned nodes: %d", orphanedNodes_.size());
 }
 
+void ompl::geometric::DRRTstarFN::stepTwo()
+{
+    if(pdef_ == NULL)
+        return;
+
+    double k_rrg = boost::math::constants::e<double>() + (boost::math::constants::e<double>() / (double)si_->getStateSpace()->getDimension());
+
+    unsigned int k = std::ceil(k_rrg * log((double)(nn_->size() + 1)));
+
+    std::vector<base::Cost> costs;
+    std::vector<base::Cost> incCosts;
+    std::vector<std::size_t> sortedCostIndices;
+    std::vector<Motion*> nbh;
+
+    // our functor for sorting nearest neighbors
+    CostIndexCompare compareFn(costs, *opt_);
+
+    for(size_t i=0; i<orphanedNodes_.size(); ++i){
+        Motion* motion = orphanedNodes_[i];
+        nn_->nearestK(motion, k, nbh);
+
+        if (costs.size() < nbh.size()) {
+            costs.resize(nbh.size());
+            incCosts.resize(nbh.size());
+            sortedCostIndices.resize(nbh.size());
+        }
+
+        for (std::size_t j = 0; j < nbh.size(); ++j) {
+            incCosts[j] = opt_->motionCost(nbh[j]->state, motion->state);
+            costs[j] = opt_->combineCosts(nbh[j]->cost, incCosts[j]);
+        }
+
+        for (std::size_t j = 0; j < nbh.size(); ++j)
+            sortedCostIndices[j] = j;
+        std::sort(sortedCostIndices.begin(),
+                  sortedCostIndices.begin() + nbh.size(), compareFn);
+
+        for(std::vector<std::size_t>::const_iterator j = sortedCostIndices.begin();
+            j != sortedCostIndices.begin() + nbh.size(); ++j){
+            Motion* m = nbh[*j];
+            if(m->nodeType == NORMAL){
+                while(m->parent != 0){
+                    if(m->parent->nodeType == ORPHANED)
+                        break;
+                    else
+                        m = m->parent;
+                }
+                if(m == startMotion_){
+                    if(si_->checkMotion(motion->state, nbh[*j]->state)){
+                        motion->nodeType = NORMAL;
+                        motion->parent = nbh[*j];
+                        motion->parent->children.push_back(motion);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    OMPL_INFORM("number of orphaned nodes: %d", orphanedNodes_.size());
+}
+
 ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
         const base::PlannerTerminationCondition& ptc)
 {
@@ -225,13 +289,14 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
     bool symCost = opt_->isSymmetric();
 
-    while (const base::State* st = pis_.nextStart()) {
-        Motion* motion = new Motion(si_);
-        si_->copyState(motion->state, st);
-        motion->cost = opt_->identityCost();
-        nn_->add(motion);
-        startMotion_ = motion;
-    }
+    if(!localPlanning_)
+        while (const base::State* st = pis_.nextStart()) {
+            Motion* motion = new Motion(si_);
+            si_->copyState(motion->state, st);
+            motion->cost = opt_->identityCost();
+            nn_->add(motion);
+            startMotion_ = motion;
+        }
 
     if (nn_->size() == 0) {
         OMPL_ERROR("%s: There are no valid initial states!", getName().c_str());
@@ -285,8 +350,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
     CostIndexCompare compareFn(costs, *opt_);
 
     OMPL_INFORM("size of the tree %d", nn_->size());
-
-    // TODO recover tree from removal of a node
 
     while (ptc == false) {
         iterations_++;
@@ -356,22 +419,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
             rewireTest += nbh.size();
             statesGenerated++;
-            /*
-            if(localPlanning_){
-                for(std::vector<Motion*>::iterator it=orphanedNodes_.begin();
-                    it != orphanedNodes_.end(); ++it){
-                    Motion* orphan = *it;
-                    if(si_->distance(orphan->state, motion->state) < 3.0){
-                        if (si_->checkMotion(orphan->state, motion->state)) {
-                            orphan->parent = motion;
-                            orphan->nodeType = NORMAL;
-                            orphanedNodes_.erase(it);
-                            it--;
-                        }
-                    }
-                }
-            }
-*/
 
             // cache for distance computations
             //
