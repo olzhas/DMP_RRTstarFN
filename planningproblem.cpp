@@ -54,9 +54,6 @@ void PlanningProblem::plan(int* argcp, char** argv)
     manipulator->obsManager.spawn("cube.skel");
     manipulator->replan();
     cfg->dynamicReplanning = true;
-
-
-
     while (true)
         ;
     return;
