@@ -205,7 +205,6 @@ void Manipulator::configurePlanner()
 bool Manipulator::replan()
 {
     return localReplan();
-    return localReplanFromScratch();
 }
 //==============================================================================
 #ifdef LOCAL_SUB_REPLAN
@@ -355,28 +354,8 @@ bool Manipulator::localReplan()
     ss_->getPlanner()->as<og::DRRTstarFN>()->stepOne();
     ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes();
     ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
-
-    //for
-
-    /*
-    ss_->getStateSpace()->as<ob::RealVectorStateSpace>()->
-            interpolate(p.getState(startPos), p.getState(endPos),
-                        0.5, interimState);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setInterimState(interimState);
-    double radius = ss_->getStateSpace()->
-            as<ob::RealVectorStateSpace>()->
-            distance(p.getState(startPos), p.getState(endPos));
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.3);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.8);
-
     ss_->getProblemDefinition()->clearSolutionPaths();
-    ss_->setStartAndGoalStates(start, goal);
-    configurePlanner();
-
-    removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes(partition);
-*/
-    ss_->getProblemDefinition()->clearSolutionPaths();
-    ss_->solve(90);
+    ss_->solve(120);
     cfg->dynamicReplanning = true;
 
 
