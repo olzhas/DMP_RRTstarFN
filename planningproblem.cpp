@@ -109,6 +109,7 @@ void PlanningProblem::treeUpdate()
                     tree.add(d);
                 }
             }
+            /*
             //if(!once){
                 for(size_t i=0; i<pdatNumVerticies; ++i){
                     DrawableLiveTime* d = new DrawableLiveTime;
@@ -134,6 +135,7 @@ void PlanningProblem::treeUpdate()
                     }
                 }
            // }
+           */
         }
         boost::this_thread::sleep_until(start);
     }
