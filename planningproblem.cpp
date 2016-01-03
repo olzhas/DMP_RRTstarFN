@@ -109,9 +109,12 @@ void PlanningProblem::treeUpdate()
                     tree.add(d);
                 }
             }
+            /*
+
+            // FIXME the following lines cause a memory leak
             //if(!once){
                 for(size_t i=0; i<pdatNumVerticies; ++i){
-                    DrawableLiveTime* d = new DrawableLiveTime;
+                    DrawableLiveTime* d = new DrawableLiveTime; // mem leak
                     std::vector<double> reals;
                     if(pdat.getVertex(i) != ob::PlannerData::NO_VERTEX){
                         if(pdat.getVertex(i).getTag() == 1) {
@@ -134,6 +137,7 @@ void PlanningProblem::treeUpdate()
                     }
                 }
            // }
+           */
         }
         boost::this_thread::sleep_until(start);
     }
