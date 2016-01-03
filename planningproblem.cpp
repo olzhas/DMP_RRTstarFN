@@ -110,9 +110,11 @@ void PlanningProblem::treeUpdate()
                 }
             }
             /*
+             *
+             * FIXME the following lines cause memory leak
             //if(!once){
                 for(size_t i=0; i<pdatNumVerticies; ++i){
-                    DrawableLiveTime* d = new DrawableLiveTime;
+                    DrawableLiveTime* d = new DrawableLiveTime; // memleak
                     std::vector<double> reals;
                     if(pdat.getVertex(i) != ob::PlannerData::NO_VERTEX){
                         if(pdat.getVertex(i).getTag() == 1) {
