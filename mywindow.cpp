@@ -110,6 +110,22 @@ void MyWindow::drawSkels()
                 * Eigen::AngleAxisd(-61.0 / 180.0 * M_PI, Eigen::Vector3d::UnitZ());
         Eigen::Quaterniond quat(mat);
         mTrackBall.setQuaternion(quat);
+
+        dart::gui::drawStringOnScreen(0.02, 0.05, "camera fixed");
+    }
+
+    // just a text that indicates the progress
+    static int progress = 0;
+    if(!cfg->planningDone){
+        std::string s = "planning is in progress";
+        progress++;
+        for(int i=0;i<progress/4;++i){
+            s += ".";
+        }
+        if (progress > 12){
+            progress = 0;
+        }
+        dart::gui::drawStringOnScreen(0.02, 0.075, s);
     }
 
 #ifdef DEBUG
