@@ -71,8 +71,11 @@ void PlanningProblem::treeUpdate()
     boost::this_thread::sleep_until(pre_wait);
     //}
 
+    DrawableCollection edges("edges");
     DrawableCollection tree("tree");
     frontend.getWindow()->drawables.push_back(&tree);
+    frontend.getWindow()->drawables.push_back(&edges);
+
 
     dart::simulation::WorldPtr pWorld(manipulator->getWorld());
     dart::dynamics::SkeletonPtr robot(pWorld->getSkeleton("TX90XLHB")->clone());
@@ -90,9 +93,8 @@ void PlanningProblem::treeUpdate()
             //size_t prevTreeSize = 0;
             size_t pdatNumVerticies = pdat.numVertices();
             for (size_t i = prevTreeSize; i < pdatNumVerticies; ++i) {
-                Drawable* d = new Drawable;
-                std::vector<double> reals;
                 if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
+                    std::vector<double> reals;
                     const ob::State* s = pdat.getVertex(i).getState();
                     ss_->getStateSpace()->copyToReals(reals, s);
 
@@ -102,11 +104,48 @@ void PlanningProblem::treeUpdate()
                     robot->computeForwardKinematics(true, false, false);
                     Eigen::Isometry3d transform = robot->getBodyNode("toolflange_link")->getTransform();
 
+                    Drawable* d = new Drawable;
                     d->setPoint(transform.translation());
                     d->setType(Drawable::BOX);
                     d->setSize(0.005);
                     d->setColor(Eigen::Vector3d(0.5, 0.0, 0.5));
                     tree.add(d);
+#ifdef SHOW_EDGES
+                    std::vector<unsigned int> edgeList;
+                    if (pdat.getEdges(i, edgeList)){
+                        for(int j=0; j<edgeList.size(); ++j){
+                            DrawableEdge* e = new DrawableEdge;
+                            e->setStart(transform.translation());
+                            const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
+                            ss_->getStateSpace()->copyToReals(reals, s1);
+
+                            for (size_t k(0); k < reals.size(); ++k) {
+                                robot->setPosition(k + 2, reals[k]);
+                            }
+                            robot->computeForwardKinematics(true, false, false);
+                            transform = robot->getBodyNode("toolflange_link")->getTransform();
+                            e->setEnd(transform.translation());
+                            edges.add(e);
+                        }
+                    }
+                    if(pdat.getIncomingEdges(i, edgeList)){
+                        for(int j=0; j<edgeList.size(); ++j){
+                            DrawableEdge* e = new DrawableEdge;
+                            e->setEnd(transform.translation());
+                            const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
+                            ss_->getStateSpace()->copyToReals(reals, s1);
+
+                            for (size_t k(0); k < reals.size(); ++k) {
+                                robot->setPosition(k + 2, reals[k]);
+                            }
+                            robot->computeForwardKinematics(true, false, false);
+                            transform = robot->getBodyNode("toolflange_link")->getTransform();
+                            e->setStart(transform.translation());
+                            edges.add(e);
+                        }
+
+                    }
+#endif
                 }
             }
             /*

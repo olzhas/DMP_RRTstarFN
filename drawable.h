@@ -98,6 +98,9 @@ class DrawableEdge : public Drawable {
     Eigen::Vector3d end_;
 
 public:
+    DrawableEdge(){
+        ;
+    }
     DrawableEdge(Eigen::Vector3d start, Eigen::Vector3d end)
         : start_(start)
         , end_(end)

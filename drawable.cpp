@@ -77,7 +77,7 @@ void DrawableEdge::draw()
     gluQuadricNormals(c, GLU_SMOOTH);
     //    GLfloat color[4]={0.8, 0.1, 0, 1};
 
-    glColor4d(25.0 / 255.0, 102.0 / 255.0, 0.0 / 255.0, 0.4);
+    glColor4d(10.0 / 255.0, 10.0 / 255.0, 200.0 / 255.0, 0.4);
 
     glPushMatrix();
     glTranslatef(start_[0], start_[1], start_[2]);

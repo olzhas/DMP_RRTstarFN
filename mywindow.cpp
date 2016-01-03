@@ -117,7 +117,7 @@ void MyWindow::drawSkels()
     // just a text that indicates the progress
     static int progress = 0;
     if(!cfg->planningDone){
-        std::string s = "planning is in progress";
+        std::string s = "planning";
         progress++;
         for(int i=0;i<progress/4;++i){
             s += ".";
