@@ -605,6 +605,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                     if (motions[i]->children.size() == 0)
                         childlessNodes.push_back(i);
                 }
+                OMPL_INFORM("childless num %d", childlessNodes.size());
 
                 if (childlessNodes.size() > 0) {
 
@@ -621,7 +622,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                         OMPL_WARN("cannot remove the node");
                     }
                     else {
-                        statesGenerated--;
                         removedNodes++;
                     }
                 }

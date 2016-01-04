@@ -56,7 +56,6 @@ void MyWindow::setSkeletonCollidable(dd::SkeletonPtr& sk, const bool& isCollidab
 //==============================================================================
 void MyWindow::setSkeletonRGBA(dd::SkeletonPtr& sk, const Eigen::Vector4d& _color)
 {
-    //
     for (size_t i = 0; i < sk->getNumBodyNodes(); ++i) {
         for (size_t j = 0; j < sk->getBodyNode(i)->getNumVisualizationShapes(); ++j) {
             sk->getBodyNode(i)->getVisualizationShape(j)->setRGBA(_color);
@@ -71,6 +70,7 @@ void MyWindow::setSkeletonAlpha(dd::SkeletonPtr& sk, const double& alpha)
         sk->getBodyNode(i)->getVisualizationShape(0)->setAlpha(alpha);
     }
 }
+
 //==============================================================================
 MyWindow::~MyWindow()
 {
@@ -191,6 +191,7 @@ void MyWindow::drawManipulatorState(int state)
     }
     staubli->computeForwardKinematics(true, false, false);
 }
+
 //==============================================================================
 
 #define TREE_NAME "tree"
