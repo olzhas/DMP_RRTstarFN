@@ -206,6 +206,18 @@ void ompl::geometric::DRRTstarFN::stepOne()
             }
         }
     }
+
+    for(size_t i=0; i<motions.size(); ++i){
+        Motion *m = motions[i];
+        ompl::base::State *s = m->state;
+        if(!si_->getStateValidityChecker()->isValid(s)){
+            m->nodeType = REMOVED;
+            for(size_t j=0; j<m->children.size(); ++j){
+                m->children[j]->nodeType = ORPHANED;
+            }
+        }
+    }
+
     orphanedNodes_.clear();
     for(size_t i=0; i<motions.size(); ++i){
         Motion* m = motions[i];
