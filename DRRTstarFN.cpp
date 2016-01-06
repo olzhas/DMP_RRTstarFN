@@ -210,10 +210,12 @@ void ompl::geometric::DRRTstarFN::stepOne()
     for(size_t i=0; i<motions.size(); ++i){
         Motion *m = motions[i];
         ompl::base::State *s = m->state;
-        if(!si_->getStateValidityChecker()->isValid(s)){
-            m->nodeType = REMOVED;
-            for(size_t j=0; j<m->children.size(); ++j){
-                m->children[j]->nodeType = ORPHANED;
+        for(size_t j=0; j<m->children.size(); ++j){
+            Motion *mChild = m->children[j];
+            ompl::base::State *sChild = mChild->state;
+            if(!si_->getMotionValidator()->checkMotion(s, sChild)){
+                m->nodeType = REMOVED;
+                mChild->nodeType = REMOVED;
             }
         }
     }
@@ -221,8 +223,11 @@ void ompl::geometric::DRRTstarFN::stepOne()
     orphanedNodes_.clear();
     for(size_t i=0; i<motions.size(); ++i){
         Motion* m = motions[i];
-        if(m->nodeType == ORPHANED){
-            orphanedNodes_.push_back(m);
+        if(m->nodeType == REMOVED){
+            for(size_t j=0; j<m->children.size(); ++j){
+                m->children[j]->nodeType = ORPHANED;
+                orphanedNodes_.push_back(m->children[j]);
+            }
         }
     }
     OMPL_INFORM("number of orphaned nodes: %d", orphanedNodes_.size());

@@ -355,7 +355,7 @@ bool Manipulator::localReplan()
     ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes();
     ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
     ss_->getProblemDefinition()->clearSolutionPaths();
-    ss_->solve(120);
+    ss_->solve(10);
     cfg->dynamicReplanning = true;
 
 
