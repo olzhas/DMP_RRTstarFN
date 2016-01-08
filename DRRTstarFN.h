@@ -292,6 +292,9 @@ namespace geometric {
 
         void verifyTree();
 
+        /** \brief Marks the branch as orphaned */
+        void markOrphaned(Motion *m);
+
         // TODO write an explanation
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
 

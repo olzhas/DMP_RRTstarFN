@@ -225,12 +225,21 @@ void ompl::geometric::DRRTstarFN::markForRemoval()
         Motion* m = motions[i];
         if(m->nodeType == REMOVED){
             for(size_t j=0; j<m->children.size(); ++j){
-                m->children[j]->nodeType = ORPHANED;
-                orphanedNodes_.push_back(m->children[j]);
+                markOrphaned(m->children[j]);
             }
         }
     }
     OMPL_INFORM("number of orphaned nodes: %d", orphanedNodes_.size());
+}
+
+void ompl::geometric::DRRTstarFN::markOrphaned(Motion *m)
+{
+    orphanedNodes_.push_back(m);
+    m->nodeType = ORPHANED;
+    for(int i=0; i<m->children.size(); ++i){
+        markOrphaned(m->children[i]);
+    }
+    OMPL_INFORM("marked");
 }
 
 void ompl::geometric::DRRTstarFN::stepTwo()
