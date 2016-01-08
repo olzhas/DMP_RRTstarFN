@@ -175,7 +175,7 @@ int ompl::geometric::DRRTstarFN::removeNodes()
     return removed;
 }
 
-void ompl::geometric::DRRTstarFN::stepOne()
+void ompl::geometric::DRRTstarFN::markForRemoval()
 {
     if(pdef_ == NULL)
         return;

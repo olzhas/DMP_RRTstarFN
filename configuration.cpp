@@ -92,5 +92,5 @@ void Configuration::defaults()
     pathCollisionMap = NULL;
     randomSeed = 20;
 
-    motionCheckAccuracy = 0.05;
+    motionCheckAccuracy = 0.005;
 }

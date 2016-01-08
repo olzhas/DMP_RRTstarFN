@@ -351,11 +351,11 @@ bool Manipulator::localReplan()
     og::PathGeometric &p = ss_->getSolutionPath();
     ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(45.0/180.0 * M_PI);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->stepOne();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->markForRemoval();
     ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes();
     ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
     ss_->getProblemDefinition()->clearSolutionPaths();
-    ss_->solve(10);
+    ss_->solve(30);
     cfg->dynamicReplanning = true;
 
 
