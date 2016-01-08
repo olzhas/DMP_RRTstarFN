@@ -39,13 +39,13 @@ public:
     {
         ;
     }
-    SolutionPath(std::string& caption)
+    SolutionPath(std::string caption)
         : caption_(caption)
         , color_({ 0.2, 0.4, 0.8 })
     {
         ;
     }
-    SolutionPath(std::string& caption, std::string& colorName)
+    SolutionPath(std::string caption, std::string colorName)
         : caption_(caption)
         , color_({ 0.2, 0.4, 0.8 })
     {

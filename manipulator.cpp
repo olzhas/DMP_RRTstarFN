@@ -359,7 +359,7 @@ bool Manipulator::localReplan()
     cfg->dynamicReplanning = true;
 
 
-    SolutionPath* sp = new SolutionPath("sub");
+    SolutionPath* sp = new SolutionPath("sub", "r");
     try {
         og::PathGeometric& p = ss_->getSolutionPath();
 
