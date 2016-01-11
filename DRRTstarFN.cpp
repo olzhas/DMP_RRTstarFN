@@ -307,7 +307,8 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
     bool symCost = opt_->isSymmetric();
 
-    if(!localPlanning_)
+
+    if(!localPlanning_){
         while (const base::State* st = pis_.nextStart()) {
             Motion* motion = new Motion(si_);
             si_->copyState(motion->state, st);
@@ -315,6 +316,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             nn_->add(motion);
             startMotion_ = motion;
         }
+    }
 
     if (nn_->size() == 0) {
         OMPL_ERROR("%s: There are no valid initial states!", getName().c_str());

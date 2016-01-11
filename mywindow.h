@@ -55,7 +55,6 @@ public:
     std::vector<SolutionPath*> solutionPaths;
 
 private:
-
     int motionStep;
     int treeState;
 

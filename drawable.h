@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <dart/dart-core.h>
+#include <ompl/base/State.h>
 
 #if WIN32
 #include <cstdlib> // To disable glut::exit() function
@@ -30,10 +31,21 @@ public:
     Drawable()
         : size_(0.01)
         , point_(0, 0, 0)
-        , color_(0.8, 0.8, 0.8)
+        , color_(0.8, 0.8, 0.8, 1.0)
         , type_(BOX)
         , visible_(DrawableVisibility::VISIBLE)
     {
+        s_ = nullptr;
+    }
+
+    Drawable(Eigen::Vector3d point, Eigen::Vector4d color, double size, DrawableType type, DrawableVisibility visible)
+        : size_(size)
+        , type_(type)
+        , visible_(visible)
+    {
+        point_ = point;
+        color_ = color;
+        s_ = nullptr;
     }
 
     Drawable(Eigen::Vector3d point, Eigen::Vector3d color, double size, DrawableType type, DrawableVisibility visible)
@@ -42,7 +54,13 @@ public:
         , visible_(visible)
     {
         point_ = point;
-        color_ = color;
+        color_ << color[0], color[1], color[2], 1.0;
+        s_ = nullptr;
+    }
+
+    virtual ~Drawable()
+    {
+        ;
     }
 
     virtual void draw();
@@ -51,20 +69,28 @@ public:
     void setType(DrawableType type) { type_ = type; }
     void setSize(double size) { size_ = size; }
     void setPoint(Eigen::Vector3d point) { point_ = point; }
-    void setColor(Eigen::Vector3d color) { color_ = color; }
+    void setColor(Eigen::Vector3d color)
+    {
+        // drawable is opaque by default
+        color_ << color[0], color[1], color[2], 1;
+    }
+    void setColor(Eigen::Vector4d color) { color_ = color; }
+    void setState(ompl::base::State* s) { s_ = s; }
 
     /* getters */
     DrawableType getType() { return type_; }
     double getSize() { return size_; }
     Eigen::Vector3d getPoint() { return point_; }
-    Eigen::Vector3d getColor() { return color_; }
+    Eigen::Vector4d getColor() { return color_; }
+    ompl::base::State* getState() { return s_; }
 
 protected:
     Eigen::Vector3d point_;
-    Eigen::Vector3d color_;
+    Eigen::Vector4d color_;
     double size_;
     DrawableType type_;
     DrawableVisibility visible_;
+    ompl::base::State* s_;
 };
 //==============================================================================
 class DrawableLiveTime : public Drawable {
@@ -98,7 +124,8 @@ class DrawableEdge : public Drawable {
     Eigen::Vector3d end_;
 
 public:
-    DrawableEdge(){
+    DrawableEdge()
+    {
         ;
     }
     DrawableEdge(Eigen::Vector3d start, Eigen::Vector3d end)
@@ -116,7 +143,6 @@ public:
     // getters
     Eigen::Vector3d getStart() { return start_; }
     Eigen::Vector3d getEnd() { return end_; }
-
 };
 //==============================================================================
 class DrawableCollection {
@@ -151,6 +177,11 @@ public:
 
     void add(Drawable* d) { data_.push_back(d); }
     void draw();
+    Drawable* getElement(int n)
+    {
+        if (n < data_.size())
+            return data_[n];
+    }
 
     /* setters */
     void setCaption(std::string caption) { caption_ = caption; }
