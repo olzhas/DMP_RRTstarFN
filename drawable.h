@@ -15,8 +15,6 @@
 #error "Load OpenGL Error: What's your operating system?"
 #endif
 
-//TODO think how to include edge drawing routine
-
 typedef Eigen::Vector4d Color;
 
 //==============================================================================
@@ -24,10 +22,10 @@ class Drawable {
 
 public:
     enum DrawableType { BOX,
-                        SPHERE };
+        SPHERE };
 
     enum DrawableVisibility : bool { VISIBLE = 1,
-                                     HIDDEN = 0 };
+        HIDDEN = 0 };
 
     Drawable()
         : size_(0.01)
@@ -91,7 +89,34 @@ public:
         return liveTime_;
     }
 
-    void setLiveTime(double l) { liveTime_ = l;}
+    void setLiveTime(double l) { liveTime_ = l; }
+};
+//==============================================================================
+class DrawableEdge : public Drawable {
+
+    Eigen::Vector3d start_;
+    Eigen::Vector3d end_;
+
+public:
+    DrawableEdge(){
+        ;
+    }
+    DrawableEdge(Eigen::Vector3d start, Eigen::Vector3d end)
+        : start_(start)
+        , end_(end)
+    {
+        ;
+    }
+    void draw();
+
+    // setters
+    void setStart(Eigen::Vector3d start) { start_ = start; }
+    void setEnd(Eigen::Vector3d end) { end_ = end; }
+
+    // getters
+    Eigen::Vector3d getStart() { return start_; }
+    Eigen::Vector3d getEnd() { return end_; }
+
 };
 //==============================================================================
 class DrawableCollection {
@@ -151,19 +176,19 @@ public:
 
 namespace dart {
 namespace gui {
-class SimpleRGB {
-public:
-    double r;
-    double g;
-    double b;
+    class SimpleRGB {
+    public:
+        double r;
+        double g;
+        double b;
 
-    SimpleRGB(double red, double green, double blue)
-    {
-        r = red;
-        g = green;
-        b = blue;
-    }
-};
+        SimpleRGB(double red, double green, double blue)
+        {
+            r = red;
+            g = green;
+            b = blue;
+        }
+    };
 }
 }
 #endif // DRAWABLE_H

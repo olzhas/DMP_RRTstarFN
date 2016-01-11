@@ -56,7 +56,6 @@ void MyWindow::setSkeletonCollidable(dd::SkeletonPtr& sk, const bool& isCollidab
 //==============================================================================
 void MyWindow::setSkeletonRGBA(dd::SkeletonPtr& sk, const Eigen::Vector4d& _color)
 {
-    //
     for (size_t i = 0; i < sk->getNumBodyNodes(); ++i) {
         for (size_t j = 0; j < sk->getBodyNode(i)->getNumVisualizationShapes(); ++j) {
             sk->getBodyNode(i)->getVisualizationShape(j)->setRGBA(_color);
@@ -71,6 +70,7 @@ void MyWindow::setSkeletonAlpha(dd::SkeletonPtr& sk, const double& alpha)
         sk->getBodyNode(i)->getVisualizationShape(0)->setAlpha(alpha);
     }
 }
+
 //==============================================================================
 MyWindow::~MyWindow()
 {
@@ -110,6 +110,22 @@ void MyWindow::drawSkels()
                 * Eigen::AngleAxisd(-61.0 / 180.0 * M_PI, Eigen::Vector3d::UnitZ());
         Eigen::Quaterniond quat(mat);
         mTrackBall.setQuaternion(quat);
+
+        dart::gui::drawStringOnScreen(0.02, 0.05, "camera fixed");
+    }
+
+    // just a text that indicates the progress
+    static int progress = 0;
+    if(!cfg->planningDone){
+        std::string s = "planning";
+        progress++;
+        for(int i=0;i<progress/4;++i){
+            s += ".";
+        }
+        if (progress > 12){
+            progress = 0;
+        }
+        dart::gui::drawStringOnScreen(0.02, 0.075, s);
     }
 
 #ifdef DEBUG
@@ -175,6 +191,7 @@ void MyWindow::drawManipulatorState(int state)
     }
     staubli->computeForwardKinematics(true, false, false);
 }
+
 //==============================================================================
 
 #define TREE_NAME "tree"

@@ -175,7 +175,7 @@ int ompl::geometric::DRRTstarFN::removeNodes()
     return removed;
 }
 
-void ompl::geometric::DRRTstarFN::stepOne()
+void ompl::geometric::DRRTstarFN::markForRemoval()
 {
     if(pdef_ == NULL)
         return;
@@ -206,14 +206,40 @@ void ompl::geometric::DRRTstarFN::stepOne()
             }
         }
     }
+
+    for(size_t i=0; i<motions.size(); ++i){
+        Motion *m = motions[i];
+        ompl::base::State *s = m->state;
+        for(size_t j=0; j<m->children.size(); ++j){
+            Motion *mChild = m->children[j];
+            ompl::base::State *sChild = mChild->state;
+            if(!si_->getMotionValidator()->checkMotion(s, sChild)){
+                m->nodeType = REMOVED;
+                mChild->nodeType = REMOVED;
+            }
+        }
+    }
+
     orphanedNodes_.clear();
     for(size_t i=0; i<motions.size(); ++i){
         Motion* m = motions[i];
-        if(m->nodeType == ORPHANED){
-            orphanedNodes_.push_back(m);
+        if(m->nodeType == REMOVED){
+            for(size_t j=0; j<m->children.size(); ++j){
+                markOrphaned(m->children[j]);
+            }
         }
     }
     OMPL_INFORM("number of orphaned nodes: %d", orphanedNodes_.size());
+}
+
+void ompl::geometric::DRRTstarFN::markOrphaned(Motion *m)
+{
+    orphanedNodes_.push_back(m);
+    m->nodeType = ORPHANED;
+    for(int i=0; i<m->children.size(); ++i){
+        markOrphaned(m->children[i]);
+    }
+    OMPL_INFORM("marked");
 }
 
 void ompl::geometric::DRRTstarFN::stepTwo()
@@ -605,6 +631,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                     if (motions[i]->children.size() == 0)
                         childlessNodes.push_back(i);
                 }
+                OMPL_INFORM("childless num %d", childlessNodes.size());
 
                 if (childlessNodes.size() > 0) {
 
@@ -621,7 +648,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                         OMPL_WARN("cannot remove the node");
                     }
                     else {
-                        statesGenerated--;
                         removedNodes++;
                     }
                 }

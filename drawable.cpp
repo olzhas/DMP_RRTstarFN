@@ -62,22 +62,11 @@ void DrawableLiveTime::draw()
     gluDeleteQuadric(c);
 }
 //==============================================================================
-void DrawableCollection::draw()
-{
-    if (getVisibility() == Drawable::DrawableVisibility::HIDDEN)
-        return;
-    size_t end = data_.size();
-    for (size_t i = 0; i < end; ++i) {
-        Drawable* d = data_[i];
-        d->draw();
-    }
-}
-//==============================================================================
-void drawLine3D(const Eigen::Vector3d start, const Eigen::Vector3d end)
+void DrawableEdge::draw()
 {
     double _thickness = 0.001;
 
-    Eigen::Vector3d normDir = end - start;
+    Eigen::Vector3d normDir = end_ - start_;
     double _length = normDir.norm();
     normDir.normalize();
 
@@ -88,14 +77,25 @@ void drawLine3D(const Eigen::Vector3d start, const Eigen::Vector3d end)
     gluQuadricNormals(c, GLU_SMOOTH);
     //    GLfloat color[4]={0.8, 0.1, 0, 1};
 
-    glColor4d(25.0 / 255.0, 102.0 / 255.0, 0.0 / 255.0, 0.4);
+    glColor4d(10.0 / 255.0, 10.0 / 255.0, 200.0 / 255.0, 0.4);
 
     glPushMatrix();
-    glTranslatef(start[0], start[1], start[2]);
+    glTranslatef(start_[0], start_[1], start_[2]);
     glRotated(acos(normDir[2]) * 180 / M_PI, -normDir[1], normDir[0], 0);
     gluCylinder(c, _thickness, _thickness, _length, 4, 4);
 
     glPopMatrix();
 
     gluDeleteQuadric(c);
+}
+//==============================================================================
+void DrawableCollection::draw()
+{
+    if (getVisibility() == Drawable::DrawableVisibility::HIDDEN)
+        return;
+    size_t end = data_.size();
+    for (size_t i = 0; i < end; ++i) {
+        Drawable* d = data_[i];
+        d->draw();
+    }
 }

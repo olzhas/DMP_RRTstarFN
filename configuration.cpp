@@ -72,6 +72,10 @@ void Configuration::readFile()
         randomSeed = config["random-seed"].as<double>();
     }
 
+    if(config["motion-check-accuracy"]){
+        motionCheckAccuracy = config["motion-check-accuracy"].as<double>();
+    }
+
 }
 
 void Configuration::defaults()
@@ -92,5 +96,5 @@ void Configuration::defaults()
     pathCollisionMap = NULL;
     randomSeed = 20;
 
-    motionCheckAccuracy = 0.05;
+    motionCheckAccuracy = 0.025;
 }

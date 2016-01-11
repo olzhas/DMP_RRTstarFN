@@ -28,19 +28,46 @@ private:
 
     ob::SpaceInformationPtr si_;
     std::string caption_;
+    Eigen::Vector3d color_;
 
     size_t step = 0;
 
 public:
-    SolutionPath() : caption_("") { ;}
-    SolutionPath(std::string caption): caption_(caption) {; }
+    SolutionPath()
+        : caption_("")
+        , color_({ 0.2, 0.4, 0.8 })
+    {
+        ;
+    }
+    SolutionPath(std::string caption)
+        : caption_(caption)
+        , color_({ 0.2, 0.4, 0.8 })
+    {
+        ;
+    }
+    SolutionPath(std::string caption, std::string colorName)
+        : caption_(caption)
+        , color_({ 0.2, 0.4, 0.8 })
+    {
+        // TODO reimplment this with associative array
+        if (colorName == "r") {
+            color_ = { 1.0, 0.0, 0.0 };
+        }
+        if (colorName == "g") {
+            color_ = { 0.0, 1.0, 0.0 };
+        }
+        if (colorName == "b") {
+            color_ = { 0.0, 0.0, 1.0 };
+        }
+    }
 
     // setters
 
     void set(const og::PathGeometric& p,
         const ob::SpaceInformationPtr& si,
         const dd::SkeletonPtr& robot,
-        const Eigen::Vector3d& color = { 0.3, 0.6, 0.9 },
+        // following argument does not change anything
+        const Eigen::Vector3d& color = { 0.2, 0.4, 0.8 },
         const double& size = 0.01);
 
     void setCaption(const std::string& caption) { caption_ = caption; }

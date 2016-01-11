@@ -195,7 +195,7 @@ namespace geometric {
         int removeNodes();
 
         /** \brief here the algorithm will find invalid nodes and mark/remove them from the tree */
-        void stepOne();
+        void markForRemoval();
 
         /** \brief here the algorithm will try to connect orphaned nodes to the rest of the tree */
         void stepTwo();
@@ -291,6 +291,9 @@ namespace geometric {
         bool huntKids(Motion* motion, std::vector<Motion*>& orph);
 
         void verifyTree();
+
+        /** \brief Marks the branch as orphaned */
+        void markOrphaned(Motion *m);
 
         // TODO write an explanation
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);

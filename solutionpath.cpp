@@ -28,7 +28,7 @@ void SolutionPath::set(const og::PathGeometric& p,
         poses_.push_back(transform);
 
         Drawable* d = new Drawable(transform.translation(),
-            color, size,
+            color_, size,
             Drawable::DrawableType::SPHERE,
             Drawable::DrawableVisibility::VISIBLE);
         dc_.add(d);
