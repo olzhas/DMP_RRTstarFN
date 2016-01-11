@@ -75,7 +75,9 @@ void Configuration::readFile()
     if(config["motion-check-accuracy"]){
         motionCheckAccuracy = config["motion-check-accuracy"].as<double>();
     }
-
+    if(config["dynamic-planning-time"]){
+        dynamicPlanningTime = config["dynamic-planning-time"].as<double>();
+    }
 }
 
 void Configuration::defaults()
@@ -95,6 +97,8 @@ void Configuration::defaults()
     interpolate = false;
     pathCollisionMap = NULL;
     randomSeed = 20;
+
+    dynamicPlanningTime = 10.0;
 
     motionCheckAccuracy = 0.025;
 }

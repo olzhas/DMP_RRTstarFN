@@ -357,7 +357,7 @@ bool Manipulator::localReplan()
     //ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
     OMPL_INFORM("step two");
     ss_->getProblemDefinition()->clearSolutionPaths();
-    ss_->solve(5);
+    ss_->solve(cfg->dynamicPlanningTime);
     OMPL_INFORM("done");
     cfg->dynamicReplanning = true;
 
