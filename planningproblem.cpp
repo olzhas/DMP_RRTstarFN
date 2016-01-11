@@ -148,6 +148,15 @@ void PlanningProblem::treeUpdate()
 #endif
                 }
             }
+
+            for(int i=0; i<pdatNumVerticies; ++i)
+            {
+                if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
+                    if(pdat.getVertex(i).getTag() == ORPHANED){
+
+                    }
+                }
+            }
             /*
              *
              * FIXME the following lines cause memory leak

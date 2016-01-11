@@ -68,7 +68,7 @@ public:
         const dd::SkeletonPtr& robot,
         // following argument does not change anything
         const Eigen::Vector3d& color = { 0.2, 0.4, 0.8 },
-        const double& size = 0.01);
+        const double& size = 0.0175);
 
     void setCaption(const std::string& caption) { caption_ = caption; }
 

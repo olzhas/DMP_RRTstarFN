@@ -283,19 +283,11 @@ void ompl::geometric::DRRTstarFN::stepTwo()
             j != sortedCostIndices.begin() + nbh.size(); ++j){
             Motion* m = nbh[*j];
             if(m->nodeType == NORMAL){
-                while(m->parent != 0){
-                    if(m->parent->nodeType == ORPHANED)
-                        break;
-                    else
-                        m = m->parent;
-                }
-                if(m == startMotion_){
-                    if(si_->checkMotion(motion->state, nbh[*j]->state)){
-                        motion->nodeType = NORMAL;
-                        motion->parent = nbh[*j];
-                        motion->parent->children.push_back(motion);
-                        break;
-                    }
+                if(si_->checkMotion(motion->state, nbh[*j]->state)){
+                    motion->nodeType = NORMAL;
+                    motion->parent = nbh[*j];
+                    motion->parent->children.push_back(motion);
+                    break;
                 }
             }
         }
