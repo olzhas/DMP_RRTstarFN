@@ -486,6 +486,8 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 // nmotion (with populated cost fields!).
                 for (std::vector<std::size_t>::const_iterator i = sortedCostIndices.begin();
                      i != sortedCostIndices.begin() + nbh.size(); ++i) {
+                    if(localPlanning_ && nbh[*i]->nodeType == ORPHANED)
+                        continue;
                     if (nbh[*i] == nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
                         motion->incCost = incCosts[*i];
                         motion->cost = costs[*i];
