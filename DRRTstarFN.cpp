@@ -423,8 +423,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
         // Check if the motion between the nearest state and the state to add is
         // valid
-        if (si_->checkMotion(nmotion->state,
-                             dstate)) // && maxNodes_ > statesGenerated)
+        if (si_->checkMotion(nmotion->state, dstate))
         {
             // create a motion
             Motion* motion = new Motion(si_);
@@ -488,7 +487,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                      i != sortedCostIndices.begin() + nbh.size(); ++i) {
                     if(localPlanning_ && nbh[*i]->nodeType == ORPHANED)
                         continue;
-                    if (nbh[*i] == nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
+                    if (nbh[*i] != nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
                         motion->incCost = incCosts[*i];
                         motion->cost = costs[*i];
                         motion->parent = nbh[*i];
