@@ -4,12 +4,12 @@
 //==============================================================================
 bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::State* s2) const
 {
-    ob::State* s3;
     if (si_->isValid(s1) == false || si_->isValid(s2) == false) {
         //OMPL_WARN("Hey, the initial or final state is invalid");
         return false;
     }
 
+    ob::State* s3;
     double interpStep = cfg->motionCheckAccuracy;
     for (double step = interpStep; step < 1.0; step += interpStep) {
         stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, step, s3);
@@ -18,7 +18,6 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
             return false;
         }
     }
-
     return true;
 }
 

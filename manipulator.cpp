@@ -349,15 +349,17 @@ bool Manipulator::localReplan()
     ob::State* interimState = si->allocState();
 
     og::PathGeometric &p = ss_->getSolutionPath();
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(45.0/180.0 * M_PI);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(20.0/180.0 * M_PI);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
     ss_->getPlanner()->as<og::DRRTstarFN>()->markForRemoval();
     ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes();
-    ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
+    OMPL_INFORM("removed nodes");
+    //ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
+    OMPL_INFORM("step two");
     ss_->getProblemDefinition()->clearSolutionPaths();
-    ss_->solve(30);
+    ss_->solve(cfg->dynamicPlanningTime);
+    OMPL_INFORM("done");
     cfg->dynamicReplanning = true;
-
 
     SolutionPath* sp = new SolutionPath("sub", "r");
     try {

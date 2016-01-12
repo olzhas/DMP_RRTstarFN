@@ -66,16 +66,15 @@ namespace og = ompl::geometric;
 void PlanningProblem::treeUpdate()
 {
     // assume that eventually world will be initialized
-    //while(manipulator->getWorld() == nullptr){
     auto pre_wait = bc::system_clock::now() + bc::seconds(2);
     boost::this_thread::sleep_until(pre_wait);
-    //}
 
     DrawableCollection edges("edges");
     DrawableCollection tree("tree");
+    DrawableCollection orphans("orphans");
     frontend.getWindow()->drawables.push_back(&tree);
     frontend.getWindow()->drawables.push_back(&edges);
-
+    frontend.getWindow()->drawables.push_back(&orphans);
 
     dart::simulation::WorldPtr pWorld(manipulator->getWorld());
     dart::dynamics::SkeletonPtr robot(pWorld->getSkeleton("TX90XLHB")->clone());
@@ -112,8 +111,8 @@ void PlanningProblem::treeUpdate()
                     tree.add(d);
 #ifdef SHOW_EDGES
                     std::vector<unsigned int> edgeList;
-                    if (pdat.getEdges(i, edgeList)){
-                        for(int j=0; j<edgeList.size(); ++j){
+                    if (pdat.getEdges(i, edgeList)) {
+                        for (int j = 0; j < edgeList.size(); ++j) {
                             DrawableEdge* e = new DrawableEdge;
                             e->setStart(transform.translation());
                             const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
@@ -128,8 +127,8 @@ void PlanningProblem::treeUpdate()
                             edges.add(e);
                         }
                     }
-                    if(pdat.getIncomingEdges(i, edgeList)){
-                        for(int j=0; j<edgeList.size(); ++j){
+                    if (pdat.getIncomingEdges(i, edgeList)) {
+                        for (int j = 0; j < edgeList.size(); ++j) {
                             DrawableEdge* e = new DrawableEdge;
                             e->setEnd(transform.translation());
                             const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
@@ -143,9 +142,40 @@ void PlanningProblem::treeUpdate()
                             e->setStart(transform.translation());
                             edges.add(e);
                         }
-
                     }
 #endif
+                }
+            }
+            // let's assume that order does not change
+            for (int i = 0; i < pdatNumVerticies; ++i) {
+                if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
+                    if (pdat.getVertex(i).getTag() == 1) {
+                        const ob::State* s = pdat.getVertex(i).getState();
+                        bool exists = false;
+                        for (int j = 0; j < orphans.size(); ++j) {
+                            if (ss_->getSpaceInformation()->equalStates(orphans.getElement(j)->getState(), s)) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            std::vector<double> reals;
+                            ss_->getStateSpace()->copyToReals(reals, s);
+
+                            for (size_t j(0); j < reals.size(); ++j) {
+                                robot->setPosition(j + 2, reals[j]);
+                            }
+                            robot->computeForwardKinematics(true, false, false);
+                            Eigen::Isometry3d transform = robot->getBodyNode("toolflange_link")->getTransform();
+                            Drawable* d = new Drawable;
+                            d->setPoint(transform.translation());
+                            d->setType(Drawable::BOX);
+                            d->setSize(0.01);
+                            d->setColor(Eigen::Vector4d(0.1, 1.0, 0.1, 0.7));
+                            d->setState(const_cast<ompl::base::State*>(s));
+                            orphans.add(d);
+                        }
+                    }
                 }
             }
             /*

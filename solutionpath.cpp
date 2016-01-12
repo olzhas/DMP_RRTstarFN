@@ -3,7 +3,7 @@
 void SolutionPath::set(const og::PathGeometric& p,
     const ob::SpaceInformationPtr& si,
     const dd::SkeletonPtr& robot,
-    const Eigen::Vector3d& color,
+    const Eigen::Vector4d& color,
     const double& size)
 {
     si_ = si;

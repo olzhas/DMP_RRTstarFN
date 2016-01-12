@@ -283,19 +283,11 @@ void ompl::geometric::DRRTstarFN::stepTwo()
             j != sortedCostIndices.begin() + nbh.size(); ++j){
             Motion* m = nbh[*j];
             if(m->nodeType == NORMAL){
-                while(m->parent != 0){
-                    if(m->parent->nodeType == ORPHANED)
-                        break;
-                    else
-                        m = m->parent;
-                }
-                if(m == startMotion_){
-                    if(si_->checkMotion(motion->state, nbh[*j]->state)){
-                        motion->nodeType = NORMAL;
-                        motion->parent = nbh[*j];
-                        motion->parent->children.push_back(motion);
-                        break;
-                    }
+                if(si_->checkMotion(motion->state, nbh[*j]->state)){
+                    motion->nodeType = NORMAL;
+                    motion->parent = nbh[*j];
+                    motion->parent->children.push_back(motion);
+                    break;
                 }
             }
         }
@@ -315,7 +307,8 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
     bool symCost = opt_->isSymmetric();
 
-    if(!localPlanning_)
+
+    if(!localPlanning_){
         while (const base::State* st = pis_.nextStart()) {
             Motion* motion = new Motion(si_);
             si_->copyState(motion->state, st);
@@ -323,6 +316,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             nn_->add(motion);
             startMotion_ = motion;
         }
+    }
 
     if (nn_->size() == 0) {
         OMPL_ERROR("%s: There are no valid initial states!", getName().c_str());
@@ -429,8 +423,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
         // Check if the motion between the nearest state and the state to add is
         // valid
-        if (si_->checkMotion(nmotion->state,
-                             dstate)) // && maxNodes_ > statesGenerated)
+        if (si_->checkMotion(nmotion->state, dstate))
         {
             // create a motion
             Motion* motion = new Motion(si_);
@@ -492,7 +485,9 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 // nmotion (with populated cost fields!).
                 for (std::vector<std::size_t>::const_iterator i = sortedCostIndices.begin();
                      i != sortedCostIndices.begin() + nbh.size(); ++i) {
-                    if (nbh[*i] == nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
+                    if(localPlanning_ && nbh[*i]->nodeType == ORPHANED)
+                        continue;
+                    if (nbh[*i] != nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
                         motion->incCost = incCosts[*i];
                         motion->cost = costs[*i];
                         motion->parent = nbh[*i];
