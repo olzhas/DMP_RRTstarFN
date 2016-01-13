@@ -78,6 +78,11 @@ void Configuration::readFile()
     if(config["dynamic-planning-time"]){
         dynamicPlanningTime = config["dynamic-planning-time"].as<double>();
     }
+
+    if(config["orphaned-sample-radius-deg"]){
+        orphanedSampleRadiusDeg = config["orphaned-sample-radius-deg"].as<double>();
+        orphanedSampleRadiusRad = orphanedSampleRadiusDeg / 180.0 * M_PI;
+    }
 }
 
 void Configuration::defaults()

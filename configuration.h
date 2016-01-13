@@ -43,6 +43,11 @@ public:
 
     double motionCheckAccuracy;
 
+    /** \brief the radius of sampling around orphaned nodes in degrees*/
+    double orphanedSampleRadiusDeg;
+    /** \brief the radius of sampling around orphaned nodes in radians*/
+    double orphanedSampleRadiusRad;
+
     //==============================================================================
 
     Configuration();
