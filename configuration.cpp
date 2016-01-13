@@ -80,8 +80,7 @@ void Configuration::readFile()
     }
 
     if(config["orphaned-sample-radius-deg"]){
-        orphanedSampleRadiusDeg = config["orphaned-sample-radius-deg"].as<double>();
-        orphanedSampleRadiusRad = orphanedSampleRadiusDeg / 180.0 * M_PI;
+        orphanedSampleRadius.setDegrees(config["orphaned-sample-radius-deg"].as<double>());
     }
 }
 
@@ -106,4 +105,5 @@ void Configuration::defaults()
     dynamicPlanningTime = 10.0;
 
     motionCheckAccuracy = 0.025;
+    orphanedSampleRadius.setDegrees(30.0);
 }

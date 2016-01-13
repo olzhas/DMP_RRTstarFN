@@ -4,6 +4,28 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
+class Angle {
+    double rad_;
+    double deg_;
+
+public:
+    // getters
+    double getDegrees() { return deg_; }
+    double getRadians() { return rad_; }
+
+    // setters
+    void setDegrees(double deg)
+    {
+        deg = deg_;
+        rad_ = deg_ / 180.0 * M_PI;
+    }
+    void setRadians(double rad)
+    {
+        rad = rad_;
+        deg_ = rad_ / M_PI * 180.0;
+    }
+};
+
 class Configuration {
 private:
     YAML::Node config;
@@ -36,17 +58,15 @@ public:
 
     std::vector<double> dynamicObstaclePosition;
 
-    bool *pathCollisionMap;
+    bool* pathCollisionMap;
     size_t pathCollisionMapSize;
 
     uint32_t randomSeed;
 
     double motionCheckAccuracy;
 
-    /** \brief the radius of sampling around orphaned nodes in degrees*/
-    double orphanedSampleRadiusDeg;
-    /** \brief the radius of sampling around orphaned nodes in radians*/
-    double orphanedSampleRadiusRad;
+    /** \brief the radius of sampling around orphaned nodes*/
+    Angle orphanedSampleRadius;
 
     //==============================================================================
 
