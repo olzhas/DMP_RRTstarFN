@@ -44,7 +44,7 @@ namespace dd = dart::dynamics;
 class Manipulator {
 public:
     og::SimpleSetupPtr ss_;
-//    ob::SpaceInformationPtr si_;
+    //    ob::SpaceInformationPtr si_;
 
     Manipulator();
 
@@ -103,6 +103,9 @@ private:
     void setState(ob::ScopedState<>& state, std::vector<double>& set);
 
     double cost(const ob::State*, const ob::State*);
+
+    // service routines
+    dart::common::Timer timer1;
 };
 
 typedef std::shared_ptr<Manipulator> ManipulatorPtr;

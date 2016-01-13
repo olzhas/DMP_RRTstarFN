@@ -23,6 +23,7 @@ ob::OptimizationObjectivePtr getPathLengthObjective(const ob::SpaceInformationPt
 
 //==============================================================================
 Manipulator::Manipulator()
+    : timer1("removal")
 {
     ;
 }
@@ -39,12 +40,12 @@ inline std::string genBoxName(int i)
     return name;
 }
 //==============================================================================
-void Manipulator::init(ConfigurationPtr &config)
+void Manipulator::init(ConfigurationPtr& config)
 {
     cfg = config;
     ds::WorldPtr myWorld(du::SkelParser::readWorld(
-                             dart::common::Uri::createFromString(
-                                 SAFESPACE_DATA "/ground_plane/ground.skel")));
+        dart::common::Uri::createFromString(
+            SAFESPACE_DATA "/ground_plane/ground.skel")));
     dd::SkeletonPtr staubli(du::SdfParser::readSkeleton(SAFESPACE_DATA "/safespace/model.sdf"));
 
     staubli->enableSelfCollision();
@@ -66,10 +67,10 @@ void Manipulator::init(ConfigurationPtr &config)
     //ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
 
     // first two are connection to the world and table
-    for(size_t i=0; i < staubli->getNumJoints(); ++i){
+    for (size_t i = 0; i < staubli->getNumJoints(); ++i) {
         double lower = staubli->getJoint(i)->getPositionLowerLimit(0);
         double upper = staubli->getJoint(i)->getPositionUpperLimit(0);
-        if(upper - lower >= EPSILON){
+        if (upper - lower >= EPSILON) {
             jointSpace->addDimension(lower, upper);
         }
     }
@@ -81,15 +82,15 @@ void Manipulator::init(ConfigurationPtr &config)
     //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
 
     ss_->getSpaceInformation()
-            ->setMotionValidator(
-                ob::MotionValidatorPtr(
-                    new ManipulatorMotionValidator(ss_->getSpaceInformation())));
+        ->setMotionValidator(
+            ob::MotionValidatorPtr(
+                new ManipulatorMotionValidator(ss_->getSpaceInformation())));
 
     ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
 
     ss_->getProblemDefinition()
-            ->setOptimizationObjective(
-                getPathLengthObjective(ss_->getSpaceInformation()));
+        ->setOptimizationObjective(
+            getPathLengthObjective(ss_->getSpaceInformation()));
 
     staubli_ = world_->getSkeleton("TX90XLHB");
 
@@ -103,7 +104,7 @@ bool Manipulator::isStateValid(const ob::State* state)
     boost::lock_guard<boost::mutex> guard(mutex_);
 
     double* jointSpace
-            = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
+        = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
 
     for (int i = 2; i < 8; ++i) {
         staubli_->setPosition(i, jointSpace[i - 2]);
@@ -111,7 +112,7 @@ bool Manipulator::isStateValid(const ob::State* state)
     }
 
     staubli_->computeForwardKinematics(true, false, false);
-    if(world_->checkCollision(false))
+    if (world_->checkCollision(false))
         return false;
 
     return true;
@@ -142,9 +143,9 @@ double Manipulator::cost(const ob::State* st1, const ob::State* st2)
     Eigen::Vector3d t2 = transform2.translation();
 
     double c = 0.0;
-    for(int i=0; i<3; ++i){
+    for (int i = 0; i < 3; ++i) {
         double diff = t1[i] - t2[i];
-        c += diff*diff;
+        c += diff * diff;
     }
     return sqrt(c);
 }
@@ -253,7 +254,6 @@ bool Manipulator::localReplanFromScratch()
     //    ConfigurationPtr subConfig(new Configuration);
     //    ManipulatorPtr subProblem(new Manipulator());
 
-
     //    if (ss_->getPlanner()) {
     //        //ss_->getPlanner()->as<og::DRRTstarFN>()->
     //        int removed;
@@ -264,7 +264,6 @@ bool Manipulator::localReplanFromScratch()
 
     //            ob::ScopedState<> goal(ss_->getStateSpace());
     //            goal = si_->cloneState(p.getState(endPos));
-
 
     //            /* defining sub problem */
 
@@ -348,11 +347,15 @@ bool Manipulator::localReplan()
     ob::SpaceInformationPtr si(ss_->getSpaceInformation());
     ob::State* interimState = si->allocState();
 
-    og::PathGeometric &p = ss_->getSolutionPath();
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(20.0/180.0 * M_PI);
+    og::PathGeometric& p = ss_->getSolutionPath();
+
+    timer1.start();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(20.0 / 180.0 * M_PI);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
     ss_->getPlanner()->as<og::DRRTstarFN>()->markForRemoval();
     ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes();
+    timer1.stop();
+    timer1.print();
     OMPL_INFORM("removed nodes");
     //ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
     OMPL_INFORM("step two");
@@ -375,7 +378,6 @@ bool Manipulator::localReplan()
         delete sp;
         dtwarn << "No solution, man\n";
     }
-
 }
 
 //==============================================================================
@@ -406,9 +408,9 @@ void Manipulator::store(const char* filename)
     pdstorage.store(pdat, filename);
 }
 //==============================================================================
-inline void Manipulator::setState(ob::ScopedState<> &state, std::vector<double> &set)
+inline void Manipulator::setState(ob::ScopedState<>& state, std::vector<double>& set)
 {
-    for(size_t i(0); i<set.size(); ++i){
+    for (size_t i(0); i < set.size(); ++i) {
         state[i] = set[i];
     }
 }
@@ -449,7 +451,7 @@ void Manipulator::load(const char* filename)
 
 //==============================================================================
 void Manipulator::printEdge(std::ostream& os, const ob::StateSpacePtr& space,
-                            const ob::PlannerDataVertex& vertex)
+    const ob::PlannerDataVertex& vertex)
 {
     std::vector<double> reals;
     if (vertex != ob::PlannerData::NO_VERTEX) {
@@ -502,12 +504,12 @@ std::string& Manipulator::dumpFileNameGenerate()
 {
     std::time_t now = std::time(nullptr);
     std::string* out = new std::string;
-    char buffer[]="2015-12-06_01-23-40";
-    if(buffer == NULL){
+    char buffer[] = "2015-12-06_01-23-40";
+    if (buffer == NULL) {
         dtwarn << "Could not generate dump file name\n";
         return *out;
     }
-    if(strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", localtime(&now))){
+    if (strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", localtime(&now))) {
         out->assign(buffer);
     }
     return *out;
