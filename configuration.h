@@ -9,6 +9,12 @@ class Angle {
     double deg_;
 
 public:
+    Angle()
+        : rad_(0)
+        , deg_(0)
+    {
+        ;
+    }
     // getters
     double getDegrees() { return deg_; }
     double getRadians() { return rad_; }
