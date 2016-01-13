@@ -105,7 +105,7 @@ private:
     double cost(const ob::State*, const ob::State*);
 
     // service routines
-    dart::common::Timer timer1;
+    //dart::common::Timer timer1;
 };
 
 typedef std::shared_ptr<Manipulator> ManipulatorPtr;

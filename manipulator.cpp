@@ -23,7 +23,6 @@ ob::OptimizationObjectivePtr getPathLengthObjective(const ob::SpaceInformationPt
 
 //==============================================================================
 Manipulator::Manipulator()
-    : timer1("removal")
 {
     ;
 }
@@ -349,16 +348,14 @@ bool Manipulator::localReplan()
 
     og::PathGeometric& p = ss_->getSolutionPath();
 
-    timer1.start();
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(20.0 / 180.0 * M_PI);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(cfg->orphanedSampleRadius.getRadians());
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
     ss_->getPlanner()->as<og::DRRTstarFN>()->markForRemoval();
     ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes();
-    timer1.stop();
-    timer1.print();
+
     OMPL_INFORM("removed nodes");
     //ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
-    OMPL_INFORM("step two");
+    //OMPL_INFORM("step two");
     ss_->getProblemDefinition()->clearSolutionPaths();
     ss_->solve(cfg->dynamicPlanningTime);
     OMPL_INFORM("done");
