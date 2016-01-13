@@ -16,12 +16,12 @@ public:
     // setters
     void setDegrees(double deg)
     {
-        deg = deg_;
+        deg_ = deg;
         rad_ = deg_ / 180.0 * M_PI;
     }
     void setRadians(double rad)
     {
-        rad = rad_;
+        rad_ = rad;
         deg_ = rad_ / M_PI * 180.0;
     }
 };
