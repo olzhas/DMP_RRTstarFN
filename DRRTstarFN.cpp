@@ -239,7 +239,9 @@ void ompl::geometric::DRRTstarFN::markOrphaned(Motion *m)
     for(int i=0; i<m->children.size(); ++i){
         markOrphaned(m->children[i]);
     }
+#ifdef DEBUG
     OMPL_INFORM("marked");
+#endif
 }
 
 void ompl::geometric::DRRTstarFN::stepTwo()
@@ -622,7 +624,9 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             }
 
             if (nn_->size() >= maxNodes_) {
+#ifdef DEBUG
                 OMPL_INFORM("%d > %d", statesGenerated, maxNodes_);
+#endif
                 std::vector<Motion*> motions;
                 nn_->list(motions);
                 std::vector<int> childlessNodes;
@@ -630,7 +634,9 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                     if (motions[i]->children.size() == 0)
                         childlessNodes.push_back(i);
                 }
+#ifdef DEBUG
                 OMPL_INFORM("childless num %d", childlessNodes.size());
+#endif
 
                 if (childlessNodes.size() > 0) {
 
