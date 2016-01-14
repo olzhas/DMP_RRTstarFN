@@ -179,7 +179,7 @@ void ompl::geometric::DRRTstarFN::markForRemoval()
 {
     if(pdef_ == NULL)
         return;
-
+/*
     if(pdef_->getSolutionCount() <= 0 )
         return;
 
@@ -206,6 +206,9 @@ void ompl::geometric::DRRTstarFN::markForRemoval()
             }
         }
     }
+*/
+    std::vector<Motion*> motions;
+    nn_->list(motions);
 
     for(size_t i=0; i<motions.size(); ++i){
         Motion *m = motions[i];
