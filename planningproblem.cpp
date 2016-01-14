@@ -154,26 +154,25 @@ void PlanningProblem::treeUpdate()
                         bool exists = false;
                         for (int j = 0; j < orphans.size(); ++j) {
                             if (ss_->getSpaceInformation()->equalStates(orphans.getElement(j)->getState(), s)) {
-                                exists = true;
+
+                                std::vector<double> reals;
+                                ss_->getStateSpace()->copyToReals(reals, s);
+
+                                for (size_t j(0); j < reals.size(); ++j) {
+                                    robot->setPosition(j + 2, reals[j]);
+                                }
+                                robot->computeForwardKinematics(true, false, false);
+                                Eigen::Isometry3d transform = robot->getBodyNode("toolflange_link")->getTransform();
+                                Drawable* d = new Drawable;
+                                d->setPoint(transform.translation());
+                                d->setType(Drawable::BOX);
+                                d->setSize(0.01);
+                                d->setColor(Eigen::Vector4d(0.1, 1.0, 0.1, 0.7));
+                                d->setState(const_cast<ompl::base::State*>(s));
+                                orphans.add(d);
+
                                 break;
                             }
-                        }
-                        if (!exists) {
-                            std::vector<double> reals;
-                            ss_->getStateSpace()->copyToReals(reals, s);
-
-                            for (size_t j(0); j < reals.size(); ++j) {
-                                robot->setPosition(j + 2, reals[j]);
-                            }
-                            robot->computeForwardKinematics(true, false, false);
-                            Eigen::Isometry3d transform = robot->getBodyNode("toolflange_link")->getTransform();
-                            Drawable* d = new Drawable;
-                            d->setPoint(transform.translation());
-                            d->setType(Drawable::BOX);
-                            d->setSize(0.01);
-                            d->setColor(Eigen::Vector4d(0.1, 1.0, 0.1, 0.7));
-                            d->setState(const_cast<ompl::base::State*>(s));
-                            orphans.add(d);
                         }
                     }
                 }

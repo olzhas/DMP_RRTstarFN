@@ -13,7 +13,8 @@ class WeightedRealVectorStateSampler : public RealVectorStateSampler {
 public:
     WeightedRealVectorStateSampler(const StateSpace *space) : RealVectorStateSampler(space)
     {
-        rng_.setLocalSeed(200390);
+        // this is the only place where I can set a random seed
+        rng_.setLocalSeed(2);
     }
 };
 
