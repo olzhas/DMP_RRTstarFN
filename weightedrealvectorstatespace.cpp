@@ -25,7 +25,7 @@ double ompl::base::WeightedRealVectorStateSpace::distance(const State *state1, c
             break;
         case 1:
         case 2:
-            k = 1.5;
+            k = 1.25;
             break;
         default:
             k = 0.50;

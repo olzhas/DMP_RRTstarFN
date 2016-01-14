@@ -98,6 +98,7 @@ void Manipulator::init(ConfigurationPtr& config)
 }
 
 //==============================================================================
+// TODO implement caching for state validation
 bool Manipulator::isStateValid(const ob::State* state)
 {
     boost::lock_guard<boost::mutex> guard(mutex_);
@@ -117,6 +118,7 @@ bool Manipulator::isStateValid(const ob::State* state)
     return true;
 }
 //==============================================================================
+/*
 double Manipulator::cost(const ob::State* st1, const ob::State* st2)
 {
     boost::lock_guard<boost::mutex> guard(mutex_);
@@ -148,6 +150,7 @@ double Manipulator::cost(const ob::State* st1, const ob::State* st2)
     }
     return sqrt(c);
 }
+*/
 
 //==============================================================================
 bool Manipulator::plan()
@@ -349,13 +352,14 @@ bool Manipulator::localReplan()
     og::PathGeometric& p = ss_->getSolutionPath();
 
     ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(cfg->orphanedSampleRadius.getRadians());
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(cfg->orphanedBias);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
     dart::common::Timer timer1("mark-removal");
     timer1.start();
     ss_->getPlanner()->as<og::DRRTstarFN>()->markForRemoval();
     timer1.stop();
     timer1.print();
-    ss_->getPlanner()->as<og::DRRTstarFN>()->removeNodes();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
 
     OMPL_INFORM("removed nodes");
     //ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
