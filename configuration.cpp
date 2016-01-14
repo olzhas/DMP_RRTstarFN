@@ -82,6 +82,10 @@ void Configuration::readFile()
     if(config["orphaned-sample-radius-deg"]){
         orphanedSampleRadius.setDegrees(config["orphaned-sample-radius-deg"].as<double>());
     }
+
+    if(config["orphaned-bias"]){
+        orphanedBias = config["orphaned-bias"].as<double>();
+    }
 }
 
 void Configuration::defaults()
@@ -106,4 +110,6 @@ void Configuration::defaults()
 
     motionCheckAccuracy = 0.025;
     orphanedSampleRadius.setDegrees(30.0);
+
+    orphanedBias = 0.8;
 }

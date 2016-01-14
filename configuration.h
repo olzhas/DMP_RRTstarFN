@@ -40,6 +40,7 @@ public:
     int planningTime; // time in seconds
     double dynamicPlanningTime;
     double goalBias; // biasing in goal
+    double orphanedBias;
     int maxNumberNodes; // maximum number of nodes
     int pathNodes; // number of nodes for interpolation
 
