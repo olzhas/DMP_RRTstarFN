@@ -87,6 +87,18 @@ namespace geometric {
             return goalBias_;
         }
 
+        /** \brief fraction of the time in the dynamic part of
+         * the motion planning will be biased with the following variable */
+        void setOrphanedBias(double orphanedBias)
+        {
+            orphanedBias_ = orphanedBias;
+        }
+        /** \brief  get the biasing factor for orphaned nodes*/
+        double getOrphanedBias()
+        {
+            return orphanedBias_;
+        }
+
         /** \brief Set the range the planner is supposed to use.
 
           This parameter greatly influences the runtime of the
@@ -192,10 +204,14 @@ namespace geometric {
         }
 
         /** \brief Remove the states from the tree */
-        int removeNodes();
+        int removeInvalidNodes();
 
         /** \brief here the algorithm will find invalid nodes and mark/remove them from the tree */
         void markForRemoval();
+
+        /** \brief remove orphaned nodes from the tree */
+
+        void removeOrphaned();
 
         /** \brief here the algorithm will try to connect orphaned nodes to the rest of the tree */
         void stepTwo();
@@ -293,7 +309,9 @@ namespace geometric {
         void verifyTree();
 
         /** \brief Marks the branch as orphaned */
-        void markOrphaned(Motion *m);
+        void markOrphaned(Motion* m);
+
+        void markNormal(Motion* m);
 
         // TODO write an explanation
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
@@ -311,6 +329,9 @@ namespace geometric {
 
         /** \brief The fraction of time the goal is picked as the state to expand towards (if such a state is available) */
         double goalBias_;
+
+        /** \brief The fraction of time the goal is picked as the state to expand towards (if such a state is available) */
+        double orphanedBias_;
 
         /** \brief The maximum length of a motion to be added to a tree */
         double maxDistance_;
