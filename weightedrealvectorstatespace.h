@@ -4,28 +4,26 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/base/StateSpace.h>
 
-namespace ompl
-{
-namespace base
-{
+namespace ompl {
+namespace base {
 
-class WeightedRealVectorStateSampler : public RealVectorStateSampler {
-public:
-    WeightedRealVectorStateSampler(const StateSpace *space) : RealVectorStateSampler(space)
-    {
-        // this is the only place where I can set a random seed
-        rng_.setLocalSeed(2);
-    }
-};
+    class WeightedRealVectorStateSampler : public RealVectorStateSampler {
+    public:
+        WeightedRealVectorStateSampler(const StateSpace* space)
+            : RealVectorStateSampler(space)
+        {
+            // this is the only place where I can set a random seed
+            rng_.setLocalSeed(4);
+        }
+    };
 
-class WeightedRealVectorStateSpace : public RealVectorStateSpace
-{
-public:
-    double distance(const State *state1, const State *state2) const;
-    ompl::base::StateSamplerPtr allocDefaultStateSampler() const;
+    class WeightedRealVectorStateSpace : public RealVectorStateSpace {
+    public:
+        double distance(const State* state1, const State* state2) const;
+        ompl::base::StateSamplerPtr allocDefaultStateSampler() const;
 
-    boost::function <double (const State *state1, const State *state2)> localCost;
-};
+        boost::function<double(const State* state1, const State* state2)> localCost;
+    };
 }
 }
 #endif // WEIGHTEDREALVECTORSPACE_H
