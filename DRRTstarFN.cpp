@@ -1005,8 +1005,10 @@ inline void ompl::geometric::DRRTstarFN::removeOrphaned()
 
 inline void ompl::geometric::DRRTstarFN::markNormal(Motion* m)
 {
-    m->nodeType = NORMAL;
-    for (int i = 0; i < m->children.size(); ++i) {
-        markNormal(m->children[i]);
+    if(m->nodeType != NORMAL){
+        m->nodeType = NORMAL;
+        for (int i = 0; i < m->children.size(); ++i) {
+            markNormal(m->children[i]);
+        }
     }
 }
