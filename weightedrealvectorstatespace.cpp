@@ -3,7 +3,7 @@
 namespace ompl {
 namespace base {
 
-    double ompl::base::WeightedRealVectorStateSpace::distance(const State* state1, const State* state2) const
+    inline double ompl::base::WeightedRealVectorStateSpace::distance(const State* state1, const State* state2) const
     {
         //return localCost(state1, state2);
 
@@ -32,7 +32,8 @@ namespace base {
         //return dist;
         return sqrt(dist);
     }
-    ompl::base::StateSamplerPtr ompl::base::WeightedRealVectorStateSpace::allocDefaultStateSampler() const
+
+    inline ompl::base::StateSamplerPtr ompl::base::WeightedRealVectorStateSpace::allocDefaultStateSampler() const
     {
         return StateSamplerPtr(new WeightedRealVectorStateSampler(this));
     }
