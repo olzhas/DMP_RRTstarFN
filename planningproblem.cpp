@@ -97,12 +97,13 @@ void PlanningProblem::treeUpdate()
                     }
                     robot->computeForwardKinematics(true, false, false);
                     Eigen::Isometry3d transform = robot->getBodyNode("toolflange_link")->getTransform();
+                    Eigen::Vector3d translation = transform.translation();
 
                     Drawable* d = new Drawable;
-                    d->setPoint(transform.translation());
+                    d->setPoint(translation);
                     d->setType(Drawable::BOX);
-                    d->setSize(0.005);
-                    d->setColor(Eigen::Vector3d(0.5, 0.0, 0.5));
+                    d->setSize(0.01);
+                    d->setColor(Eigen::Vector3d(translation / 1.750));
                     tree.add(d);
 #ifdef SHOW_EDGES
                     std::vector<unsigned int> edgeList;

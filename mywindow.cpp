@@ -14,7 +14,7 @@ MyWindow::MyWindow()
     , treeState(0)
     , timer1("update")
     , timer2("draw")
-    , cameraReset(true)
+    , cameraReset(false)
     , prevSize(0)
 {
     mZoom = 0.3f;
