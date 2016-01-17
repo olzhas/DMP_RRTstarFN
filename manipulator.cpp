@@ -167,7 +167,9 @@ bool Manipulator::plan()
     for (std::size_t i(0); i < cfg->goalState.size(); ++i) {
         goal[i] = cfg->goalState[i];
     }
+
     ss_->setStartAndGoalStates(start, goal);
+    ss_->getGoal()->as<ob::GoalRegion>()->setThreshold(1.0/180.0*M_PI);
     // generate a few solutions; all will be added to the goal;
 
     if (ss_->getPlanner()) {
@@ -178,6 +180,8 @@ bool Manipulator::plan()
 
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
     OMPL_INFORM("Found %d solutions", (int)ns);
+    std::string bestCost = ss_->getPlanner()->as<og::DRRTstarFN>()->getBestCost();
+    OMPL_INFORM("Best cost: %s", bestCost.c_str());
 
     SolutionPath* sp = new SolutionPath("main");
     try {
@@ -207,7 +211,8 @@ void Manipulator::configurePlanner()
 //==============================================================================
 bool Manipulator::replan()
 {
-    return localReplan();
+    return newReplan();
+    //return localReplan();
 }
 //==============================================================================
 #ifdef LOCAL_SUB_REPLAN
@@ -384,21 +389,47 @@ bool Manipulator::localReplan()
         dtwarn << "No solution, man\n";
     }
 }
-
 //==============================================================================
-void Manipulator::updateObstacles()
+bool Manipulator::newReplan()
 {
-    // double avgSpeed = 0.05;// calculated from the average speed of walking, 5
-    // kph
-    // FIXME introduce update for dynamic obstacles
-    //    double avgSpeed = 0.05;
-    //    Eigen::Isometry3d T;
-    //    T = myObstacle[1]->getBodyNode("box")->getTransform();
+    ob::SpaceInformationPtr si(ss_->getSpaceInformation());
+    ob::State* interimState = si->allocState();
 
-    //    T.translation()(0) -= avgSpeed;
+    og::PathGeometric& p = ss_->getSolutionPath();
+    std::vector<ob::State*> pathStates = p.getStates();
 
-    //    myObstacle[1]->getJoint("joint 1")->setTransformFromParentBodyNode(T);
-    //    myObstacle[1]->computeForwardKinematics(true, false, false);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(cfg->orphanedSampleRadius.getRadians());
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(cfg->orphanedBias);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+    dart::common::Timer timer1("mark-removal");
+    timer1.start();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->markForRemoval();
+    timer1.stop();
+    timer1.print();
+    ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
+
+    OMPL_INFORM("removed nodes");
+    //ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
+    //OMPL_INFORM("step two");
+    ss_->getProblemDefinition()->clearSolutionPaths();
+    ss_->solve(cfg->dynamicPlanningTime);
+    OMPL_INFORM("done");
+    cfg->dynamicReplanning = true;
+
+    SolutionPath* sp = new SolutionPath("sub", "r");
+    try {
+        og::PathGeometric& p = ss_->getSolutionPath();
+
+        p.interpolate(200);
+
+        sp->set(p, ss_->getSpaceInformation(), staubli_);
+        pWindow->drawables.push_back(&sp->getDrawables());
+        pWindow->solutionPaths.push_back(sp);
+    }
+    catch (ompl::Exception e) {
+        delete sp;
+        dtwarn << "No solution, man\n";
+    }
 }
 
 //==============================================================================

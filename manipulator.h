@@ -2,6 +2,7 @@
 #define MANIPULATOR_H_
 
 #include <ompl/geometric/SimpleSetup.h>
+#include <ompl/base/goals/GoalRegion.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/util/Exception.h>
 #include <ompl/config.h>
@@ -86,8 +87,9 @@ public:
 
 private:
     bool isStateValid(const ob::State* state);
-    bool localReplanFromScratch();
+    //bool localReplanFromScratch();
     bool localReplan();
+    bool newReplan();
 
     std::string& dumpFileNameGenerate();
     dart::simulation::WorldPtr world_;
