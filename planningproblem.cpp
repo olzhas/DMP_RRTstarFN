@@ -6,9 +6,6 @@ PlanningProblem::PlanningProblem()
     , manipulator(new Manipulator)
 {
     cfg->readFile();
-
-    ompl::RNG::setSeed(cfg->randomSeed);
-
     manipulator->init(cfg);
 }
 //==============================================================================
@@ -54,8 +51,6 @@ void PlanningProblem::plan(int* argcp, char** argv)
     manipulator->obsManager.spawn("cube.skel");
     manipulator->replan();
     cfg->dynamicReplanning = true;
-    while (true)
-        ;
     return;
 }
 //==============================================================================
