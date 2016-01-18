@@ -213,6 +213,12 @@ namespace geometric {
 
         void removeOrphaned();
 
+        /** \brief */
+        void proxySelectBranch(ompl::base::State* s)
+        {
+            selectBranch(s);
+        }
+
         /** \brief here the algorithm will try to connect orphaned nodes to the rest of the tree */
         void stepTwo();
 
@@ -227,7 +233,8 @@ namespace geometric {
         enum NodeType : char { NORMAL = 0,
             ORPHANED = 1,
             NEW_DYNAMIC = 2,
-            REMOVED = 3 };
+            REMOVED = 3,
+            NEW_ORPHANED = 4 };
 
     protected:
         /** \brief Representation of a motion */
@@ -316,6 +323,9 @@ namespace geometric {
         // TODO write an explanation
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
 
+        /** \brief select the branch*/
+        void selectBranch(ompl::base::State* s);
+
         /** \brief Computes the Cost To Go heuristically as the cost to come from start to motion plus
           the cost to go from motion to goal. If \e shortest is true, the estimated cost to come
           start-motion is given. Otherwise, this cost to come is the current motion cost. */
@@ -326,6 +336,10 @@ namespace geometric {
 
         /** \brief A nearest-neighbors datastructure containing the tree of motions */
         boost::shared_ptr<NearestNeighbors<Motion*> > nn_;
+
+        /** \brief A nearest-neighbors datastructure containing the subtree of motions */
+
+        boost::shared_ptr<NearestNeighbors<Motion*> > subTreeNN_;
 
         /** \brief The fraction of time the goal is picked as the state to expand towards (if such a state is available) */
         double goalBias_;

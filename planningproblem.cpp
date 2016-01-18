@@ -78,7 +78,7 @@ void PlanningProblem::treeUpdate()
     bool once = false;
 
     while (true) {
-        auto start = bc::system_clock::now() + bc::milliseconds(50);
+        auto start = bc::system_clock::now() + bc::milliseconds(20);
         ob::PlannerData pdat(ss_->getSpaceInformation());
         ss_->getPlannerData(pdat);
 
@@ -102,8 +102,8 @@ void PlanningProblem::treeUpdate()
                     Drawable* d = new Drawable;
                     d->setPoint(translation);
                     d->setType(Drawable::BOX);
-                    d->setSize(0.01);
-                    d->setColor(Eigen::Vector3d(translation / 1.750));
+                    d->setSize(0.0125);
+                    d->setColor(Eigen::Vector3d(translation.array().abs() / 1.750));
                     tree.add(d);
 #ifdef SHOW_EDGES
                     std::vector<unsigned int> edgeList;
@@ -162,7 +162,7 @@ void PlanningProblem::treeUpdate()
                                 Drawable* d = new Drawable;
                                 d->setPoint(transform.translation());
                                 d->setType(Drawable::BOX);
-                                d->setSize(0.01);
+                                d->setSize(0.005);
                                 d->setColor(Eigen::Vector4d(0.1, 1.0, 0.1, 0.7));
                                 d->setState(const_cast<ompl::base::State*>(s));
                                 orphans.add(d);

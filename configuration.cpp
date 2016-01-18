@@ -34,7 +34,7 @@ void Configuration::readFile()
         if(config["start-pos"].size() > 0) {
             startState.resize(config["start-pos"].size());
             for (std::size_t i(0); i < config["start-pos"].size(); ++i) {
-                startState[i] = config["start-pos"][i].as<double>() / 180.0 * M_PI;
+                startState[i] = config["start-pos"][i].as<double>() * M_PI / 180.0;
             }
         }
     }
@@ -43,7 +43,7 @@ void Configuration::readFile()
         if(config["goal-pos"].size() > 0){
             goalState.resize(config["goal-pos"].size());
             for (std::size_t i(0); i < config["goal-pos"].size(); ++i) {
-                goalState[i] = config["goal-pos"][i].as<double>() / 180.0 * M_PI;
+                goalState[i] = config["goal-pos"][i].as<double>() * M_PI / 180.0;
             }
         }
     }
