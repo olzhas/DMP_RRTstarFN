@@ -224,15 +224,20 @@ bool Manipulator::newReplan()
     int from = 2;
 
     ompl::base::State* s = p.getState(from);
+    std::vector<ompl::base::State*> pathArray = p.getStates();
 
+    ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray, from);
     ss_->getPlanner()->as<og::DRRTstarFN>()->proxySelectBranch(s);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(cfg->orphanedSampleRadius.getRadians());
     ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(cfg->orphanedBias);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
 
+    int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
+    OMPL_INFORM("removed nodes from the sub tree is %d", removed);
+
     ss_->getProblemDefinition()->clearSolutionPaths();
     ss_->solve(cfg->dynamicPlanningTime);
-    OMPL_INFORM("done");
+    OMPL_INFORM("Dynamic planning completed");
     cfg->dynamicReplanning = true;
 
     SolutionPath* sp = new SolutionPath("sub", "r");
