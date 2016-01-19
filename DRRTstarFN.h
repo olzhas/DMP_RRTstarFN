@@ -147,22 +147,10 @@ namespace geometric {
 
         void setPreviousPath(std::vector<ompl::base::State*> stateList, int stateIndex)
         {
-            ompl::base::State* s = stateList[stateIndex];
-            std::vector<Motion*> motions;
-            nn_->list(motions);
-            Motion* startMotion = nullptr;
-            for (auto m : motions) {
-                if (si_->equalStates(m->state, s)) {
-                    startMotion = m;
-                }
-            }
-            assert(startMotion != nullptr);
-            previousPath_.push_back(startMotion);
-            for (auto m : startMotion->children) {
-                std::find_if(m->children.begin(),
-                    m->children.end(),
-                    [&](Motion* mot) -> bool { return si_->equalStates(mot->state, s); });
-            }
+            previousPath_.clear();
+            std::copy(stateList.begin() + stateIndex,
+                      stateList.end(),
+                      std::back_inserter(previousPath_));
         }
 
         virtual void setup();
@@ -310,16 +298,7 @@ namespace geometric {
         /** \brief Deletes (frees memory) the motion and its children motions. */
         void deleteBranch(Motion* motion);
 
-        /** \brief Deletes (frees memory) the motion that was invalidated
-          by a dynamic obstacle and generating a list of orphaned branches. */
-        bool huntKids(Motion* motion, std::vector<Motion*>& orph);
-
         void verifyTree();
-
-        /** \brief Marks the branch as orphaned */
-        void markOrphaned(Motion* m);
-
-        void markNormal(Motion* m);
 
         // TODO write an explanation
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
@@ -372,7 +351,7 @@ namespace geometric {
         /** \brief Stores the Motion containing the last added initial start state. */
         Motion* startMotion_;
 
-        std::vector<Motion*> previousPath_;
+        std::vector<ompl::base::State*> previousPath_;
 
         //////////////////////////////
         // Planner progress properties
@@ -387,7 +366,6 @@ namespace geometric {
 
         base::State* interimState_;
         double sampleRadius_;
-        std::vector<Motion*> orphanedNodes_;
     };
 }
 }

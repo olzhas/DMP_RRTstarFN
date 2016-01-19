@@ -266,7 +266,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             if (rng_.uniform01() < orphanedBias_) {
                 size_t whereSample = rng_.uniformInt(0, previousPath_.size() - 1);
                 sampler_->sampleUniformNear(rstate,
-                    previousPath_[whereSample]->state,
+                    previousPath_[whereSample],
                     sampleRadius_);
             }
             else {
@@ -456,11 +456,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                             updateChildCosts(nbh[i]);
 
                             checkForSolution = true;
-
-                            if (nbh[i]->nodeType == ORPHANED) {
-                                markNormal(nbh[i]);
-                                // TODO remove from the orphaned_
-                            }
                         }
                     }
                 }
@@ -863,41 +858,9 @@ bool ompl::geometric::DRRTstarFN::traverseTree(
     }
     return true;
 }
-//==============================================================================
-inline void ompl::geometric::DRRTstarFN::removeOrphaned()
-{
-    for (auto orphan : orphanedNodes_) {
-        nn_->remove(orphan);
-    }
-}
-//==============================================================================
-inline void ompl::geometric::DRRTstarFN::markNormal(Motion* m)
-{
-    if (m->nodeType != NORMAL) {
-        auto res = std::find(orphanedNodes_.begin(), orphanedNodes_.end(), m);
-        orphanedNodes_.erase(res);
-        m->nodeType = NORMAL;
-        for (auto child : m->children) {
-            markNormal(child);
-        }
-    }
-}
-//==============================================================================
-void ompl::geometric::DRRTstarFN::markOrphaned(Motion* m)
-{
-    orphanedNodes_.push_back(m);
-    m->nodeType = ORPHANED;
-
-    for (auto child : m->children) {
-        markOrphaned(child);
-    }
-
-#ifdef DEBUG
-    OMPL_INFORM("marked");
-#endif
-}
 
 // decouple it later
+
 void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s)
 {
     std::vector<Motion*> tree;
@@ -922,5 +885,20 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s)
     for (auto node : tree) {
         if (node->nodeType == NEW_ORPHANED)
             subTreeNN_->add(node);
+    }
+}
+
+void ompl::geometric::DRRTstarFN::identifyInvalidNodes()
+{
+    std::vector<Motion*> motions;
+    subTreeNN_->list(motions);
+
+    for (auto m : motions) {
+        for (auto child : m->children) {
+            if (si_->checkMotion(m->state, child->state)) {
+                m->nodeType = REMOVED;
+                child->nodeType = REMOVED;
+            }
+        }
     }
 }
