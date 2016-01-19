@@ -38,7 +38,8 @@ public:
         s_ = nullptr;
     }
 
-    Drawable(Eigen::Vector3d point, Eigen::Vector4d color, double size, DrawableType type, DrawableVisibility visible)
+    Drawable(Eigen::Vector3d point, Eigen::Vector4d color, double size,
+             DrawableType type, DrawableVisibility visible = DrawableVisibility::VISIBLE)
         : size_(size)
         , type_(type)
         , visible_(visible)
@@ -48,7 +49,8 @@ public:
         s_ = nullptr;
     }
 
-    Drawable(Eigen::Vector3d point, Eigen::Vector3d color, double size, DrawableType type, DrawableVisibility visible)
+    Drawable(Eigen::Vector3d point, Eigen::Vector3d color, double size,
+             DrawableType type, DrawableVisibility visible = DrawableVisibility::VISIBLE)
         : size_(size)
         , type_(type)
         , visible_(visible)
@@ -153,6 +155,8 @@ private:
 
     Drawable::DrawableVisibility visible_;
 
+    std::mutex dcMutex_;
+
 public:
     DrawableCollection()
         : visible_(Drawable::DrawableVisibility::VISIBLE)
@@ -204,6 +208,8 @@ public:
 
     size_t size() { return data_.size(); }
 };
+
+typedef std::shared_ptr<DrawableCollection> DrawableCollectionPtr;
 
 namespace dart {
 namespace gui {

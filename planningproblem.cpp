@@ -65,9 +65,9 @@ void PlanningProblem::treeUpdate()
     boost::this_thread::sleep_until(pre_wait);
 
     DrawableCollection edges("edges");
-    DrawableCollection tree("tree");
+    DrawableCollection* tree = new DrawableCollection("tree");
     DrawableCollection orphans("orphans");
-    frontend.getWindow()->drawables.push_back(&tree);
+    frontend.getWindow()->drawables.push_back(tree);
     frontend.getWindow()->drawables.push_back(&edges);
     frontend.getWindow()->drawables.push_back(&orphans);
 
@@ -80,31 +80,42 @@ void PlanningProblem::treeUpdate()
     while (true) {
         auto start = bc::system_clock::now() + bc::milliseconds(20);
         ob::PlannerData pdat(ss_->getSpaceInformation());
+
         ss_->getPlannerData(pdat);
 
+        if (cfg->dynamicReplanning) {
+            if (tree->getCaption() == "tree") {
+                delete tree;
+                tree = new DrawableCollection("dynamic-subtree");
+            }
+        }
+
         if (pdat.numVertices() > 0) {
-            size_t prevTreeSize = tree.size();
-            //size_t prevTreeSize = 0;
+            size_t prevTreeSize = tree->size();
             size_t pdatNumVerticies = pdat.numVertices();
+
             for (size_t i = prevTreeSize; i < pdatNumVerticies; ++i) {
                 if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
                     std::vector<double> reals;
                     const ob::State* s = pdat.getVertex(i).getState();
                     ss_->getStateSpace()->copyToReals(reals, s);
 
-                    for (size_t j(0); j < reals.size(); ++j) {
-                        robot->setPosition(j + 2, reals[j]);
-                    }
+                    Eigen::VectorXd currentState(8);
+                    currentState << 0, 0,
+                        reals[0], reals[1], reals[2],
+                        reals[3], reals[4], reals[5];
+                    robot->setPositions(currentState);
+
                     robot->computeForwardKinematics(true, false, false);
                     Eigen::Isometry3d transform = robot->getBodyNode("toolflange_link")->getTransform();
                     Eigen::Vector3d translation = transform.translation();
 
-                    Drawable* d = new Drawable;
-                    d->setPoint(translation);
-                    d->setType(Drawable::BOX);
-                    d->setSize(0.0125);
+                    Drawable* d = new Drawable(translation,
+                        Eigen::Vector3d(translation.array().abs() / 1.750),
+                        0.005,
+                        Drawable::BOX);
                     d->setColor(Eigen::Vector3d(translation.array().abs() / 1.750));
-                    tree.add(d);
+                    tree->add(d);
 #ifdef SHOW_EDGES
                     std::vector<unsigned int> edgeList;
                     if (pdat.getEdges(i, edgeList)) {
@@ -145,6 +156,7 @@ void PlanningProblem::treeUpdate()
             // let's assume that order does not change
             for (int i = 0; i < pdatNumVerticies; ++i) {
                 if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
+                    // ORPHANED == 1
                     if (pdat.getVertex(i).getTag() == 1) {
                         const ob::State* s = pdat.getVertex(i).getState();
                         bool exists = false;

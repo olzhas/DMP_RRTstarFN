@@ -95,7 +95,10 @@ void DrawableCollection::draw()
         return;
     size_t end = data_.size();
     for (size_t i = 0; i < end; ++i) {
-        Drawable* d = data_[i];
-        d->draw();
+        // FIXME mutex or shit
+        if(data_.size() > 0){
+            Drawable* d = data_[i];
+            d->draw();
+        }
     }
 }
