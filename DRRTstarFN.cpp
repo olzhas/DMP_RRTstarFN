@@ -300,6 +300,8 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
     bool symCost = opt_->isSymmetric();
 
+    boost::shared_ptr<NearestNeighbors<Motion*> > nnBak_;
+
     if (!localPlanning_) {
         while (const base::State* st = pis_.nextStart()) {
             Motion* motion = new Motion(si_);
@@ -308,6 +310,9 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             nn_->add(motion);
             startMotion_ = motion;
         }
+    } else {
+        nnBak_ = nn_;
+        nn_ = subTreeNN_;
     }
 
     if (nn_->size() == 0) {

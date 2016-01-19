@@ -83,7 +83,7 @@ void Manipulator::init(ConfigurationPtr& config)
     ss_->getSpaceInformation()
         ->setMotionValidator(
             ob::MotionValidatorPtr(
-                new ManipulatorMotionValidator(ss_->getSpaceInformation())));
+                new ManipulatorMotionValidator(ss_->getSpaceInformation(), cfg)));
 
     ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
 

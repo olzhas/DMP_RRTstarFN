@@ -13,25 +13,33 @@ class ManipulatorMotionValidator : public ob::MotionValidator {
 public:
     ManipulatorMotionValidator(ob::SpaceInformation* si)
         : MotionValidator(si),
-          cfg(new Configuration)
+          cfg_(new Configuration)
     {
-        cfg->readFile(); // FIXME terrible hack
+        cfg_->readFile(); // FIXME terrible hack
         defaultSettings();
     }
     ManipulatorMotionValidator(const ob::SpaceInformationPtr& si)
         : MotionValidator(si),
-          cfg(new Configuration)
+          cfg_(new Configuration)
     {
-        cfg->readFile(); // FIXME terrible hack
+        cfg_->readFile(); // FIXME terrible hack
         defaultSettings();
     }
+
+    ManipulatorMotionValidator(const ob::SpaceInformationPtr& si, const ConfigurationPtr& cfg):
+        MotionValidator(si),
+        cfg_(cfg)
+    {
+        defaultSettings();
+    }
+
     virtual ~ManipulatorMotionValidator()
     {
     }
     virtual bool checkMotion(const ob::State* s1, const ob::State* s2) const;
     virtual bool checkMotion(const ob::State* s1, const ob::State* s2, std::pair<ob::State*, double>& lastValid) const;
 
-    ConfigurationPtr cfg;
+    ConfigurationPtr cfg_;
 
 private:
     ob::StateSpacePtr stateSpace_;

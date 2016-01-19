@@ -145,17 +145,24 @@ namespace geometric {
             return delayCC_;
         }
 
-        /** \brief Set the percentage threshold (between 0 and 1) for pruning the tree. If the new tree has removed
-          at least this percentage of states, the tree will be finally pruned. */
-        void setPruneStatesImprovementThreshold(const double pp)
+        void setPreviousPath(std::vector<ompl::base::State*> stateList, int stateIndex)
         {
-            pruneStatesThreshold_ = pp;
-        }
-
-        /** \brief Get the current prune states percentage threshold parameter. */
-        double getPruneStatesImprovementThreshold() const
-        {
-            return pruneStatesThreshold_;
+            ompl::base::State* s = stateList[stateIndex];
+            std::vector<Motion*> motions;
+            nn_->list(motions);
+            Motion* startMotion = nullptr;
+            for (auto m : motions) {
+                if (si_->equalStates(m->state, s)) {
+                    startMotion = m;
+                }
+            }
+            assert(startMotion != nullptr);
+            previousPath_.push_back(startMotion);
+            for (auto m : startMotion->children) {
+                std::find_if(m->children.begin(),
+                    m->children.end(),
+                    [&](Motion* mot) -> bool { return si_->equalStates(mot->state, s); });
+            }
         }
 
         virtual void setup();
@@ -323,7 +330,7 @@ namespace geometric {
         // TODO write an explanation
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
 
-        /** \brief select the branch*/
+        /** \brief selects the branch */
         void selectBranch(ompl::base::State* s);
 
         /** \brief Computes the Cost To Go heuristically as the cost to come from start to motion plus
@@ -368,15 +375,10 @@ namespace geometric {
         /** \brief If this value is set to true, tree pruning will be enabled. */
         //bool                                           prune_;
 
-        /** \brief The tree is only pruned is the percentage of states to prune is above this threshold (between 0 and 1). */
-        double pruneStatesThreshold_;
-
-        struct PruneScratchSpace {
-            std::vector<Motion*> newTree, toBePruned, candidates;
-        } pruneScratchSpace_;
-
         /** \brief Stores the Motion containing the last added initial start state. */
         Motion* startMotion_;
+
+        std::vector<Motion*> previousPath_;
 
         //////////////////////////////
         // Planner progress properties
