@@ -148,9 +148,10 @@ namespace geometric {
         void setPreviousPath(std::vector<ompl::base::State*> stateList, int stateIndex)
         {
             previousPath_.clear();
-            std::copy(stateList.begin() + stateIndex,
-                      stateList.end(),
-                      std::back_inserter(previousPath_));
+            for(auto it = stateList.begin() + stateIndex; it < stateList.end(); ++it){
+                ompl::base::State* s = *it;
+                previousPath_.push_back(si_->cloneState(s));
+            }
         }
 
         virtual void setup();
