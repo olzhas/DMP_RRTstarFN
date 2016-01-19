@@ -213,9 +213,6 @@ namespace geometric {
         /** \brief Remove the states from the tree */
         int removeInvalidNodes();
 
-        /** \brief here the algorithm will find invalid nodes and mark/remove them from the tree */
-        void markForRemoval();
-
         /** \brief remove orphaned nodes from the tree */
 
         void removeOrphaned();
@@ -225,9 +222,6 @@ namespace geometric {
         {
             selectBranch(s);
         }
-
-        /** \brief here the algorithm will try to connect orphaned nodes to the rest of the tree */
-        void stepTwo();
 
         /** \brief Save the state of the tree */
 

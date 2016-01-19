@@ -229,16 +229,7 @@ bool Manipulator::newReplan()
     ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(cfg->orphanedSampleRadius.getRadians());
     ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(cfg->orphanedBias);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
-    dart::common::Timer timer1("mark-removal");
-    timer1.start();
-    ss_->getPlanner()->as<og::DRRTstarFN>()->markForRemoval();
-    timer1.stop();
-    timer1.print();
-    ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
 
-    OMPL_INFORM("removed nodes");
-    //ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
-    //OMPL_INFORM("step two");
     ss_->getProblemDefinition()->clearSolutionPaths();
     ss_->solve(cfg->dynamicPlanningTime);
     OMPL_INFORM("done");
@@ -379,6 +370,7 @@ bool Manipulator::newReplan()
     return ss_->haveSolutionPath();
 }
 
+#ifdef OLD_REPLAN
 //==============================================================================
 bool Manipulator::localReplan()
 {
@@ -420,44 +412,7 @@ bool Manipulator::localReplan()
         dtwarn << "No solution, man\n";
     }
 }
-/*
-//==============================================================================
-bool Manipulator::newReplan()
-{
-    ob::SpaceInformationPtr si(ss_->getSpaceInformation());
-    ob::State* interimState = si->allocState();
-
-    og::PathGeometric& p = ss_->getSolutionPath();
-    std::vector<ob::State*> pathStates = p.getStates();
-
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(cfg->orphanedSampleRadius.getRadians());
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(cfg->orphanedBias);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
-
-    OMPL_INFORM("removed nodes");
-    //ss_->getPlanner()->as<og::DRRTstarFN>()->stepTwo();
-    //OMPL_INFORM("step two");
-    ss_->getProblemDefinition()->clearSolutionPaths();
-    ss_->solve(cfg->dynamicPlanningTime);
-    OMPL_INFORM("done");
-    cfg->dynamicReplanning = true;
-
-    SolutionPath* sp = new SolutionPath("sub", "r");
-    try {
-        og::PathGeometric& p = ss_->getSolutionPath();
-
-        p.interpolate(200);
-
-        sp->set(p, ss_->getSpaceInformation(), staubli_);
-        pWindow->drawables.push_back(&sp->getDrawables());
-        pWindow->solutionPaths.push_back(sp);
-    }
-    catch (ompl::Exception e) {
-        delete sp;
-        dtwarn << "No solution, man\n";
-    }
-}
-*/
+#endif
 //==============================================================================
 void Manipulator::store(const char* filename)
 {

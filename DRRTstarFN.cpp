@@ -175,119 +175,6 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     return removed;
 }
 
-void ompl::geometric::DRRTstarFN::markForRemoval()
-{
-    if (pdef_ == NULL)
-        return;
-    /*
-    if(pdef_->getSolutionCount() <= 0 )
-        return;
-
-    // getting geometric path
-    const ompl::base::PathPtr &p = pdef_->getSolutionPath();
-    // FIXME hoping p to be correct, however find a way to check that
-    ompl::geometric::PathGeometric &gp = static_cast<PathGeometric&>(*p);
-
-    std::vector<Motion*> motions;
-    nn_->list(motions);
-
-    for(size_t i=0; i<gp.getStateCount()-1; ++i){
-        ompl::base::State *s1 = gp.getState(i);
-        ompl::base::State *s2 = gp.getState(i+1);
-        if(si_->getMotionValidator()->checkMotion(s1, s2) == 0){
-            //FIXME a faster way for the search
-            for(size_t j=0; j<motions.size(); ++j){
-                Motion* m = motions[j];
-                if(si_->equalStates(m->state, s1)){
-                    m->nodeType = REMOVED;
-                    for(size_t k=0; k<m->children.size(); ++k)
-                        m->children[k]->nodeType = ORPHANED;
-                }
-            }
-        }
-    }
-*/
-    std::vector<Motion*> motions;
-    nn_->list(motions);
-
-    for (size_t i = 0; i < motions.size(); ++i) {
-        Motion* m = motions[i];
-        ompl::base::State* s = m->state;
-        for (size_t j = 0; j < m->children.size(); ++j) {
-            Motion* mChild = m->children[j];
-            ompl::base::State* sChild = mChild->state;
-            if (!si_->getMotionValidator()->checkMotion(s, sChild)) {
-                m->nodeType = REMOVED;
-                mChild->nodeType = REMOVED;
-            }
-        }
-    }
-
-    orphanedNodes_.clear();
-    for (size_t i = 0; i < motions.size(); ++i) {
-        Motion* m = motions[i];
-        if (m->nodeType == REMOVED) {
-            for (size_t j = 0; j < m->children.size(); ++j) {
-                markOrphaned(m->children[j]);
-            }
-        }
-    }
-    OMPL_INFORM("number of orphaned nodes: %d", orphanedNodes_.size());
-}
-
-void ompl::geometric::DRRTstarFN::stepTwo()
-{
-    if (pdef_ == NULL)
-        return;
-
-    double k_rrg = boost::math::constants::e<double>() + (boost::math::constants::e<double>() / (double)si_->getStateSpace()->getDimension());
-
-    unsigned int k = std::ceil(k_rrg * log((double)(nn_->size() + 1)));
-
-    std::vector<base::Cost> costs;
-    std::vector<base::Cost> incCosts;
-    std::vector<std::size_t> sortedCostIndices;
-    std::vector<Motion*> nbh;
-
-    // our functor for sorting nearest neighbors
-    CostIndexCompare compareFn(costs, *opt_);
-
-    for (size_t i = 0; i < orphanedNodes_.size(); ++i) {
-        Motion* motion = orphanedNodes_[i];
-        nn_->nearestK(motion, k, nbh);
-
-        if (costs.size() < nbh.size()) {
-            costs.resize(nbh.size());
-            incCosts.resize(nbh.size());
-            sortedCostIndices.resize(nbh.size());
-        }
-
-        for (std::size_t j = 0; j < nbh.size(); ++j) {
-            incCosts[j] = opt_->motionCost(nbh[j]->state, motion->state);
-            costs[j] = opt_->combineCosts(nbh[j]->cost, incCosts[j]);
-        }
-
-        for (std::size_t j = 0; j < nbh.size(); ++j)
-            sortedCostIndices[j] = j;
-        std::sort(sortedCostIndices.begin(),
-            sortedCostIndices.begin() + nbh.size(), compareFn);
-
-        for (std::vector<std::size_t>::const_iterator j = sortedCostIndices.begin();
-             j != sortedCostIndices.begin() + nbh.size(); ++j) {
-            Motion* m = nbh[*j];
-            if (m->nodeType == NORMAL) {
-                if (si_->checkMotion(motion->state, nbh[*j]->state)) {
-                    motion->nodeType = NORMAL;
-                    motion->parent = nbh[*j];
-                    motion->parent->children.push_back(motion);
-                    break;
-                }
-            }
-        }
-    }
-    OMPL_INFORM("number of orphaned nodes: %d", orphanedNodes_.size());
-}
-
 ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
     const base::PlannerTerminationCondition& ptc)
 {
@@ -310,7 +197,8 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             nn_->add(motion);
             startMotion_ = motion;
         }
-    } else {
+    }
+    else {
         nnBak_ = nn_;
         nn_ = subTreeNN_;
     }
@@ -374,11 +262,11 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
         // sample random state (with goal biasing)
         // Goal samples are only sampled until maxSampleCount() goals are in the
         // tree, to prohibit duplicate goal states.
-        if (localPlanning_ && orphanedNodes_.size() > 0) {
+        if (localPlanning_) {
             if (rng_.uniform01() < orphanedBias_) {
-                size_t whereSample = rng_.uniformInt(0, orphanedNodes_.size() - 1);
+                size_t whereSample = rng_.uniformInt(0, previousPath_.size() - 1);
                 sampler_->sampleUniformNear(rstate,
-                    orphanedNodes_[whereSample]->state,
+                    previousPath_[whereSample]->state,
                     sampleRadius_);
             }
             else {
@@ -766,8 +654,14 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
     Planner::getPlannerData(data);
 
     std::vector<Motion*> motions;
-    if (nn_)
-        nn_->list(motions);
+    if (!localPlanning_) {
+        if (nn_)
+            nn_->list(motions);
+    }
+    else {
+        if (subTreeNN_)
+            subTreeNN_->list(motions);
+    }
 
     if (lastGoalMotion_)
         data.addGoalVertex(base::PlannerDataVertex(lastGoalMotion_->state));
@@ -784,7 +678,7 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
         }
     }
 }
-
+//==============================================================================
 ompl::base::Cost ompl::geometric::DRRTstarFN::costToGo(
     const Motion* motion, const bool shortest) const
 {
@@ -1021,6 +915,9 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s)
     }
 
     subTreeNN_.reset(new NearestNeighborsLinear<Motion*>());
+
+    subTreeNN_->setDistanceFunction(
+        boost::bind(&DRRTstarFN::distanceFunction, this, _1, _2));
 
     for (auto node : tree) {
         if (node->nodeType == NEW_ORPHANED)
