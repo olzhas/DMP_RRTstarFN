@@ -3,7 +3,7 @@
 <skeleton name="human box skeleton">
     <body name="box">
         <gravity>1</gravity>
-        <transformation>1.060 0.550 1.254 0.0 0.0 1.5708</transformation>
+        <transformation>1.0 0.550 1.254 0.0 0.0 1.5708</transformation>
         <inertia>
             <mass>1</mass>
             <offset>0 0 0</offset>
@@ -15,7 +15,7 @@
                     <size>0.6 0.3 1.8</size>
                 </box>
             </geometry>
-            <color>0.1 0.4 1</color>
+            <color>0.4 0.6 0.8</color>
         </visualization_shape>
         <collision_shape>
             <transformation>0 0 0 0 0 0</transformation>

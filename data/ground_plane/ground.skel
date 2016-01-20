@@ -3,12 +3,12 @@
   <world name="world 1">
     <skeleton name="ground skeleton">
       <body name="ground">
-        <transformation>0 0 -0.03 1.570 0 0</transformation>
+        <transformation>0 0 -0.03 0 0 0</transformation>
         <visualization_shape>
           <transformation>0 0 0 0 0 0</transformation>
           <geometry>
             <box>
-              <size>6.5 0.05 6.5</size>
+              <size>6.5 6.5 0.05</size>
             </box>
           </geometry>
           <color>0.9 0.9 0.925</color>
@@ -17,7 +17,7 @@
           <transformation>0 0 0 0 0 0</transformation>
           <geometry>
             <box>
-              <size>6.5 0.05 6.5</size>
+              <size>6.5 6.5 0.05</size>
             </box>
           </geometry>
         </collision_shape>

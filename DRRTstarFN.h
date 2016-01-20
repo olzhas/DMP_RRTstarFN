@@ -145,18 +145,8 @@ namespace geometric {
             return delayCC_;
         }
 
-        /** \brief Set the percentage threshold (between 0 and 1) for pruning the tree. If the new tree has removed
-          at least this percentage of states, the tree will be finally pruned. */
-        void setPruneStatesImprovementThreshold(const double pp)
-        {
-            pruneStatesThreshold_ = pp;
-        }
-
-        /** \brief Get the current prune states percentage threshold parameter. */
-        double getPruneStatesImprovementThreshold() const
-        {
-            return pruneStatesThreshold_;
-        }
+        void setPreviousPath(std::vector<ompl::base::State*> stateList, int stateIndex);
+        void nodeCleanUp(ompl::base::State* s);
 
         virtual void setup();
 
@@ -206,15 +196,17 @@ namespace geometric {
         /** \brief Remove the states from the tree */
         int removeInvalidNodes();
 
-        /** \brief here the algorithm will find invalid nodes and mark/remove them from the tree */
-        void markForRemoval();
-
         /** \brief remove orphaned nodes from the tree */
 
         void removeOrphaned();
 
-        /** \brief here the algorithm will try to connect orphaned nodes to the rest of the tree */
-        void stepTwo();
+        /** \brief */
+        void proxySelectBranch(ompl::base::State* s)
+        {
+            selectBranch(s);
+        }
+
+        void swapNN();
 
         /** \brief Save the state of the tree */
 
@@ -227,7 +219,8 @@ namespace geometric {
         enum NodeType : char { NORMAL = 0,
             ORPHANED = 1,
             NEW_DYNAMIC = 2,
-            REMOVED = 3 };
+            REMOVED = 3,
+            NEW_ORPHANED = 4 };
 
     protected:
         /** \brief Representation of a motion */
@@ -302,19 +295,13 @@ namespace geometric {
         /** \brief Deletes (frees memory) the motion and its children motions. */
         void deleteBranch(Motion* motion);
 
-        /** \brief Deletes (frees memory) the motion that was invalidated
-          by a dynamic obstacle and generating a list of orphaned branches. */
-        bool huntKids(Motion* motion, std::vector<Motion*>& orph);
-
         void verifyTree();
-
-        /** \brief Marks the branch as orphaned */
-        void markOrphaned(Motion* m);
-
-        void markNormal(Motion* m);
 
         // TODO write an explanation
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
+
+        /** \brief selects the branch */
+        void selectBranch(ompl::base::State* s);
 
         /** \brief Computes the Cost To Go heuristically as the cost to come from start to motion plus
           the cost to go from motion to goal. If \e shortest is true, the estimated cost to come
@@ -326,6 +313,11 @@ namespace geometric {
 
         /** \brief A nearest-neighbors datastructure containing the tree of motions */
         boost::shared_ptr<NearestNeighbors<Motion*> > nn_;
+
+        /** \brief A nearest-neighbors datastructure containing the subtree of motions */
+
+        boost::shared_ptr<NearestNeighbors<Motion*> > subTreeNN_;
+        boost::shared_ptr<NearestNeighbors<Motion*> > bakNN_;
 
         /** \brief The fraction of time the goal is picked as the state to expand towards (if such a state is available) */
         double goalBias_;
@@ -354,15 +346,10 @@ namespace geometric {
         /** \brief If this value is set to true, tree pruning will be enabled. */
         //bool                                           prune_;
 
-        /** \brief The tree is only pruned is the percentage of states to prune is above this threshold (between 0 and 1). */
-        double pruneStatesThreshold_;
-
-        struct PruneScratchSpace {
-            std::vector<Motion*> newTree, toBePruned, candidates;
-        } pruneScratchSpace_;
-
         /** \brief Stores the Motion containing the last added initial start state. */
         Motion* startMotion_;
+
+        std::vector<ompl::base::State*> previousPath_;
 
         //////////////////////////////
         // Planner progress properties
@@ -377,7 +364,6 @@ namespace geometric {
 
         base::State* interimState_;
         double sampleRadius_;
-        std::vector<Motion*> orphanedNodes_;
     };
 }
 }

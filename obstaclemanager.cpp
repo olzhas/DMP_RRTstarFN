@@ -27,9 +27,8 @@ void ObstacleManager::loadAll()
             dterr << "Cannot load obstacle skel file\n";
         }
     }
-
 }
-
+//==============================================================================
 void ObstacleManager::spawn(const std::string& name)
 {
     Obstacle *obstacle;

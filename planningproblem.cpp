@@ -6,9 +6,6 @@ PlanningProblem::PlanningProblem()
     , manipulator(new Manipulator)
 {
     cfg->readFile();
-
-    ompl::RNG::setSeed(cfg->randomSeed);
-
     manipulator->init(cfg);
 }
 //==============================================================================
@@ -54,8 +51,6 @@ void PlanningProblem::plan(int* argcp, char** argv)
     manipulator->obsManager.spawn("cube.skel");
     manipulator->replan();
     cfg->dynamicReplanning = true;
-    while (true)
-        ;
     return;
 }
 //==============================================================================
@@ -70,9 +65,10 @@ void PlanningProblem::treeUpdate()
     boost::this_thread::sleep_until(pre_wait);
 
     DrawableCollection edges("edges");
-    DrawableCollection tree("tree");
+    DrawableCollection* tree = new DrawableCollection("tree");
+    DrawableCollection* treeBak;
     DrawableCollection orphans("orphans");
-    frontend.getWindow()->drawables.push_back(&tree);
+    frontend.getWindow()->drawables.push_back(tree);
     frontend.getWindow()->drawables.push_back(&edges);
     frontend.getWindow()->drawables.push_back(&orphans);
 
@@ -80,75 +76,93 @@ void PlanningProblem::treeUpdate()
     dart::dynamics::SkeletonPtr robot(pWorld->getSkeleton("TX90XLHB")->clone());
     og::SimpleSetupPtr ss_(manipulator->ss_);
 
-    bool once = false;
-
+    while(!cfg->dynamicReplanning);
     while (true) {
-        auto start = bc::system_clock::now() + bc::milliseconds(50);
+        auto start = bc::system_clock::now() + bc::milliseconds(20);
         ob::PlannerData pdat(ss_->getSpaceInformation());
-        ss_->getPlannerData(pdat);
 
+        ss_->getPlannerData(pdat);
+/*
+        if (cfg->dynamicReplanning) {
+            if (tree->getCaption() == "tree") {
+                treeBak = tree;
+                tree = new DrawableCollection("dynamic-subtree");
+            }
+        }
+*/
         if (pdat.numVertices() > 0) {
-            size_t prevTreeSize = tree.size();
-            //size_t prevTreeSize = 0;
-            size_t pdatNumVerticies = pdat.numVertices();
-            for (size_t i = prevTreeSize; i < pdatNumVerticies; ++i) {
+            size_t prevTreeSize = tree->size();
+            size_t pdatNumVertices = pdat.numVertices();
+
+            /*
+            if (prevTreeSize != pdatNumVertices) {
+                std::cout << "not loaded yet\n";
+            }
+            */
+
+            for (size_t i = prevTreeSize; i < pdatNumVertices; ++i) {
                 if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
                     std::vector<double> reals;
                     const ob::State* s = pdat.getVertex(i).getState();
                     ss_->getStateSpace()->copyToReals(reals, s);
 
-                    for (size_t j(0); j < reals.size(); ++j) {
-                        robot->setPosition(j + 2, reals[j]);
-                    }
+                    Eigen::VectorXd currentState(8);
+                    currentState << 0, 0,
+                            reals[0], reals[1], reals[2],
+                            reals[3], reals[4], reals[5];
+                    robot->setPositions(currentState);
+
                     robot->computeForwardKinematics(true, false, false);
                     Eigen::Isometry3d transform = robot->getBodyNode("toolflange_link")->getTransform();
+                    Eigen::Vector3d translation = transform.translation();
 
-                    Drawable* d = new Drawable;
-                    d->setPoint(transform.translation());
-                    d->setType(Drawable::BOX);
-                    d->setSize(0.005);
-                    d->setColor(Eigen::Vector3d(0.5, 0.0, 0.5));
-                    tree.add(d);
-#ifdef SHOW_EDGES
-                    std::vector<unsigned int> edgeList;
-                    if (pdat.getEdges(i, edgeList)) {
-                        for (int j = 0; j < edgeList.size(); ++j) {
-                            DrawableEdge* e = new DrawableEdge;
-                            e->setStart(transform.translation());
-                            const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
-                            ss_->getStateSpace()->copyToReals(reals, s1);
+                    Drawable* d = new Drawable(translation,
+                                               Eigen::Vector3d(translation.array().abs() / 1.750),
+                                               0.005,
+                                               Drawable::BOX);
+                    tree->add(d);
 
-                            for (size_t k(0); k < reals.size(); ++k) {
-                                robot->setPosition(k + 2, reals[k]);
+                    if (cfg->dynamicReplanning) {
+                        std::vector<unsigned int> edgeList;
+                        if (pdat.getEdges(i, edgeList)) {
+                            for (int j = 0; j < edgeList.size(); ++j) {
+                                DrawableEdge* e = new DrawableEdge;
+                                e->setStart(transform.translation());
+                                const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
+                                ss_->getStateSpace()->copyToReals(reals, s1);
+
+                                for (size_t k(0); k < reals.size(); ++k) {
+                                    robot->setPosition(k + 2, reals[k]);
+                                }
+                                robot->computeForwardKinematics(true, false, false);
+                                transform = robot->getBodyNode("toolflange_link")->getTransform();
+                                e->setEnd(transform.translation());
+                                edges.add(e);
                             }
-                            robot->computeForwardKinematics(true, false, false);
-                            transform = robot->getBodyNode("toolflange_link")->getTransform();
-                            e->setEnd(transform.translation());
-                            edges.add(e);
+                        }
+                        if (pdat.getIncomingEdges(i, edgeList)) {
+                            for (int j = 0; j < edgeList.size(); ++j) {
+                                DrawableEdge* e = new DrawableEdge;
+                                e->setEnd(transform.translation());
+                                const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
+                                ss_->getStateSpace()->copyToReals(reals, s1);
+
+                                for (size_t k(0); k < reals.size(); ++k) {
+                                    robot->setPosition(k + 2, reals[k]);
+                                }
+                                robot->computeForwardKinematics(true, false, false);
+                                transform = robot->getBodyNode("toolflange_link")->getTransform();
+                                e->setStart(transform.translation());
+                                edges.add(e);
+                            }
                         }
                     }
-                    if (pdat.getIncomingEdges(i, edgeList)) {
-                        for (int j = 0; j < edgeList.size(); ++j) {
-                            DrawableEdge* e = new DrawableEdge;
-                            e->setEnd(transform.translation());
-                            const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
-                            ss_->getStateSpace()->copyToReals(reals, s1);
-
-                            for (size_t k(0); k < reals.size(); ++k) {
-                                robot->setPosition(k + 2, reals[k]);
-                            }
-                            robot->computeForwardKinematics(true, false, false);
-                            transform = robot->getBodyNode("toolflange_link")->getTransform();
-                            e->setStart(transform.translation());
-                            edges.add(e);
-                        }
-                    }
-#endif
                 }
             }
             // let's assume that order does not change
-            for (int i = 0; i < pdatNumVerticies; ++i) {
+            for (int i = 0; i < pdatNumVertices; ++i) {
                 if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
+                    // ORPHANED == 1
                     if (pdat.getVertex(i).getTag() == 1) {
                         const ob::State* s = pdat.getVertex(i).getState();
                         bool exists = false;
@@ -166,7 +180,7 @@ void PlanningProblem::treeUpdate()
                                 Drawable* d = new Drawable;
                                 d->setPoint(transform.translation());
                                 d->setType(Drawable::BOX);
-                                d->setSize(0.01);
+                                d->setSize(0.005);
                                 d->setColor(Eigen::Vector4d(0.1, 1.0, 0.1, 0.7));
                                 d->setState(const_cast<ompl::base::State*>(s));
                                 orphans.add(d);

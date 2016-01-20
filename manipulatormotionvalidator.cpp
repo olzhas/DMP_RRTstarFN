@@ -4,16 +4,35 @@
 //==============================================================================
 bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::State* s2) const
 {
-    if (si_->isValid(s1) == false || si_->isValid(s2) == false) {
+    /*
+    static size_t total = 0;
+    static size_t too_far = 0;
+    static size_t precheck = 0;
+    if (total % 1000 == 0){
+        OMPL_INFORM("%d %d %f, %d", too_far, total, (double)too_far / (double)total, precheck);
+    }
+    ++total;
+    */
+    if (si_->isValid(s2) == false || si_->isValid(s1) == false) {
         //OMPL_WARN("Hey, the initial or final state is invalid");
+    //    ++precheck;
         return false;
     }
 
     ob::State* s3;
-    double interpStep = cfg->motionCheckAccuracy;
+    double d = si_->distance(s1, s2);
+    double interpStep = cfg_->rangeRad / d;//* 0.5;
+    // fixme hardcoded
+    /*
+    if ((1.0 / interpStep) > 5.0) {
+    //    ++too_far;
+        return false;
+    }
+*/
+    interpStep = interpStep * 0.5;
     for (double step = interpStep; step < 1.0; step += interpStep) {
         stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, step, s3);
-        if (si_->isValid(s3) == false) {
+        if (!si_->isValid(s3)) {
             //OMPL_WARN("Hey intermediate state is invalid");
             return false;
         }

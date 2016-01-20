@@ -1,40 +1,41 @@
 <?xml version="1.0" ?>
 <skel version="1.0">
-	<skeleton name="box skeleton">
-		<body name="box">
-			<gravity>1</gravity>
-            <transformation>0.750 -0.223 0.844 4.16858072 3.14151269 2.59488083</transformation>
-			<!--<transformation>-0.652 0.200 1.250 0 0 1.57</transformation>-->
-			<!--<transformation>1.060 0.550 1.254 1 2 3</transformation>-->
-			<!--<transformation>0 0.125 1.2 1 2 3</transformation>-->
-			<!--<transformation>0 0.125 1.2 1 2 3</transformation>-->
-			<!--<transformation>0 0.125 1.2 1 2 3</transformation>-->
-			<inertia>
-				<mass>1</mass>
-				<offset>0 0 0</offset>
-			</inertia>
-			<visualization_shape>
-				<transformation>0 0 0 0 0 0</transformation>
-				<geometry>
-					<box>
-						<size>0.5 0.2 0.2</size>
-					</box>
-				</geometry>
-				<color>0.1 0.8 0.3</color>
-			</visualization_shape>
-			<collision_shape>
-				<transformation>0 0 0 0 0 0</transformation>
-				<geometry>
-					<box>
-						<size>0.5 0.2 0.2</size>
-					</box>
-				</geometry>
-			</collision_shape>
-		</body>
+    <skeleton name="box skeleton">
+        <body name="box">
+            <gravity>1</gravity>
+            <!--<transformation>0 0.125 1.2 0 0 0</transformation>-->
+            <transformation>0.750 -0.223 0.9944 4.16858072 3.14151269 2.59488083</transformation>
+            <!--<transformation>-0.652 0.200 1.250 0 0 1.57</transformation>-->
+            <!--<transformation>1.060 0.550 1.254 1 2 3</transformation>-->
+            <!--<transformation>0 0.125 1.2 1 2 3</transformation>-->
+            <!--<transformation>0 0.125 1.2 1 2 3</transformation>-->
+            <!--<transformation>0 0.125 1.2 1 2 3</transformation>-->
+            <inertia>
+                <mass>1</mass>
+                <offset>0 0 0</offset>
+            </inertia>
+            <visualization_shape>
+                <transformation>0 0 0 0 0 0</transformation>
+                <geometry>
+                    <box>
+                        <size>0.5 0.25 0.25</size>
+                    </box>
+                </geometry>
+                <color>0.1 0.8 0.3</color>
+            </visualization_shape>
+            <collision_shape>
+                <transformation>0 0 0 0 0 0</transformation>
+                <geometry>
+                    <box>
+                        <size>0.5 0.2 0.2</size>
+                    </box>
+                </geometry>
+            </collision_shape>
+        </body>
 
 		<joint type="free" name="joint 1">
-			<parent>world</parent>
-			<child>box</child>
-		</joint>
-	</skeleton>
+            <parent>world</parent>
+            <child>box</child>
+        </joint>
+    </skeleton>
 </skel>
