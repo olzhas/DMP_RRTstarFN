@@ -66,6 +66,7 @@ void PlanningProblem::treeUpdate()
 
     DrawableCollection edges("edges");
     DrawableCollection* tree = new DrawableCollection("tree");
+    DrawableCollection* treeBak;
     DrawableCollection orphans("orphans");
     frontend.getWindow()->drawables.push_back(tree);
     frontend.getWindow()->drawables.push_back(&edges);
@@ -75,21 +76,20 @@ void PlanningProblem::treeUpdate()
     dart::dynamics::SkeletonPtr robot(pWorld->getSkeleton("TX90XLHB")->clone());
     og::SimpleSetupPtr ss_(manipulator->ss_);
 
-    bool once = false;
-
+    while(!cfg->dynamicReplanning);
     while (true) {
         auto start = bc::system_clock::now() + bc::milliseconds(20);
         ob::PlannerData pdat(ss_->getSpaceInformation());
 
         ss_->getPlannerData(pdat);
-
+/*
         if (cfg->dynamicReplanning) {
             if (tree->getCaption() == "tree") {
-                delete tree;
+                treeBak = tree;
                 tree = new DrawableCollection("dynamic-subtree");
             }
         }
-
+*/
         if (pdat.numVertices() > 0) {
             size_t prevTreeSize = tree->size();
             size_t pdatNumVertices = pdat.numVertices();
@@ -108,8 +108,8 @@ void PlanningProblem::treeUpdate()
 
                     Eigen::VectorXd currentState(8);
                     currentState << 0, 0,
-                        reals[0], reals[1], reals[2],
-                        reals[3], reals[4], reals[5];
+                            reals[0], reals[1], reals[2],
+                            reals[3], reals[4], reals[5];
                     robot->setPositions(currentState);
 
                     robot->computeForwardKinematics(true, false, false);
@@ -117,9 +117,9 @@ void PlanningProblem::treeUpdate()
                     Eigen::Vector3d translation = transform.translation();
 
                     Drawable* d = new Drawable(translation,
-                        Eigen::Vector3d(translation.array().abs() / 1.750),
-                        0.005,
-                        Drawable::BOX);
+                                               Eigen::Vector3d(translation.array().abs() / 1.750),
+                                               0.005,
+                                               Drawable::BOX);
                     tree->add(d);
 
                     if (cfg->dynamicReplanning) {

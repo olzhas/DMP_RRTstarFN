@@ -145,14 +145,8 @@ namespace geometric {
             return delayCC_;
         }
 
-        void setPreviousPath(std::vector<ompl::base::State*> stateList, int stateIndex)
-        {
-            previousPath_.clear();
-            for(auto it = stateList.begin() + stateIndex; it < stateList.end(); ++it){
-                ompl::base::State* s = *it;
-                previousPath_.push_back(si_->cloneState(s));
-            }
-        }
+        void setPreviousPath(std::vector<ompl::base::State*> stateList, int stateIndex);
+        void nodeCleanUp(ompl::base::State* s);
 
         virtual void setup();
 
@@ -211,6 +205,8 @@ namespace geometric {
         {
             selectBranch(s);
         }
+
+        void swapNN();
 
         /** \brief Save the state of the tree */
 
@@ -321,6 +317,7 @@ namespace geometric {
         /** \brief A nearest-neighbors datastructure containing the subtree of motions */
 
         boost::shared_ptr<NearestNeighbors<Motion*> > subTreeNN_;
+        boost::shared_ptr<NearestNeighbors<Motion*> > bakNN_;
 
         /** \brief The fraction of time the goal is picked as the state to expand towards (if such a state is available) */
         double goalBias_;

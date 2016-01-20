@@ -17,14 +17,12 @@ namespace base {
 
             switch (i) {
             case 0:
-                k = 1.00;
-                break;
             case 1:
             case 2:
                 k = 1.00;
                 break;
             default:
-                k = 0.005;
+                k = 0.01;
                 break;
             }
             dist += (diff * diff) * k;

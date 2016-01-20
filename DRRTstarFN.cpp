@@ -187,8 +187,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
     bool symCost = opt_->isSymmetric();
 
-    boost::shared_ptr<NearestNeighbors<Motion*> > nnBak_;
-
     if (!localPlanning_) {
         while (const base::State* st = pis_.nextStart()) {
             Motion* motion = new Motion(si_);
@@ -197,10 +195,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             nn_->add(motion);
             startMotion_ = motion;
         }
-    }
-    else {
-        nnBak_ = nn_;
-        nn_ = subTreeNN_;
     }
 
     if (nn_->size() == 0) {
@@ -374,8 +368,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 // nmotion (with populated cost fields!).
                 for (std::vector<std::size_t>::const_iterator i = sortedCostIndices.begin();
                      i != sortedCostIndices.begin() + nbh.size(); ++i) {
-                    if (localPlanning_ && nbh[*i]->nodeType == ORPHANED)
-                        continue;
                     if (nbh[*i] == nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
                         motion->incCost = incCosts[*i];
                         motion->cost = costs[*i];
@@ -393,8 +385,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 motion->cost = opt_->combineCosts(nmotion->cost, motion->incCost);
                 // find which one we connect the new state to
                 for (std::size_t i = 0; i < nbh.size(); ++i) {
-                    if (localPlanning_ && nbh[i]->nodeType == ORPHANED)
-                        continue;
                     if (nbh[i] != nmotion) {
                         incCosts[i] = opt_->motionCost(nbh[i]->state, motion->state);
                         costs[i] = opt_->combineCosts(nbh[i]->cost, incCosts[i]);
@@ -859,30 +849,32 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s)
     std::vector<Motion*> tree;
     nn_->list(tree);
 
-    auto start = std::find_if(tree.begin(), tree.end(),
-        [&](Motion* m) -> bool {return si_->equalStates(m->state, s); });
-
-    if (start != tree.end()) {
-        std::function<void(Motion * m)> markNewOrphaned;
-        markNewOrphaned = [&markNewOrphaned](Motion* m) {
-            m->nodeType = NEW_ORPHANED;
-            for ( auto child : m->children) { markNewOrphaned(child); } };
-        markNewOrphaned(*start);
-    }
-
     subTreeNN_.reset(new NearestNeighborsLinear<Motion*>());
 
     subTreeNN_->setDistanceFunction(
         boost::bind(&DRRTstarFN::distanceFunction, this, _1, _2));
 
-    for (auto node : tree) {
-        if (node->nodeType == NEW_ORPHANED)
-            subTreeNN_->add(node);
+    auto start = std::find_if(tree.begin(), tree.end(),
+        [&](Motion* m) -> bool {return si_->equalStates(m->state, s); });
+
+    if (start != tree.end()) {
+        std::function<void(Motion * m)> markNewOrphaned;
+        markNewOrphaned = [&](Motion* m) {
+            subTreeNN_->add(m);
+            m->nodeType = NEW_ORPHANED;
+            for (auto child : m->children) {
+                markNewOrphaned(child);
+            }
+        };
+        Motion* m = *start;
+        m->parent = nullptr;
+        markNewOrphaned(m);
     }
 }
 //==============================================================================
 int ompl::geometric::DRRTstarFN::removeInvalidNodes()
 {
+
     int removed = 0;
     int disconnected = 0;
     int didnotchange = 0;
@@ -892,7 +884,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     for (auto mIt = motions.begin(); mIt != motions.end(); ++mIt) {
         Motion* m = *mIt;
 
-        for(auto cIt = m->children.begin(); cIt != m->children.end(); ++cIt) {
+        for (auto cIt = m->children.begin(); cIt != m->children.end(); ++cIt) {
             ++didnotchange;
             Motion* child = *cIt;
 
@@ -919,4 +911,40 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
         }
     }
     return removed;
+}
+
+void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s)
+{
+    std::vector<Motion*> motions;
+    nn_->list(motions);
+
+    for (auto m : motions) {
+        if (m->parent == nullptr) {
+            if (!si_->equalStates(m->state, s)) {
+                std::function<void(Motion * m)> rmBranch;
+                rmBranch = [&](Motion* m) {
+                    nn_->remove(m);
+                    for (auto child : m->children) {
+                        rmBranch(child);
+                    }
+                };
+                rmBranch(m);
+            }
+        }
+    }
+}
+
+void ompl::geometric::DRRTstarFN::setPreviousPath(std::vector<ompl::base::State*> stateList, int stateIndex)
+{
+    previousPath_.clear();
+    for (auto it = stateList.begin() + stateIndex; it < stateList.end(); ++it) {
+        ompl::base::State* s = *it;
+        previousPath_.push_back(si_->cloneState(s));
+    }
+}
+
+void ompl::geometric::DRRTstarFN::swapNN()
+{
+    bakNN_ = nn_;
+    nn_ = subTreeNN_;
 }
