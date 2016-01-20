@@ -500,7 +500,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                      i != sortedCostIndices.begin() + nbh.size(); ++i) {
                     if (localPlanning_ && nbh[*i]->nodeType == ORPHANED)
                         continue;
-                    if (nbh[*i] != nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
+                    if (nbh[*i] == nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
                         motion->incCost = incCosts[*i];
                         motion->cost = costs[*i];
                         motion->parent = nbh[*i];
