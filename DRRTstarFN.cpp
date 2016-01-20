@@ -60,7 +60,7 @@ ompl::geometric::DRRTstarFN::DRRTstarFN(const base::SpaceInformationPtr& si)
     , goalBias_(0.05)
     , maxDistance_(0.0)
     , delayCC_(true)
-    , lastGoalMotion_(NULL)
+    , lastGoalMotion_(nullptr)
     , iterations_(0)
     , bestCost_(std::numeric_limits<double>::quiet_NaN())
     , maxNodes_(DEFAULT_MAXNODES)
@@ -141,7 +141,7 @@ void ompl::geometric::DRRTstarFN::clear()
     if (nn_)
         nn_->clear();
 
-    lastGoalMotion_ = NULL;
+    lastGoalMotion_ = nullptr;
     goalMotions_.clear();
 
     iterations_ = 0;
@@ -224,7 +224,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
     bestCost_ = opt_->infiniteCost();
 
-    Motion* approximation = NULL;
+    Motion* approximation = nullptr;
     double approximatedist = std::numeric_limits<double>::infinity();
     bool sufficientlyShort = false;
 
@@ -285,9 +285,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
         // find closest state in the tree
         Motion* nmotion = nn_->nearest(rmotion);
-        if (nmotion->parent == nullptr) {
-            continue;
-        }
+
         if (nmotion->nodeType == ORPHANED || nmotion->nodeType == REMOVED) {
 #ifdef DEBUG
             OMPL_ERROR("tried to connect to an ORPHANED node %d\n", nmotion->nodeType);
@@ -378,7 +376,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                      i != sortedCostIndices.begin() + nbh.size(); ++i) {
                     if (localPlanning_ && nbh[*i]->nodeType == ORPHANED)
                         continue;
-                    if (nbh[*i] != nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
+                    if (nbh[*i] == nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
                         motion->incCost = incCosts[*i];
                         motion->cost = costs[*i];
                         motion->parent = nbh[*i];
@@ -525,7 +523,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 #endif
 
                 if (childlessNodes.size() > 0) {
-
                     int rmNode = rng_.uniformInt(0, childlessNodes.size() - 1);
                     // removing information about the child in the parent node
                     // did not have a chance to check this line
@@ -535,12 +532,10 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                     removeFromParent(motions[childlessNodes[rmNode]]);
                     // removing
                     bool rmResult = nn_->remove(motions[childlessNodes[rmNode]]);
-                    if (rmResult == false) {
+                    if (rmResult == false)
                         OMPL_WARN("cannot remove the node");
-                    }
-                    else {
+                    else
                         removedNodes++;
-                    }
                 }
                 else {
                     OMPL_WARN("zero childless nodes");
@@ -553,18 +548,18 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             break;
     }
 
-    bool approximate = (solution == NULL);
+    bool approximate = (solution == nullptr);
     bool addedSolution = false;
     if (approximate)
         solution = approximation;
     else
         lastGoalMotion_ = solution;
 
-    if (solution != NULL) {
+    if (solution != nullptr) {
         ptc.terminate();
         // construct the solution path
         std::vector<Motion*> mpath;
-        while (solution != NULL) {
+        while (solution != nullptr) {
             std::vector<Motion*>::iterator it;
             it = find(mpath.begin(), mpath.end(), solution);
             if (mpath.end() != it) {
@@ -660,7 +655,7 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
         data.addGoalVertex(base::PlannerDataVertex(lastGoalMotion_->state));
 
     for (std::size_t i = 0; i < motions.size(); ++i) {
-        if (motions[i]->parent == NULL)
+        if (motions[i]->parent == nullptr)
             data.addStartVertex(base::PlannerDataVertex(motions[i]->state));
         else {
             base::PlannerDataVertex myVertex(motions[i]->state);
@@ -724,7 +719,7 @@ bool ompl::geometric::DRRTstarFN::traverseTree(
 
     bestCost_ = opt_->infiniteCost();
 
-    Motion* approximation = NULL;
+    Motion* approximation = nullptr;
     double approximatedist = std::numeric_limits<double>::infinity();
     bool sufficientlyShort = false;
 
@@ -825,16 +820,16 @@ bool ompl::geometric::DRRTstarFN::traverseTree(
         nodeList.pop_front();
         queue.pop_front();
     }
-    bool approximate = (solution == NULL);
+    bool approximate = (solution == nullptr);
     if (approximate)
         solution = approximation;
     else
         lastGoalMotion_ = solution;
 
-    if (solution != NULL) {
+    if (solution != nullptr) {
         // construct the solution path
         std::vector<Motion*> mpath;
-        while (solution != NULL) {
+        while (solution != nullptr) {
             mpath.push_back(solution);
             solution = solution->parent;
         }
@@ -896,37 +891,31 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
 
     for (auto mIt = motions.begin(); mIt != motions.end(); ++mIt) {
         Motion* m = *mIt;
-        auto cIt = m->children.begin();
-        while (cIt != m->children.end()) {
+
+        for(auto cIt = m->children.begin(); cIt != m->children.end(); ++cIt) {
             ++didnotchange;
             Motion* child = *cIt;
 
-            if (child == nullptr){
-                ++cIt;
+            if (child->parent == nullptr)
                 continue;
-            }
-            if (child->parent == nullptr){
-                ++cIt;
-                continue;
-            }
 
             if (!si_->checkMotion(m->state, child->state)) {
                 ++disconnected;
                 --didnotchange;
-
+                child->nodeType = NEW_ORPHANED;
                 --cIt;
                 removeFromParent(child);
                 child->parent = nullptr;
-                if (!si_->isValid(m->state)) {
-                    //nn_->remove(m);
-                    ++removed;
-                }
+
                 if (!si_->isValid(child->state)) {
-                    //nn_->remove(child);
+                    subTreeNN_->remove(child);
                     ++removed;
                 }
             }
-            ++cIt;
+        }
+        if (!si_->isValid(m->state)) {
+            subTreeNN_->remove(m);
+            ++removed;
         }
     }
     return removed;

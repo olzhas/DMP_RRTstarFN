@@ -112,4 +112,5 @@ void Configuration::defaults()
     orphanedSampleRadius.setDegrees(30.0);
 
     orphanedBias = 0.8;
+
 }

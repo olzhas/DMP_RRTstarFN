@@ -221,7 +221,7 @@ bool Manipulator::newReplan()
     //si_ = ss_->getSpaceInformation();
     og::PathGeometric& p = ss_->getSolutionPath();
 
-    int from = 2;
+    int from = 3;
 
     ompl::base::State* s = p.getState(from);
     std::vector<ompl::base::State*> pathArray = p.getStates();
@@ -233,7 +233,7 @@ bool Manipulator::newReplan()
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
 
     int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
-    OMPL_INFORM("removed nodes from the sub tree is %d", removed);
+    //OMPL_INFORM("removed nodes from the sub tree is %d", removed);
 
     ss_->getProblemDefinition()->clearSolutionPaths();
     ss_->solve(cfg->dynamicPlanningTime);

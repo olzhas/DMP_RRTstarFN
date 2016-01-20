@@ -3,7 +3,7 @@
 //==============================================================================
 void Drawable::draw()
 {
-    if(visible_ == Drawable::DrawableVisibility::HIDDEN)
+    if (visible_ == Drawable::DrawableVisibility::HIDDEN)
         return;
 
     GLUquadricObj* c;
@@ -33,7 +33,7 @@ void Drawable::draw()
 //==============================================================================
 void DrawableLiveTime::draw()
 {
-    if(visible_ == Drawable::DrawableVisibility::HIDDEN)
+    if (visible_ == Drawable::DrawableVisibility::HIDDEN)
         return;
 
     GLUquadricObj* c;
@@ -96,7 +96,7 @@ void DrawableCollection::draw()
     size_t end = data_.size();
     for (size_t i = 0; i < end; ++i) {
         // FIXME mutex or shit
-        if(data_.size() > 0){
+        if (data_.size() > 0) {
             Drawable* d = data_[i];
             d->draw();
         }
