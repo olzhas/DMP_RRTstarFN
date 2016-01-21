@@ -23,13 +23,13 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
     double d = si_->distance(s1, s2);
     double interpStep = cfg_->rangeRad / d;//* 0.5;
     // fixme hardcoded
-    /*
-    if ((1.0 / interpStep) > 5.0) {
+/*
+    if ((1.0 / interpStep) > 2.5) {
     //    ++too_far;
         return false;
     }
 */
-    interpStep = interpStep * 0.5;
+    interpStep = interpStep * 0.75;
     for (double step = interpStep; step < 1.0; step += interpStep) {
         stateSpace_->as<ob::RealVectorStateSpace>()->interpolate(s1, s2, step, s3);
         if (!si_->isValid(s3)) {
