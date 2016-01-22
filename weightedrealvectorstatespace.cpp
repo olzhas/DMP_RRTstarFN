@@ -22,7 +22,7 @@ namespace base {
                 k = 1.00;
                 break;
             default:
-                k = 1.0;
+                k = 0.0;
                 break;
             }
             dist += (diff * diff) * k;
