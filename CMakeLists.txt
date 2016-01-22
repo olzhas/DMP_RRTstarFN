@@ -36,10 +36,12 @@ target_link_libraries(${PROJECT_NAME}
     )
 
 target_link_libraries(2d_demo
+    dart
     ${Boost_LIBRARIES}
     ${OMPL_LIBRARIES}
     ${FLANN_LIBRARIES}
     ${BULLET_LIBRARIES}
+    pthread
     )
 
 

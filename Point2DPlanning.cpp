@@ -1,44 +1,9 @@
-/*********************************************************************
-* Software License Agreement (BSD License)
-*
-*  Copyright (c) 2013, Rice University
-*  All rights reserved.
-*
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions
-*  are met:
-*
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above
-*     copyright notice, this list of conditions and the following
-*     disclaimer in the documentation and/or other materials provided
-*     with the distribution.
-*   * Neither the name of the Rice University nor the names of its
-*     contributors may be used to endorse or promote products derived
-*     from this software without specific prior written permission.
-*
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*********************************************************************/
-
-/* Author: Ioan Sucan */
-
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/rrt/RRTstarFN.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <ompl/util/PPM.h>
+#include <dart/dart.h>
 
 #include <ompl/config.h>
 #include "config/config2D.h"
@@ -49,37 +14,27 @@
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-class Plane2DEnvironment
-{
+namespace dd = dart::dynamics;
+namespace ds = dart::simulation;
+
+class Plane2DEnvironment {
 public:
-
-    Plane2DEnvironment(const char *ppm_file)
+    Plane2DEnvironment()
     {
-        bool ok = false;
-        try
-        {
-            ppm_.loadFile(ppm_file);
-            ok = true;
-        }
-        catch(ompl::Exception &ex)
-        {
-            OMPL_ERROR("Unable to load %s.\n%s", ppm_file, ex.what());
-        }
-        if (ok)
-        {
-            ob::RealVectorStateSpace *space = new ob::RealVectorStateSpace();
-            space->addDimension(0.0, ppm_.getWidth());
-            space->addDimension(0.0, ppm_.getHeight());
-            maxWidth_ = ppm_.getWidth() - 1;
-            maxHeight_ = ppm_.getHeight() - 1;
-            ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
+        maxWidth_ = 20.0;
+        maxHeight_ = 20.0;
 
-            // set state validity checking for this space
-            ss_->setStateValidityChecker(boost::bind(&Plane2DEnvironment::isStateValid, this, _1));
-            space->setup();
-            ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
-            //      ss_->setPlanner(ob::PlannerPtr(new og::RRTConnect(ss_->getSpaceInformation())));
-        }
+        ob::RealVectorStateSpace* space = new ob::RealVectorStateSpace();
+        space->addDimension(0.0, maxWidth_);
+        space->addDimension(0.0, maxWidth_);
+
+        ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
+
+        // set state validity checking for this space
+        ss_->setStateValidityChecker(boost::bind(&Plane2DEnvironment::isStateValid, this, _1));
+        space->setup();
+        //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
+        ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
     }
 
     bool plan(unsigned int start_row, unsigned int start_col, unsigned int goal_row, unsigned int goal_col)
@@ -94,18 +49,16 @@ public:
         goal[1] = goal_col;
         ss_->setStartAndGoalStates(start, goal);
         // generate a few solutions; all will be added to the goal;
-        for (int i = 0 ; i < 10 ; ++i)
-        {
+        for (int i = 0; i < 10; ++i) {
             if (ss_->getPlanner())
                 ss_->getPlanner()->clear();
             ss_->solve();
         }
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
-        if (ss_->haveSolutionPath())
-        {
+        if (ss_->haveSolutionPath()) {
             ss_->simplifySolution();
-            og::PathGeometric &p = ss_->getSolutionPath();
+            og::PathGeometric& p = ss_->getSolutionPath();
             ss_->getPathSimplifier()->simplifyMax(p);
             ss_->getPathSimplifier()->smoothBSpline(p);
             return true;
@@ -118,56 +71,208 @@ public:
     {
         if (!ss_ || !ss_->haveSolutionPath())
             return;
-        og::PathGeometric &p = ss_->getSolutionPath();
+        og::PathGeometric& p = ss_->getSolutionPath();
         p.interpolate();
-        for (std::size_t i = 0 ; i < p.getStateCount() ; ++i)
-        {
-            const int w = std::min(maxWidth_, (int)p.getState(i)->as<ob::RealVectorStateSpace::StateType>()->values[0]);
-            const int h = std::min(maxHeight_, (int)p.getState(i)->as<ob::RealVectorStateSpace::StateType>()->values[1]);
-            ompl::PPM::Color &c = ppm_.getPixel(h, w);
-            c.red = 255;
-            c.green = 0;
-            c.blue = 0;
+        for (std::size_t i = 0; i < p.getStateCount(); ++i) {
+            // const int w = std::min(maxWidth_, (int)p.getState(i)->as<ob::RealVectorStateSpace::StateType>()->values[0]);
+            //const int h = std::min(maxHeight_, (int)p.getState(i)->as<ob::RealVectorStateSpace::StateType>()->values[1]);
+            //ompl::PPM::Color& c = ppm_.getPixel(h, w);
+            //c.red = 255;
+            //c.green = 0;
+            //c.blue = 0;
         }
     }
 
-    void save(const char *filename)
+    void save(const char* filename)
     {
         if (!ss_)
             return;
-        ppm_.saveFile(filename);
+        //ppm_.saveFile(filename);
     }
 
 private:
-
-    bool isStateValid(const ob::State *state) const
+    bool isStateValid(const ob::State* state) const
     {
-        const int w = std::min((int)state->as<ob::RealVectorStateSpace::StateType>()->values[0], maxWidth_);
-        const int h = std::min((int)state->as<ob::RealVectorStateSpace::StateType>()->values[1], maxHeight_);
+        //const int w = std::min((int)state->as<ob::RealVectorStateSpace::StateType>()->values[0], maxWidth_);
+        //const int h = std::min((int)state->as<ob::RealVectorStateSpace::StateType>()->values[1], maxHeight_);
 
-        const ompl::PPM::Color &c = ppm_.getPixel(h, w);
-        return c.red > 127 && c.green > 127 && c.blue > 127;
+        //const ompl::PPM::Color& c = ppm_.getPixel(h, w);
+        //return c.red > 127 && c.green > 127 && c.blue > 127;
     }
 
     og::SimpleSetupPtr ss_;
-    int maxWidth_;
-    int maxHeight_;
-    ompl::PPM ppm_;
-
+    double maxWidth_;
+    double maxHeight_;
 };
 
-int main(int, char **)
+const double default_ground_width = 2;
+const double default_wall_thickness = 0.1;
+
+dd::SkeletonPtr createGround()
 {
-    std::cout << "OMPL version: " << OMPL_VERSION << std::endl;
+  dd::SkeletonPtr ground = dd::Skeleton::create("ground");
 
-    boost::filesystem::path path(TEST_RESOURCES_DIR);
-    Plane2DEnvironment env((path / "ppm/floor.ppm").string().c_str());
+  dd::BodyNode* bn = ground->createJointAndBodyNodePair<dd::WeldJoint>().second;
 
-    if (env.plan(0, 0, 777, 1265))
+  std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(
+        Eigen::Vector3d(default_ground_width, default_ground_width,
+                        default_wall_thickness));
+  shape->setColor(Eigen::Vector3d(1.0, .0, 1.0));
+
+  bn->addCollisionShape(shape);
+  bn->addVisualizationShape(shape);
+
+  return ground;
+}
+
+class Model {
+    static constexpr const char* WORLD_FILE_NAME = "data/2d-problem/model.sdf";
+
+    class Point {
+        double x_;
+        double y_;
+
+    public:
+        Point() { ; }
+        Point(const Point& p) { x_ = p.x(); y_ = p.y(); }
+        Point(const double& x, const double& y)
+        {
+            x_ = x;
+            y_ = y;
+        }
+
+        Point& operator=(Point p)
+        {
+            x_ = p.x();
+            y_ = p.y();
+            return *this;
+        }
+
+        //getters
+        double x() const { return x_; }
+        double y() const { return y_; }
+
+        Eigen::Vector2d toVector() const
+        {
+            Eigen::Vector2d out;
+            out << x_, y_;
+            return out;
+        }
+    };
+    class Line {
+        Point head_;
+        Point tail_;
+
+    public:
+        Line(Point head, Point tail)
+            : head_(head)
+            , tail_(tail)
+        {
+            ;
+        }
+        Line()
+            : head_(Point(0.0, 0.0))
+            , tail_(Point(0.0, 0.0))
+        {
+            ;
+        }
+
+        ~Line()
+        {;}
+
+        // getters
+        Point getHead() const { return head_; }
+        Point getTail() const { return tail_; }
+
+        double getLength() const
+        {
+            auto x = head_.x() - tail_.x();
+            auto y = head_.y() - tail_.y();
+
+            return sqrt(x * x + y * y);
+        }
+
+        Point middle() const
+        {
+            Point p((head_.x() + tail_.x()) / 2.0, (head_.y() + tail_.y()) / 2.0);
+            return p;
+        }
+    };
+
+public:
+    Model()
     {
-        env.recordSolution();
-        env.save("result_demo.ppm");
+        loadWorld();
     }
+
+    ds::WorldPtr getWorld() const { return world_; }
+
+private:
+    void loadWorld()
+    {
+        world_ = std::make_shared<ds::World>();
+        std::vector<Line*> map;
+        //map.reserve(9);
+        map.resize(10);
+        map[0] = new Line(Point(0.00, 0.50), Point(0.40, 0.50));
+        map[1] = new Line(Point(0.50, 0.00), Point(0.50, 0.30));
+        map[2] = new Line(Point(1.40, 0.00), Point(1.40, 0.50));
+        map[3] = new Line(Point(1.70, 0.40), Point(1.70, 0.70));
+        map[4] = new Line(Point(1.10, 0.80), Point(1.10, 2.00));
+        map[5] = new Line(Point(1.10, 0.80), Point(1.10, 1.30));
+        map[6] = new Line(Point(1.30, 1.10), Point(1.80, 1.10));
+        map[7] = new Line(Point(1.30, 1.70), Point(1.60, 1.70));
+        map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.90));
+        map[9] = new Line(Point(0.20, 1.60), Point(0.70, 1.60));
+
+        for (int i = 0; i < map.size(); ++i) {
+            auto& l = map[i];
+
+            dd::BodyNode::Properties body;
+            body.mName = "box" + std::to_string(i);
+
+            dd::ShapePtr shape(
+                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.01, 1.0)));
+
+            body.mVizShapes.push_back(shape);
+            body.mColShapes.push_back(shape);
+
+            dd::FreeJoint::Properties properties;
+            properties.mName = "box" + std::to_string(i);
+            dd::SkeletonPtr box = dd::Skeleton::create("box" + std::to_string(i));
+            box->createJointAndBodyNodePair<dd::FreeJoint>(nullptr, properties, body);
+
+            Eigen::Vector6d positions(Eigen::Vector6d::Zero());
+            Eigen::Vector2d middle = l->middle().toVector();
+
+            positions[3] = middle[0];
+            positions[4] = middle[1];
+            box->getJoint(0)->setPositions(positions);
+
+            world_->addSkeleton(box);
+        }
+
+        dd::SkeletonPtr ground = createGround();
+
+        world_->addSkeleton(ground);
+
+    }
+    dart::simulation::WorldPtr world_;
+};
+
+class Window2D : public dart::gui::SimWindow {
+};
+
+int main(int argc, char** argv)
+{
+    Model model;
+
+    Window2D win;
+    win.setWorld(model.getWorld());
+
+    glutInit(&argc, argv);
+    win.initWindow(1280, 800, "2D demo");
+    glutMainLoop();
 
     return 0;
 }
