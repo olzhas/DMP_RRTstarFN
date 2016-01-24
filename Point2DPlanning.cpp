@@ -110,23 +110,38 @@ const double default_wall_thickness = 0.1;
 
 dd::SkeletonPtr createGround()
 {
-  dd::SkeletonPtr ground = dd::Skeleton::create("ground");
+    dd::SkeletonPtr ground = dd::Skeleton::create("ground");
 
-  dd::BodyNode* bn = ground->createJointAndBodyNodePair<dd::WeldJoint>().second;
+    dd::BodyNode* bn = ground->createJointAndBodyNodePair<dd::WeldJoint>().second;
 
-  std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(
-        Eigen::Vector3d(default_ground_width, default_ground_width,
-                        default_wall_thickness));
-  shape->setColor(Eigen::Vector3d(1.0, .0, 1.0));
+    std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(
+        Eigen::Vector3d(default_ground_width*5, default_ground_width*5,
+            default_wall_thickness));
+    shape->setColor(Eigen::Vector3d(1.0, 1.0, 1.0));
 
-  bn->addCollisionShape(shape);
-  bn->addVisualizationShape(shape);
+    bn->addCollisionShape(shape);
+    bn->addVisualizationShape(shape);
+    Eigen::Vector6d positions(Eigen::Vector6d::Zero());
+    ground->getJoint(0)->setPositions(positions);
 
-  return ground;
+    return ground;
 }
 
 class Model {
     static constexpr const char* WORLD_FILE_NAME = "data/2d-problem/model.sdf";
+
+    //    class Angle{
+    //        double deg_;
+    //        double rad_;
+
+    //        Angle(): deg_(0), rad_(0) {; }
+
+    //        void setDegrees(double deg) { deg_ = deg; rad_ = deg / 180.0 * M_PI; }
+    //        void setRadians(double rad) { rad_ = rad; deg_ = rad / M_PI * 180.0; }
+
+    //        double degrees() { return deg_; }
+    //        double radians() { return rad_; }
+    //    };
 
     class Point {
         double x_;
@@ -134,7 +149,11 @@ class Model {
 
     public:
         Point() { ; }
-        Point(const Point& p) { x_ = p.x(); y_ = p.y(); }
+        Point(const Point& p)
+        {
+            x_ = p.x();
+            y_ = p.y();
+        }
         Point(const double& x, const double& y)
         {
             x_ = x;
@@ -178,7 +197,9 @@ class Model {
         }
 
         ~Line()
-        {;}
+        {
+            ;
+        }
 
         // getters
         Point getHead() const { return head_; }
@@ -218,7 +239,7 @@ private:
         map[1] = new Line(Point(0.50, 0.00), Point(0.50, 0.30));
         map[2] = new Line(Point(1.40, 0.00), Point(1.40, 0.50));
         map[3] = new Line(Point(1.70, 0.40), Point(1.70, 0.70));
-        map[4] = new Line(Point(1.10, 0.80), Point(1.10, 2.00));
+        map[4] = new Line(Point(1.10, 0.80), Point(2.00, 0.80));
         map[5] = new Line(Point(1.10, 0.80), Point(1.10, 1.30));
         map[6] = new Line(Point(1.30, 1.10), Point(1.80, 1.10));
         map[7] = new Line(Point(1.30, 1.70), Point(1.60, 1.70));
@@ -245,6 +266,10 @@ private:
             Eigen::Vector6d positions(Eigen::Vector6d::Zero());
             Eigen::Vector2d middle = l->middle().toVector();
 
+            if (l->getHead().x() == l->getTail().x()) {
+                positions[2] = M_PI / 2.0;
+            }
+
             positions[3] = middle[0];
             positions[4] = middle[1];
             box->getJoint(0)->setPositions(positions);
@@ -255,7 +280,6 @@ private:
         dd::SkeletonPtr ground = createGround();
 
         world_->addSkeleton(ground);
-
     }
     dart::simulation::WorldPtr world_;
 };
