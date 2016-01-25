@@ -262,6 +262,7 @@ public:
         space->setup();
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
         ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
+        ss_->getPlanner()->as<og::RRTstar>()->setRange(0.05);
     }
 
     bool plan(const Model::Point& s, const Model::Point& g)
@@ -279,7 +280,7 @@ public:
 
         if (ss_->getPlanner())
             ss_->getPlanner()->clear();
-        ss_->solve();
+        ss_->solve(20.0);
 
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
@@ -297,7 +298,7 @@ public:
         if (!ss_ || !ss_->haveSolutionPath())
             return;
         og::PathGeometric& p = ss_->getSolutionPath();
-        p.interpolate();
+        //p.interpolate();
         for (std::size_t i = 0; i < p.getStateCount(); ++i) {
             ompl::base::State* state = p.getState(i);
             double* values = (double*)
@@ -306,10 +307,47 @@ public:
         }
     }
 
-    void save(const char* filename)
+    //==============================================================================
+    void printEdge(std::ostream& os, const ob::StateSpacePtr& space,
+        const ob::PlannerDataVertex& vertex)
     {
-        if (!ss_)
+        std::vector<double> reals;
+        if (vertex != ob::PlannerData::NO_VERTEX) {
+            space->copyToReals(reals, vertex.getState());
+            for (size_t j(0); j < reals.size(); ++j)
+                os << " " << reals[j];
+        }
+    }
+
+    void recordTreeState()
+    {
+        if(!ss_){
             return;
+        }
+        // Get the planner data to visualize the vertices and the edges
+        ob::PlannerData pdat(ss_->getSpaceInformation());
+        ss_->getPlannerData(pdat);
+
+        // Print the vertices to file
+        std::ofstream ofs_v("2d-vertices.dat");
+        for (unsigned int i(0); i < pdat.numVertices(); ++i) {
+            printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
+            ofs_v << std::endl;
+        }
+
+        // Print the edges to file
+        std::ofstream ofs_e("2d-edges.dat");
+        std::vector<unsigned int> edge_list;
+        for (unsigned int i(0); i < pdat.numVertices(); ++i) {
+            unsigned int n_edge = pdat.getEdges(i, edge_list);
+            for (unsigned int i2(0); i2 < n_edge; ++i2) {
+                printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(i));
+                ofs_e << " ";
+                printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(edge_list[i2]));
+                ofs_e << std::endl;
+
+            }
+        }
     }
 
     Model& getModel() { return model_; }
@@ -324,7 +362,7 @@ private:
 };
 
 class Window2D : public dart::gui::SimWindow {
-
+;
 };
 
 int main(int argc, char** argv)
@@ -334,13 +372,13 @@ int main(int argc, char** argv)
     Window2D win;
     win.setWorld(problem.getModel().getWorld());
 
-    //problem.solve();
-
     Model::Point start(default_radius*1.5, default_radius*1.5);
     Model::Point goal(1.7, 1.0);
 
     if (problem.plan(start, goal)){
         problem.recordSolution();
+        problem.recordTreeState();
+        std::cout << "done\n";
     }
 
     glutInit(&argc, argv);
