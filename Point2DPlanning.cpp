@@ -8,6 +8,8 @@
 #include <mutex>
 #include <thread>
 
+#include <fstream>
+
 #include <ompl/config.h>
 #include "config/config2D.h"
 
@@ -42,6 +44,7 @@ dd::SkeletonPtr createGround()
 
     positions[3] = 1.0;
     positions[4] = 1.0;
+    positions[5] = -5.0;
 
     ground->getJoint(0)->setPositions(positions);
 
@@ -172,10 +175,8 @@ public:
 
         double* d = (double*)s->as<ob::RealVectorStateSpace::StateType>()->values;
 
-        Eigen::Vector2d currentState;
-        currentState << d[0], d[1];
-
-        ball_->getJoint(0)->setPositions(currentState);
+        ball_->getJoint(0)->setPosition(3, d[0]);
+        ball_->getJoint(0)->setPosition(4, d[1]);
 
         return !world_->checkCollision();
     }
@@ -184,6 +185,7 @@ private:
     void loadWorld()
     {
         world_ = std::make_shared<ds::World>();
+        world_->setGravity(Eigen::Vector3d(0.0, 0.0, 0.0));
         std::vector<Line*> map;
         //map.reserve(9);
         map.resize(10);
@@ -192,7 +194,7 @@ private:
         map[2] = new Line(Point(1.40, 0.00), Point(1.40, 0.50));
         map[3] = new Line(Point(1.70, 0.40), Point(1.70, 0.70));
         map[4] = new Line(Point(1.10, 0.80), Point(2.00, 0.80));
-        map[5] = new Line(Point(1.10, 0.80), Point(1.10, 1.30));
+        map[5] = new Line(Point(1.09, 0.80), Point(1.09, 1.30));
         map[6] = new Line(Point(1.30, 1.10), Point(1.80, 1.10));
         map[7] = new Line(Point(1.30, 1.70), Point(1.60, 1.70));
         map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.90));
@@ -275,6 +277,10 @@ public:
         ss_->setStartAndGoalStates(start, goal);
         // generate a few solutions; all will be added to the goal;
 
+        if (ss_->getPlanner())
+            ss_->getPlanner()->clear();
+        ss_->solve();
+
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
         if (ss_->haveSolutionPath()) {
@@ -286,12 +292,17 @@ public:
 
     void recordSolution()
     {
+        const std::string fileName = "2d-results.txt";
+        std::ofstream fout(fileName);
         if (!ss_ || !ss_->haveSolutionPath())
             return;
         og::PathGeometric& p = ss_->getSolutionPath();
         p.interpolate();
         for (std::size_t i = 0; i < p.getStateCount(); ++i) {
-
+            ompl::base::State* state = p.getState(i);
+            double* values = (double*)
+                    state->as<ob::RealVectorStateSpace::StateType>()->values;
+            fout << values[0] << " " << values[1] << "\n";
         }
     }
 
@@ -300,6 +311,8 @@ public:
         if (!ss_)
             return;
     }
+
+    Model& getModel() { return model_; }
 
 private:
 
@@ -318,13 +331,20 @@ int main(int argc, char** argv)
 {
     Plane2DEnvironment problem;
 
+    Window2D win;
+    win.setWorld(problem.getModel().getWorld());
+
     //problem.solve();
 
-    Model::Point start(default_radius, default_radius);
+    Model::Point start(default_radius*1.5, default_radius*1.5);
     Model::Point goal(1.7, 1.0);
 
     if (problem.plan(start, goal)){
         problem.recordSolution();
     }
+
+    glutInit(&argc, argv);
+    win.initWindow(1280, 800, "2D demo");
+    glutMainLoop();
     return 0;
 }
