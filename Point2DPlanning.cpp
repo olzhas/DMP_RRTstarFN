@@ -5,10 +5,14 @@
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <dart/dart.h>
 
+#include <mutex>
+#include <thread>
+
 #include <ompl/config.h>
 #include "config/config2D.h"
 
 #include <boost/filesystem.hpp>
+//#include <boost/bind.hpp>
 #include <iostream>
 
 namespace ob = ompl::base;
@@ -16,81 +20,6 @@ namespace og = ompl::geometric;
 
 namespace dd = dart::dynamics;
 namespace ds = dart::simulation;
-
-class Plane2DEnvironment {
-public:
-    Plane2DEnvironment()
-    {
-        maxWidth_ = 20.0;
-        maxHeight_ = 20.0;
-
-        ob::RealVectorStateSpace* space = new ob::RealVectorStateSpace();
-        space->addDimension(0.0, maxWidth_);
-        space->addDimension(0.0, maxWidth_);
-
-        ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
-
-        // set state validity checking for this space
-        ss_->setStateValidityChecker(boost::bind(&Plane2DEnvironment::isStateValid, this, _1));
-        space->setup();
-        //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
-        ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
-    }
-
-    bool plan(unsigned int start_row, unsigned int start_col, unsigned int goal_row, unsigned int goal_col)
-    {
-        if (!ss_)
-            return false;
-        ob::ScopedState<> start(ss_->getStateSpace());
-        start[0] = start_row;
-        start[1] = start_col;
-        ob::ScopedState<> goal(ss_->getStateSpace());
-        goal[0] = goal_row;
-        goal[1] = goal_col;
-        ss_->setStartAndGoalStates(start, goal);
-        // generate a few solutions; all will be added to the goal;
-
-        const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
-        OMPL_INFORM("Found %d solutions", (int)ns);
-        if (ss_->haveSolutionPath()) {
-            return true;
-        }
-        else
-            return false;
-    }
-
-    void recordSolution()
-    {
-        if (!ss_ || !ss_->haveSolutionPath())
-            return;
-        og::PathGeometric& p = ss_->getSolutionPath();
-        p.interpolate();
-        for (std::size_t i = 0; i < p.getStateCount(); ++i) {
-
-        }
-    }
-
-    void save(const char* filename)
-    {
-        if (!ss_)
-            return;
-        //ppm_.saveFile(filename);
-    }
-
-private:
-    bool isStateValid(const ob::State* state) const
-    {
-        //const int w = std::min((int)state->as<ob::RealVectorStateSpace::StateType>()->values[0], maxWidth_);
-        //const int h = std::min((int)state->as<ob::RealVectorStateSpace::StateType>()->values[1], maxHeight_);
-
-        //const ompl::PPM::Color& c = ppm_.getPixel(h, w);
-        //return c.red > 127 && c.green > 127 && c.blue > 127;
-    }
-
-    og::SimpleSetupPtr ss_;
-    double maxWidth_;
-    double maxHeight_;
-};
 
 const double default_ground_width = 2;
 const double default_wall_thickness = 0.1;
@@ -103,11 +32,11 @@ dd::SkeletonPtr createGround()
     dd::BodyNode* bn = ground->createJointAndBodyNodePair<dd::FreeJoint>().second;
 
     std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(
-        Eigen::Vector3d(default_ground_width, default_ground_width,
-            default_wall_thickness));
+                Eigen::Vector3d(default_ground_width, default_ground_width,
+                                default_wall_thickness));
     shape->setColor(Eigen::Vector3d(1.0, 1.0, .0));
 
-    bn->addCollisionShape(shape);
+    //bn->addCollisionShape(shape);
     bn->addVisualizationShape(shape);
     Eigen::Vector6d positions(Eigen::Vector6d::Zero());
 
@@ -126,7 +55,7 @@ dd::SkeletonPtr createBall()
     dd::BodyNode* bn = ball->createJointAndBodyNodePair<dd::FreeJoint>().second;
 
     std::shared_ptr<dd::EllipsoidShape> shape = std::make_shared<dd::EllipsoidShape>(
-        Eigen::Vector3d(default_radius*2, default_radius*2, default_radius*2));
+                Eigen::Vector3d(default_radius*2, default_radius*2, default_radius*2));
     shape->setColor(Eigen::Vector3d(1.0, .0, .0));
 
     bn->addCollisionShape(shape);
@@ -143,8 +72,8 @@ dd::SkeletonPtr createBall()
 }
 
 class Model {
-    static constexpr const char* WORLD_FILE_NAME = "data/2d-problem/model.sdf";
 
+    static constexpr const char* WORLD_FILE_NAME = "data/2d-problem/model.sdf";
     //    class Angle{
     //        double deg_;
     //        double rad_;
@@ -157,7 +86,7 @@ class Model {
     //        double degrees() { return deg_; }
     //        double radians() { return rad_; }
     //    };
-
+public:
     class Point {
         double x_;
         double y_;
@@ -211,11 +140,6 @@ class Model {
             ;
         }
 
-        ~Line()
-        {
-            ;
-        }
-
         // getters
         Point getHead() const { return head_; }
         Point getTail() const { return tail_; }
@@ -235,13 +159,26 @@ class Model {
         }
     };
 
-public:
+
     Model()
     {
         loadWorld();
     }
 
     ds::WorldPtr getWorld() const { return world_; }
+
+    bool isStateValid(const ompl::base::State *s){
+        std::lock_guard<std::mutex> guard(mutex_);
+
+        double* d = (double*)s->as<ob::RealVectorStateSpace::StateType>()->values;
+
+        Eigen::Vector2d currentState;
+        currentState << d[0], d[1];
+
+        ball_->getJoint(0)->setPositions(currentState);
+
+        return !world_->checkCollision();
+    }
 
 private:
     void loadWorld()
@@ -268,7 +205,7 @@ private:
             body.mName = "box" + std::to_string(i);
 
             dd::ShapePtr shape(
-                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.01, 1.0)));
+                        new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.01, 1.0)));
 
             body.mVizShapes.push_back(shape);
             body.mColShapes.push_back(shape);
@@ -297,9 +234,80 @@ private:
 
         world_->addSkeleton(ground);
         world_->addSkeleton(ball);
+        ball_ = ball;
     }
 
     dart::simulation::WorldPtr world_;
+    dd::SkeletonPtr ball_;
+
+    std::mutex mutex_;
+};
+
+class Plane2DEnvironment {
+public:
+    Plane2DEnvironment():
+        maxWidth_(2.0),
+        maxHeight_(2.0)
+    {
+        ob::RealVectorStateSpace* space = new ob::RealVectorStateSpace();
+        space->addDimension(0.0, maxWidth_);
+        space->addDimension(0.0, maxWidth_);
+
+        ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
+
+        // set state validity checking for this space
+        ss_->setStateValidityChecker(boost::bind(&Model::isStateValid, &model_, _1));
+        space->setup();
+        //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
+        ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
+    }
+
+    bool plan(const Model::Point& s, const Model::Point& g)
+    {
+        if (!ss_)
+            return false;
+        ob::ScopedState<> start(ss_->getStateSpace());
+        start[0] = s.x();
+        start[1] = s.y();
+        ob::ScopedState<> goal(ss_->getStateSpace());
+        goal[0] = g.x();
+        goal[1] = g.y();
+        ss_->setStartAndGoalStates(start, goal);
+        // generate a few solutions; all will be added to the goal;
+
+        const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
+        OMPL_INFORM("Found %d solutions", (int)ns);
+        if (ss_->haveSolutionPath()) {
+            return true;
+        }
+        else
+            return false;
+    }
+
+    void recordSolution()
+    {
+        if (!ss_ || !ss_->haveSolutionPath())
+            return;
+        og::PathGeometric& p = ss_->getSolutionPath();
+        p.interpolate();
+        for (std::size_t i = 0; i < p.getStateCount(); ++i) {
+
+        }
+    }
+
+    void save(const char* filename)
+    {
+        if (!ss_)
+            return;
+    }
+
+private:
+
+    og::SimpleSetupPtr ss_;
+    const double maxWidth_;
+    const double maxHeight_;
+
+    Model model_;
 };
 
 class Window2D : public dart::gui::SimWindow {
@@ -308,14 +316,15 @@ class Window2D : public dart::gui::SimWindow {
 
 int main(int argc, char** argv)
 {
-    Model model;
+    Plane2DEnvironment problem;
 
-    Window2D win;
-    win.setWorld(model.getWorld());
+    //problem.solve();
 
-    glutInit(&argc, argv);
-    win.initWindow(1280, 800, "2D demo");
-    glutMainLoop();
+    Model::Point start(default_radius, default_radius);
+    Model::Point goal(1.7, 1.0);
 
+    if (problem.plan(start, goal)){
+        problem.recordSolution();
+    }
     return 0;
 }
