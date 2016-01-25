@@ -104,7 +104,7 @@ void ompl::geometric::DRRTstarFN::setup()
     if (!nn_) {
         // TODO implement equal sized grid to map the state space
         nn_.reset(new NearestNeighborsLinear<Motion*>());
-        // nn_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(si_->getStateSpace()));
+        //nn_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(si_->getStateSpace()));
     }
     nn_->setDistanceFunction(
         boost::bind(&DRRTstarFN::distanceFunction, this, _1, _2));
@@ -850,6 +850,7 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s)
     nn_->list(tree);
 
     subTreeNN_.reset(new NearestNeighborsLinear<Motion*>());
+    //subTreeNN_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(si_->getStateSpace()));
 
     subTreeNN_->setDistanceFunction(
         boost::bind(&DRRTstarFN::distanceFunction, this, _1, _2));

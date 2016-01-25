@@ -13,7 +13,7 @@ namespace base {
             : RealVectorStateSampler(space)
         {
             // this is the only place where I can set a random seed
-            rng_.setLocalSeed(50);
+            rng_.setLocalSeed(5000);
         }
     };
 

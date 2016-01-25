@@ -76,7 +76,7 @@ void PlanningProblem::treeUpdate()
     dart::dynamics::SkeletonPtr robot(pWorld->getSkeleton("TX90XLHB")->clone());
     og::SimpleSetupPtr ss_(manipulator->ss_);
 
-    while(!cfg->dynamicReplanning);
+    //while(!cfg->dynamicReplanning);
     while (true) {
         auto start = bc::system_clock::now() + bc::milliseconds(20);
         ob::PlannerData pdat(ss_->getSpaceInformation());
