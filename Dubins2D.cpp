@@ -2,7 +2,7 @@
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
-#include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/geometric/planners/rrt/DRRTstarFN.h>
 #include <dart/dart.h>
 
 #include <mutex>
@@ -34,8 +34,8 @@ dd::SkeletonPtr createGround()
     dd::BodyNode* bn = ground->createJointAndBodyNodePair<dd::FreeJoint>().second;
 
     std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(
-                Eigen::Vector3d(default_ground_width, default_ground_width,
-                                default_wall_thickness));
+        Eigen::Vector3d(default_ground_width, default_ground_width,
+            default_wall_thickness));
     shape->setColor(Eigen::Vector3d(1.0, 1.0, .0));
 
     //bn->addCollisionShape(shape);
@@ -51,14 +51,14 @@ dd::SkeletonPtr createGround()
     return ground;
 }
 
-dd::SkeletonPtr createBall()
+dd::SkeletonPtr createCar()
 {
-    dd::SkeletonPtr ball = dd::Skeleton::create("ball");
+    dd::SkeletonPtr car = dd::Skeleton::create("car");
 
-    dd::BodyNode* bn = ball->createJointAndBodyNodePair<dd::FreeJoint>().second;
+    dd::BodyNode* bn = car->createJointAndBodyNodePair<dd::FreeJoint>().second;
 
-    std::shared_ptr<dd::EllipsoidShape> shape = std::make_shared<dd::EllipsoidShape>(
-                Eigen::Vector3d(default_radius*2, default_radius*2, default_radius*2));
+    std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(
+        Eigen::Vector3d(default_radius * 5, default_radius * 3, default_radius * 2));
     shape->setColor(Eigen::Vector3d(1.0, .0, .0));
 
     bn->addCollisionShape(shape);
@@ -69,9 +69,9 @@ dd::SkeletonPtr createBall()
     positions[3] = default_radius;
     positions[4] = default_radius;
 
-    ball->getJoint(0)->setPositions(positions);
+    car->getJoint(0)->setPositions(positions);
 
-    return ball;
+    return car;
 }
 
 class Model {
@@ -162,7 +162,6 @@ public:
         }
     };
 
-
     Model()
     {
         loadWorld();
@@ -170,16 +169,27 @@ public:
 
     ds::WorldPtr getWorld() const { return world_; }
 
-    bool isStateValid(const ompl::base::State *s){
+    bool isStateValid(const ob::State* state)
+    {
         std::lock_guard<std::mutex> guard(mutex_);
 
-        double* d = (double*)s->as<ob::RealVectorStateSpace::StateType>()->values;
+        const ob::SE2StateSpace::StateType* s = state->as<ob::SE2StateSpace::StateType>();
 
-        ball_->getJoint(0)->setPosition(3, d[0]);
-        ball_->getJoint(0)->setPosition(4, d[1]);
+        if (!si_->satisfiesBounds(s))
+            return false;
+
+        double x = s->getX();
+        double y = s->getY();
+        double yaw = s->getYaw();
+
+        car_->getJoint(0)->setPosition(2, yaw);
+        car_->getJoint(0)->setPosition(3, x);
+        car_->getJoint(0)->setPosition(4, y);
 
         return !world_->checkCollision();
     }
+
+    void setSpaceInformation(ob::SpaceInformationPtr &si) { si_ = si; }
 
 private:
     void loadWorld()
@@ -207,7 +217,7 @@ private:
             body.mName = "box" + std::to_string(i);
 
             dd::ShapePtr shape(
-                        new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.01, 1.0)));
+                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.01, 1.0)));
 
             body.mVizShapes.push_back(shape);
             body.mColShapes.push_back(shape);
@@ -232,39 +242,44 @@ private:
         }
 
         dd::SkeletonPtr ground = createGround();
-        dd::SkeletonPtr ball = createBall();
+        car_ = createCar();
 
         world_->addSkeleton(ground);
-        world_->addSkeleton(ball);
-        ball_ = ball;
+        world_->addSkeleton(car_);
     }
 
     dart::simulation::WorldPtr world_;
-    dd::SkeletonPtr ball_;
+    dd::SkeletonPtr car_;
+
+    ob::SpaceInformationPtr si_;
 
     std::mutex mutex_;
 };
 
 class DubinsCarEnvironment {
 public:
-    DubinsCarEnvironment():
-        maxWidth_(2.0),
-        maxHeight_(2.0)
+    DubinsCarEnvironment()
+        : maxWidth_(2.0)
+        , maxHeight_(2.0)
     {
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.01, true));
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
         bounds.high[0] = maxWidth_;
-        bounds.high[1] = max
+        bounds.high[1] = maxHeight_;
 
+        space->as<ob::SE2StateSpace>()->setBounds(bounds);
 
-
+        ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
         // set state validity checking for this space
+        ob::SpaceInformationPtr si = ss_->getSpaceInformation();
+        model_.setSpaceInformation(si);
         ss_->setStateValidityChecker(boost::bind(&Model::isStateValid, &model_, _1));
         space->setup();
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
         ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::RRTstar>()->setRange(0.05);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
     bool plan(const Model::Point& initial, const Model::Point& final)
@@ -282,7 +297,7 @@ public:
 
         if (ss_->getPlanner())
             ss_->getPlanner()->clear();
-        ss_->solve(20.0);
+        ss_->solve(40.0);
 
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
@@ -302,10 +317,10 @@ public:
         og::PathGeometric& p = ss_->getSolutionPath();
         //p.interpolate();
         for (std::size_t i = 0; i < p.getStateCount(); ++i) {
-            ompl::base::State* state = p.getState(i);
-            double* values = (double*)
-                    state->as<ob::RealVectorStateSpace::StateType>()->values;
-            fout << values[0] << " " << values[1] << "\n";
+            const ob::SE2StateSpace::StateType* state =
+                    p.getState(i)->as<ob::SE2StateSpace::StateType>();
+
+            fout << state->getX() << " " << state->getY() << " " << state->getYaw() << "\n";
         }
     }
 
@@ -323,7 +338,7 @@ public:
 
     void recordTreeState()
     {
-        if(!ss_){
+        if (!ss_) {
             return;
         }
         // Get the planner data to visualize the vertices and the edges
@@ -347,7 +362,6 @@ public:
                 ofs_e << " ";
                 printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(edge_list[i2]));
                 ofs_e << std::endl;
-
             }
         }
     }
@@ -355,7 +369,6 @@ public:
     Model& getModel() { return model_; }
 
 private:
-
     og::SimpleSetupPtr ss_;
     const double maxWidth_;
     const double maxHeight_;
@@ -364,7 +377,7 @@ private:
 };
 
 class Window2D : public dart::gui::SimWindow {
-;
+    ;
 };
 
 int main(int argc, char** argv)
@@ -374,10 +387,10 @@ int main(int argc, char** argv)
     Window2D win;
     win.setWorld(problem.getModel().getWorld());
 
-    Model::Point start(default_radius*1.5, default_radius*1.5);
+    Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    if (problem.plan(start, goal)){
+    if (problem.plan(start, goal)) {
         problem.recordSolution();
         problem.recordTreeState();
         std::cout << "done\n";
