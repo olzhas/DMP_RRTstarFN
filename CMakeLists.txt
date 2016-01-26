@@ -25,8 +25,8 @@ list(REMOVE_ITEM SRC_LIST "./Point2DPlanning.cpp")
 list(REMOVE_ITEM SRC_LIST "./Dubins2D.cpp")
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
-add_executable(2d_demo Point2DPlanning.cpp)
-add_executable(2d_dubins Dubins2D.cpp)
+add_executable(2d_demo Point2DPlanning.cpp DRRTstarFN.cpp)
+add_executable(2d_dubins Dubins2D.cpp DRRTstarFN.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     dart

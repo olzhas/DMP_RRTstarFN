@@ -2,7 +2,7 @@
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
-#include <ompl/geometric/planners/rrt/DRRTstarFN.h>
+#include "DRRTstarFN.h"
 #include <dart/dart.h>
 
 #include <mutex>
@@ -262,7 +262,7 @@ public:
         : maxWidth_(2.0)
         , maxHeight_(2.0)
     {
-        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.01, true));
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false));
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -278,7 +278,8 @@ public:
         ss_->setStateValidityChecker(boost::bind(&Model::isStateValid, &model_, _1));
         space->setup();
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
-        ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
+        ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.1);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
@@ -297,7 +298,7 @@ public:
 
         if (ss_->getPlanner())
             ss_->getPlanner()->clear();
-        ss_->solve(40.0);
+        ss_->solve(100.0);
 
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
@@ -315,25 +316,8 @@ public:
         if (!ss_ || !ss_->haveSolutionPath())
             return;
         og::PathGeometric& p = ss_->getSolutionPath();
-        //p.interpolate();
-        for (std::size_t i = 0; i < p.getStateCount(); ++i) {
-            const ob::SE2StateSpace::StateType* state =
-                    p.getState(i)->as<ob::SE2StateSpace::StateType>();
-
-            fout << state->getX() << " " << state->getY() << " " << state->getYaw() << "\n";
-        }
-    }
-
-    //==============================================================================
-    void printEdge(std::ostream& os, const ob::StateSpacePtr& space,
-        const ob::PlannerDataVertex& vertex)
-    {
-        std::vector<double> reals;
-        if (vertex != ob::PlannerData::NO_VERTEX) {
-            space->copyToReals(reals, vertex.getState());
-            for (size_t j(0); j < reals.size(); ++j)
-                os << " " << reals[j];
-        }
+        p.interpolate();
+        p.printAsMatrix(fout);
     }
 
     void recordTreeState()
@@ -348,20 +332,30 @@ public:
         // Print the vertices to file
         std::ofstream ofs_v("dubins-vertices.dat");
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
-            printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
+            //printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
             ofs_v << std::endl;
         }
+
+        ob::DubinsStateSpace* space;
+        space = ss_->getStateSpace()->as<ob::DubinsStateSpace>();
 
         // Print the edges to file
         std::ofstream ofs_e("dubins-edges.dat");
         std::vector<unsigned int> edge_list;
+        std::vector<double> reals;
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             unsigned int n_edge = pdat.getEdges(i, edge_list);
+            const ob::State* s1 = pdat.getVertex(i).getState();
             for (unsigned int i2(0); i2 < n_edge; ++i2) {
-                printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(i));
-                ofs_e << " ";
-                printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(edge_list[i2]));
-                ofs_e << std::endl;
+                const ob::State* s2 = pdat.getVertex(edge_list[i2]).getState();
+                const double step = 0.1;
+                for (double t = step; t+=step; t < 1.0){
+                    ob::State* s3;
+                    space->interpolate(s1, s2, t, s3);
+                    space->copyToReals(reals, s3);
+                    for (const auto& r : reals) ofs_e << " " << r;
+                    ofs_e << std::endl;
+                }
             }
         }
     }
