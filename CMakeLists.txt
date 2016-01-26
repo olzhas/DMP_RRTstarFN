@@ -22,8 +22,11 @@ include_directories(${BULLET_INCLUDE_DIR})
 
 aux_source_directory(. SRC_LIST)
 list(REMOVE_ITEM SRC_LIST "./Point2DPlanning.cpp")
+list(REMOVE_ITEM SRC_LIST "./Dubins2D.cpp")
+
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 add_executable(2d_demo Point2DPlanning.cpp)
+add_executable(2d_dubins Dubins2D.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     dart
@@ -44,5 +47,11 @@ target_link_libraries(2d_demo
     pthread
     )
 
-
-
+target_link_libraries(2d_dubins
+    dart
+    ${Boost_LIBRARIES}
+    ${OMPL_LIBRARIES}
+    ${FLANN_LIBRARIES}
+    ${BULLET_LIBRARIES}
+    pthread
+    )
