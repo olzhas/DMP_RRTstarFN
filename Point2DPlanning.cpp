@@ -253,7 +253,7 @@ public:
     {
         ob::RealVectorStateSpace* space = new ob::RealVectorStateSpace();
         space->addDimension(0.0, maxWidth_);
-        space->addDimension(0.0, maxWidth_);
+        space->addDimension(0.0, maxHeight_);
 
         ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
 
@@ -265,16 +265,16 @@ public:
         ss_->getPlanner()->as<og::RRTstar>()->setRange(0.05);
     }
 
-    bool plan(const Model::Point& s, const Model::Point& g)
+    bool plan(const Model::Point& initial, const Model::Point& final)
     {
         if (!ss_)
             return false;
         ob::ScopedState<> start(ss_->getStateSpace());
-        start[0] = s.x();
-        start[1] = s.y();
+        start[0] = initial.x();
+        start[1] = initial.y();
         ob::ScopedState<> goal(ss_->getStateSpace());
-        goal[0] = g.x();
-        goal[1] = g.y();
+        goal[0] = final.x();
+        goal[1] = final.y();
         ss_->setStartAndGoalStates(start, goal);
         // generate a few solutions; all will be added to the goal;
 
