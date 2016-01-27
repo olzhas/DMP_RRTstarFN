@@ -48,6 +48,14 @@ dd::SkeletonPtr createCar()
     return car;
 }
 
+#define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
+
+dd::SkeletonPtr convexObstacle()
+{
+    dd::SkeletonPtr obs = dart::utils::SkelParser::readSkeleton(SAFESPACE_DATA "obstacles/convex_obstacle.skel");
+    return obs;
+}
+
 class Model {
 
     static constexpr const char* WORLD_FILE_NAME = "data/2d-problem/model.sdf";
@@ -214,6 +222,8 @@ private:
 
             world_->addSkeleton(box);
         }
+
+        world_->addSkeleton(convexObstacle());
 
         car_ = createCar();
         world_->addSkeleton(car_);
@@ -391,8 +401,8 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 60.0;
-    const double dt = 1.0;
+    const double time = 120.0;
+    const double dt = 0.50;
     const int ITERATIONS = time / dt;
 
 
