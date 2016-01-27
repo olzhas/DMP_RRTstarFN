@@ -298,7 +298,7 @@ public:
 
         if (ss_->getPlanner())
             ss_->getPlanner()->clear();
-        ss_->solve(100.0);
+        ss_->solve(60.0);
 
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
@@ -343,18 +343,24 @@ public:
         std::ofstream ofs_e("dubins-edges.dat");
         std::vector<unsigned int> edge_list;
         std::vector<double> reals;
+        std::vector<double> realsOld;
+        ob::State* s3 = space->allocState();
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             unsigned int n_edge = pdat.getEdges(i, edge_list);
             const ob::State* s1 = pdat.getVertex(i).getState();
             for (unsigned int i2(0); i2 < n_edge; ++i2) {
                 const ob::State* s2 = pdat.getVertex(edge_list[i2]).getState();
                 const double step = 0.1;
-                for (double t = step; t+=step; t < 1.0){
-                    ob::State* s3;
+                space->copyToReals(realsOld, s1);
+                for (double t = step; t <= 1.01; t += step){
+
                     space->interpolate(s1, s2, t, s3);
                     space->copyToReals(reals, s3);
-                    for (const auto& r : reals) ofs_e << " " << r;
+                    for (const auto& r : realsOld) ofs_e << r << " ";
+                    realsOld = reals;
+                    for (const auto& r : reals) ofs_e << r << " ";
                     ofs_e << std::endl;
+
                 }
             }
         }
