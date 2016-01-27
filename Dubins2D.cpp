@@ -7,15 +7,15 @@
 
 #include <mutex>
 #include <thread>
+#include <boost/filesystem.hpp>
 
+#include <iostream>
 #include <fstream>
+
 
 #include <ompl/config.h>
 #include "config/config2D.h"
 
-#include <boost/filesystem.hpp>
-//#include <boost/bind.hpp>
-#include <iostream>
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -26,30 +26,6 @@ namespace ds = dart::simulation;
 const double default_ground_width = 2;
 const double default_wall_thickness = 0.1;
 const double default_radius = 0.01;
-
-dd::SkeletonPtr createGround()
-{
-    dd::SkeletonPtr ground = dd::Skeleton::create("ground");
-
-    dd::BodyNode* bn = ground->createJointAndBodyNodePair<dd::FreeJoint>().second;
-
-    std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(
-        Eigen::Vector3d(default_ground_width, default_ground_width,
-            default_wall_thickness));
-    shape->setColor(Eigen::Vector3d(1.0, 1.0, .0));
-
-    //bn->addCollisionShape(shape);
-    bn->addVisualizationShape(shape);
-    Eigen::Vector6d positions(Eigen::Vector6d::Zero());
-
-    positions[3] = 1.0;
-    positions[4] = 1.0;
-    positions[5] = -5.0;
-
-    ground->getJoint(0)->setPositions(positions);
-
-    return ground;
-}
 
 dd::SkeletonPtr createCar()
 {
@@ -241,10 +217,7 @@ private:
             world_->addSkeleton(box);
         }
 
-        dd::SkeletonPtr ground = createGround();
         car_ = createCar();
-
-        world_->addSkeleton(ground);
         world_->addSkeleton(car_);
     }
 
