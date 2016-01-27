@@ -326,7 +326,7 @@ public:
         else
             fileName = "dubins-vertices" + std::to_string(num) + ".dat";
 
-        std::ofstream ofs_v("dubins-vertices.dat");
+        std::ofstream ofs_v(filename);
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             //printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
             ofs_v << std::endl;
