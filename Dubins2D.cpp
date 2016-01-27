@@ -12,10 +12,8 @@
 #include <iostream>
 #include <fstream>
 
-
 #include <ompl/config.h>
 #include "config/config2D.h"
-
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -165,7 +163,7 @@ public:
         return !world_->checkCollision();
     }
 
-    void setSpaceInformation(ob::SpaceInformationPtr &si) { si_ = si; }
+    void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
 
 private:
     void loadWorld()
@@ -256,7 +254,8 @@ public:
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
-    bool plan(const Model::Point& initial, const Model::Point& final)
+    bool plan(const Model::Point& initial, const Model::Point& final,
+        double time, bool clearPlanner = true)
     {
         if (!ss_)
             return false;
@@ -270,8 +269,10 @@ public:
         // generate a few solutions; all will be added to the goal;
 
         if (ss_->getPlanner())
-            ss_->getPlanner()->clear();
-        ss_->solve(60.0);
+            if (clearPlanner)
+                ss_->getPlanner()->clear();
+
+        ss_->solve(time);
 
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
@@ -284,7 +285,18 @@ public:
 
     void recordSolution()
     {
-        const std::string fileName = "dubins-results.txt";
+        recordSolution(-1);
+    }
+
+    void recordSolution(int num)
+    {
+        std::string fileName;
+
+        if (num != -1)
+            fileName = "dubins-results" + std::to_string(num) + ".txt";
+        else
+            fileName = "dubins-results.txt";
+
         std::ofstream fout(fileName);
         if (!ss_ || !ss_->haveSolutionPath())
             return;
@@ -295,6 +307,11 @@ public:
 
     void recordTreeState()
     {
+        recordTreeState(-1);
+    }
+
+    void recordTreeState(int num)
+    {
         if (!ss_) {
             return;
         }
@@ -303,6 +320,12 @@ public:
         ss_->getPlannerData(pdat);
 
         // Print the vertices to file
+        std::string fileName;
+        if (num != -1)
+            fileName = "dubins-vertices.dat";
+        else
+            fileName = "dubins-vertices" + std::to_string(num) + ".dat";
+
         std::ofstream ofs_v("dubins-vertices.dat");
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             //printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
@@ -325,15 +348,16 @@ public:
                 const ob::State* s2 = pdat.getVertex(edge_list[i2]).getState();
                 const double step = 0.1;
                 space->copyToReals(realsOld, s1);
-                for (double t = step; t <= 1.01; t += step){
+                for (double t = step; t <= 1.01; t += step) {
 
                     space->interpolate(s1, s2, t, s3);
                     space->copyToReals(reals, s3);
-                    for (const auto& r : realsOld) ofs_e << r << " ";
+                    for (const auto& r : realsOld)
+                        ofs_e << r << " ";
                     realsOld = reals;
-                    for (const auto& r : reals) ofs_e << r << " ";
+                    for (const auto& r : reals)
+                        ofs_e << r << " ";
                     ofs_e << std::endl;
-
                 }
             }
         }
@@ -357,20 +381,27 @@ int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
 
-    Window2D win;
-    win.setWorld(problem.getModel().getWorld());
+//    Window2D win;
+//    win.setWorld(problem.getModel().getWorld());
 
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    if (problem.plan(start, goal)) {
-        problem.recordSolution();
-        problem.recordTreeState();
-        std::cout << "done\n";
+    const int ITERATIONS = 10;
+    const double dt = 6;
+
+    for (int i = 0; i < ITERATIONS; i++) {
+        bool clearPlanner = (i == 0);
+        if (problem.plan(start, goal, dt, clearPlanner)) {
+            problem.recordSolution(i);
+            problem.recordTreeState(i);
+            std::cout << "done\n";
+        }
     }
 
-    glutInit(&argc, argv);
-    win.initWindow(1280, 800, "2D demo");
-    glutMainLoop();
+//    glutInit(&argc, argv);
+//    win.initWindow(1280, 800, "2D demo");
+//    glutMainLoop();
+
     return 0;
 }
