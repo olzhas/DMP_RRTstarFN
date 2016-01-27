@@ -321,7 +321,7 @@ public:
 
         // Print the vertices to file
         std::string fileName;
-        if (num != -1)
+        if (num == -1)
             fileName = "dubins-vertices.dat";
         else
             fileName = "dubins-vertices" + std::to_string(num) + ".dat";
@@ -336,7 +336,7 @@ public:
         space = ss_->getStateSpace()->as<ob::DubinsStateSpace>();
 
         // Print the edges to file
-        if (num != -1)
+        if (num == -1)
             fileName = "dubins-edges.dat";
         else
             fileName = "dubins-edges" + std::to_string(num) + ".dat";
@@ -391,8 +391,10 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    const int ITERATIONS = 10;
-    const double dt = 6;
+    const double time = 60.0;
+    const double dt = 1.0;
+    const int ITERATIONS = time / dt;
+
 
     for (int i = 0; i < ITERATIONS; i++) {
         bool clearPlanner = (i == 0);
