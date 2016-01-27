@@ -336,7 +336,11 @@ public:
         space = ss_->getStateSpace()->as<ob::DubinsStateSpace>();
 
         // Print the edges to file
-        std::ofstream ofs_e("dubins-edges.dat");
+        if (num != -1)
+            fileName = "dubins-edges.dat";
+        else
+            fileName = "dubins-edges" + std::to_string(num) + ".dat";
+        std::ofstream ofs_e(fileName);
         std::vector<unsigned int> edge_list;
         std::vector<double> reals;
         std::vector<double> realsOld;
