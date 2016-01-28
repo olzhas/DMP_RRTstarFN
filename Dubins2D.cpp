@@ -260,7 +260,7 @@ public:
         space->setup();
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
         ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.1);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.05);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
@@ -401,7 +401,7 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 120.0;
+    const double time = 180.0;
     const double dt = 0.50;
     const int ITERATIONS = time / dt;
 
