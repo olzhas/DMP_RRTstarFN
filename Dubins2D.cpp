@@ -7,15 +7,13 @@
 
 #include <mutex>
 #include <thread>
+#include <boost/filesystem.hpp>
 
+#include <iostream>
 #include <fstream>
 
 #include <ompl/config.h>
 #include "config/config2D.h"
-
-#include <boost/filesystem.hpp>
-//#include <boost/bind.hpp>
-#include <iostream>
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -26,30 +24,6 @@ namespace ds = dart::simulation;
 const double default_ground_width = 2;
 const double default_wall_thickness = 0.1;
 const double default_radius = 0.01;
-
-dd::SkeletonPtr createGround()
-{
-    dd::SkeletonPtr ground = dd::Skeleton::create("ground");
-
-    dd::BodyNode* bn = ground->createJointAndBodyNodePair<dd::FreeJoint>().second;
-
-    std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(
-        Eigen::Vector3d(default_ground_width, default_ground_width,
-            default_wall_thickness));
-    shape->setColor(Eigen::Vector3d(1.0, 1.0, .0));
-
-    //bn->addCollisionShape(shape);
-    bn->addVisualizationShape(shape);
-    Eigen::Vector6d positions(Eigen::Vector6d::Zero());
-
-    positions[3] = 1.0;
-    positions[4] = 1.0;
-    positions[5] = -5.0;
-
-    ground->getJoint(0)->setPositions(positions);
-
-    return ground;
-}
 
 dd::SkeletonPtr createCar()
 {
@@ -72,6 +46,14 @@ dd::SkeletonPtr createCar()
     car->getJoint(0)->setPositions(positions);
 
     return car;
+}
+
+#define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
+
+dd::SkeletonPtr convexObstacle()
+{
+    dd::SkeletonPtr obs = dart::utils::SkelParser::readSkeleton(SAFESPACE_DATA "obstacles/convex_obstacle.skel");
+    return obs;
 }
 
 class Model {
@@ -189,7 +171,7 @@ public:
         return !world_->checkCollision();
     }
 
-    void setSpaceInformation(ob::SpaceInformationPtr &si) { si_ = si; }
+    void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
 
 private:
     void loadWorld()
@@ -241,10 +223,9 @@ private:
             world_->addSkeleton(box);
         }
 
-        dd::SkeletonPtr ground = createGround();
-        car_ = createCar();
+        world_->addSkeleton(convexObstacle());
 
-        world_->addSkeleton(ground);
+        car_ = createCar();
         world_->addSkeleton(car_);
     }
 
@@ -283,7 +264,8 @@ public:
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
-    bool plan(const Model::Point& initial, const Model::Point& final)
+    bool plan(const Model::Point& initial, const Model::Point& final,
+        double time, bool clearPlanner = true)
     {
         if (!ss_)
             return false;
@@ -297,8 +279,10 @@ public:
         // generate a few solutions; all will be added to the goal;
 
         if (ss_->getPlanner())
-            ss_->getPlanner()->clear();
-        ss_->solve(60.0);
+            if (clearPlanner)
+                ss_->getPlanner()->clear();
+
+        ss_->solve(time);
 
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
@@ -311,7 +295,18 @@ public:
 
     void recordSolution()
     {
-        const std::string fileName = "dubins-results.txt";
+        recordSolution(-1);
+    }
+
+    void recordSolution(int num)
+    {
+        std::string fileName;
+
+        if (num != -1)
+            fileName = "dubins-results" + std::to_string(num) + ".txt";
+        else
+            fileName = "dubins-results.txt";
+
         std::ofstream fout(fileName);
         if (!ss_ || !ss_->haveSolutionPath())
             return;
@@ -322,6 +317,11 @@ public:
 
     void recordTreeState()
     {
+        recordTreeState(-1);
+    }
+
+    void recordTreeState(int num)
+    {
         if (!ss_) {
             return;
         }
@@ -330,7 +330,13 @@ public:
         ss_->getPlannerData(pdat);
 
         // Print the vertices to file
-        std::ofstream ofs_v("dubins-vertices.dat");
+        std::string fileName;
+        if (num == -1)
+            fileName = "dubins-vertices.dat";
+        else
+            fileName = "dubins-vertices" + std::to_string(num) + ".dat";
+
+        std::ofstream ofs_v(fileName);
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             //printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
             ofs_v << std::endl;
@@ -340,7 +346,11 @@ public:
         space = ss_->getStateSpace()->as<ob::DubinsStateSpace>();
 
         // Print the edges to file
-        std::ofstream ofs_e("dubins-edges.dat");
+        if (num == -1)
+            fileName = "dubins-edges.dat";
+        else
+            fileName = "dubins-edges" + std::to_string(num) + ".dat";
+        std::ofstream ofs_e(fileName);
         std::vector<unsigned int> edge_list;
         std::vector<double> reals;
         std::vector<double> realsOld;
@@ -352,15 +362,16 @@ public:
                 const ob::State* s2 = pdat.getVertex(edge_list[i2]).getState();
                 const double step = 0.1;
                 space->copyToReals(realsOld, s1);
-                for (double t = step; t <= 1.01; t += step){
+                for (double t = step; t <= 1.01; t += step) {
 
                     space->interpolate(s1, s2, t, s3);
                     space->copyToReals(reals, s3);
-                    for (const auto& r : realsOld) ofs_e << r << " ";
+                    for (const auto& r : realsOld)
+                        ofs_e << r << " ";
                     realsOld = reals;
-                    for (const auto& r : reals) ofs_e << r << " ";
+                    for (const auto& r : reals)
+                        ofs_e << r << " ";
                     ofs_e << std::endl;
-
                 }
             }
         }
@@ -384,20 +395,29 @@ int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
 
-    Window2D win;
-    win.setWorld(problem.getModel().getWorld());
+//    Window2D win;
+//    win.setWorld(problem.getModel().getWorld());
 
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    if (problem.plan(start, goal)) {
-        problem.recordSolution();
-        problem.recordTreeState();
-        std::cout << "done\n";
+    const double time = 120.0;
+    const double dt = 0.50;
+    const int ITERATIONS = time / dt;
+
+
+    for (int i = 0; i < ITERATIONS; i++) {
+        bool clearPlanner = (i == 0);
+        if (problem.plan(start, goal, dt, clearPlanner)) {
+            problem.recordSolution(i);
+            problem.recordTreeState(i);
+            std::cout << "done\n";
+        }
     }
 
-    glutInit(&argc, argv);
-    win.initWindow(1280, 800, "2D demo");
-    glutMainLoop();
+//    glutInit(&argc, argv);
+//    win.initWindow(1280, 800, "2D demo");
+//    glutMainLoop();
+
     return 0;
 }
