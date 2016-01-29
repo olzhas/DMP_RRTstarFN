@@ -5,6 +5,8 @@
 #include "DRRTstarFN.h"
 #include <dart/dart.h>
 
+#include <fcl/collision.h>
+
 #include <mutex>
 #include <thread>
 #include <boost/filesystem.hpp>

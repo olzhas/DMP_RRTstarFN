@@ -7,6 +7,7 @@ find_package(Bullet REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 pkg_search_module(YAMLCPP REQUIRED yaml-cpp)
+pkg_search_module(FCL REQUIRED fcl)
 
 include(FindBoost)
 
@@ -53,5 +54,6 @@ target_link_libraries(2d_dubins
     ${OMPL_LIBRARIES}
     ${FLANN_LIBRARIES}
     ${BULLET_LIBRARIES}
+    ${FCL_LIBRARIES}
     pthread
     )
