@@ -171,6 +171,11 @@ public:
         return !world_->checkCollision();
     }
 
+    void updateObstacles()
+    {
+
+    }
+
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
 
 private:
@@ -222,8 +227,8 @@ private:
 
             world_->addSkeleton(box);
         }
-
-        world_->addSkeleton(convexObstacle());
+        dynamicObstacle_ = convexObstacle();
+        world_->addSkeleton(dynamicObstacle_);
 
         car_ = createCar();
         world_->addSkeleton(car_);
@@ -231,6 +236,8 @@ private:
 
     dart::simulation::WorldPtr world_;
     dd::SkeletonPtr car_;
+
+    dd::SkeletonPtr dynamicObstacle_;
 
     ob::SpaceInformationPtr si_;
 
@@ -242,6 +249,7 @@ public:
     DubinsCarEnvironment()
         : maxWidth_(2.0)
         , maxHeight_(2.0)
+        , dynamic_(false)
     {
         ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false));
 
@@ -281,6 +289,10 @@ public:
         if (ss_->getPlanner())
             if (clearPlanner)
                 ss_->getPlanner()->clear();
+
+        if(dynamic_){
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+        }
 
         ss_->solve(time);
 
@@ -377,7 +389,11 @@ public:
         }
     }
 
+    void setDynamic() { dynamic_ = true; }
+
     Model& getModel() { return model_; }
+
+    void updateObstacles() {;}
 
 private:
     og::SimpleSetupPtr ss_;
@@ -385,6 +401,8 @@ private:
     const double maxHeight_;
 
     Model model_;
+
+    bool dynamic_;
 };
 
 class Window2D : public dart::gui::SimWindow {
@@ -395,17 +413,17 @@ int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
 
-//    Window2D win;
-//    win.setWorld(problem.getModel().getWorld());
+    //    Window2D win;
+    //    win.setWorld(problem.getModel().getWorld());
 
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 120.0;
-    const double dt = 0.50;
+    const double time = 300.0;
+    const double dt = 0.020;
     const int ITERATIONS = time / dt;
 
-
+#ifdef PLOTTING
     for (int i = 0; i < ITERATIONS; i++) {
         bool clearPlanner = (i == 0);
         if (problem.plan(start, goal, dt, clearPlanner)) {
@@ -414,10 +432,28 @@ int main(int argc, char** argv)
             std::cout << "done\n";
         }
     }
+#endif
 
-//    glutInit(&argc, argv);
-//    win.initWindow(1280, 800, "2D demo");
-//    glutMainLoop();
+    if (problem.plan(start, goal, time)) {
+        problem.recordSolution();
+        problem.recordTreeState();
+        std::cout << "done\n";
+    }
+
+    problem.setDynamic();
+    problem.updateObstacles();
+
+    for (int i = 0; i < ITERATIONS; i++) {
+        if (problem.plan(start, goal, dt, false)) {
+            problem.recordSolution(i);
+            problem.recordTreeState(i);
+            std::cout << "done\n";
+        }
+    }
+
+    //    glutInit(&argc, argv);
+    //    win.initWindow(1280, 800, "2D demo");
+    //    glutMainLoop();
 
     return 0;
 }
