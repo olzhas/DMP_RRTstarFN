@@ -34,8 +34,8 @@ dd::SkeletonPtr createGround()
     dd::BodyNode* bn = ground->createJointAndBodyNodePair<dd::FreeJoint>().second;
 
     std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(
-                Eigen::Vector3d(default_ground_width, default_ground_width,
-                                default_wall_thickness));
+        Eigen::Vector3d(default_ground_width, default_ground_width,
+            default_wall_thickness));
     shape->setColor(Eigen::Vector3d(1.0, 1.0, .0));
 
     //bn->addCollisionShape(shape);
@@ -58,7 +58,7 @@ dd::SkeletonPtr createBall()
     dd::BodyNode* bn = ball->createJointAndBodyNodePair<dd::FreeJoint>().second;
 
     std::shared_ptr<dd::EllipsoidShape> shape = std::make_shared<dd::EllipsoidShape>(
-                Eigen::Vector3d(default_radius*2, default_radius*2, default_radius*2));
+        Eigen::Vector3d(default_radius * 2, default_radius * 2, default_radius * 2));
     shape->setColor(Eigen::Vector3d(1.0, .0, .0));
 
     bn->addCollisionShape(shape);
@@ -162,7 +162,6 @@ public:
         }
     };
 
-
     Model()
     {
         loadWorld();
@@ -170,7 +169,8 @@ public:
 
     ds::WorldPtr getWorld() const { return world_; }
 
-    bool isStateValid(const ompl::base::State *s){
+    bool isStateValid(const ompl::base::State* s)
+    {
         std::lock_guard<std::mutex> guard(mutex_);
 
         double* d = (double*)s->as<ob::RealVectorStateSpace::StateType>()->values;
@@ -207,7 +207,7 @@ private:
             body.mName = "box" + std::to_string(i);
 
             dd::ShapePtr shape(
-                        new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.01, 1.0)));
+                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.01, 1.0)));
 
             body.mVizShapes.push_back(shape);
             body.mColShapes.push_back(shape);
@@ -247,9 +247,9 @@ private:
 
 class Plane2DEnvironment {
 public:
-    Plane2DEnvironment():
-        maxWidth_(2.0),
-        maxHeight_(2.0)
+    Plane2DEnvironment()
+        : maxWidth_(2.0)
+        , maxHeight_(2.0)
     {
         ob::RealVectorStateSpace* space = new ob::RealVectorStateSpace();
         space->addDimension(0.0, maxWidth_);
@@ -265,7 +265,8 @@ public:
         ss_->getPlanner()->as<og::RRTstar>()->setRange(0.05);
     }
 
-    bool plan(const Model::Point& initial, const Model::Point& final)
+    bool plan(const Model::Point& initial, const Model::Point& final,
+        double time, bool clearPlanner = true)
     {
         if (!ss_)
             return false;
@@ -279,8 +280,9 @@ public:
         // generate a few solutions; all will be added to the goal;
 
         if (ss_->getPlanner())
-            ss_->getPlanner()->clear();
-        ss_->solve(20.0);
+            if (clearPlanner)
+                ss_->getPlanner()->clear();
+        ss_->solve(time);
 
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
@@ -293,8 +295,20 @@ public:
 
     void recordSolution()
     {
-        const std::string fileName = "2d-results.txt";
-        std::ofstream fout(fileName);
+        recordSolution(-1);
+    }
+
+    void recordSolution(int num)
+    {
+        std::string filename;
+
+        filename = "2d-results";
+        if (num >= 0)
+        {
+            filename += std::to_string(num);
+        }
+        filename += ".txt";
+        std::ofstream fout(filename);
         if (!ss_ || !ss_->haveSolutionPath())
             return;
         og::PathGeometric& p = ss_->getSolutionPath();
@@ -302,7 +316,7 @@ public:
         for (std::size_t i = 0; i < p.getStateCount(); ++i) {
             ompl::base::State* state = p.getState(i);
             double* values = (double*)
-                    state->as<ob::RealVectorStateSpace::StateType>()->values;
+                                 state->as<ob::RealVectorStateSpace::StateType>()->values;
             fout << values[0] << " " << values[1] << "\n";
         }
     }
@@ -321,22 +335,36 @@ public:
 
     void recordTreeState()
     {
-        if(!ss_){
+        recordTreeState(-1);
+    }
+
+    void recordTreeState(int num)
+    {
+        if (!ss_) {
             return;
         }
         // Get the planner data to visualize the vertices and the edges
         ob::PlannerData pdat(ss_->getSpaceInformation());
         ss_->getPlannerData(pdat);
 
+        std::string filename;
         // Print the vertices to file
-        std::ofstream ofs_v("2d-vertices.dat");
+        filename = "2d-vertices";
+        if (num >= 0)
+            filename += std::to_string(num);
+        filename += ".dat";
+        std::ofstream ofs_v(filename);
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
             ofs_v << std::endl;
         }
 
         // Print the edges to file
-        std::ofstream ofs_e("2d-edges.dat");
+        filename = "2d-edges";
+        if (num >= 0)
+            filename += std::to_string(num);
+        filename += ".dat";
+        std::ofstream ofs_e(filename);
         std::vector<unsigned int> edge_list;
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             unsigned int n_edge = pdat.getEdges(i, edge_list);
@@ -345,7 +373,6 @@ public:
                 ofs_e << " ";
                 printEdge(ofs_e, ss_->getStateSpace(), pdat.getVertex(edge_list[i2]));
                 ofs_e << std::endl;
-
             }
         }
     }
@@ -353,7 +380,6 @@ public:
     Model& getModel() { return model_; }
 
 private:
-
     og::SimpleSetupPtr ss_;
     const double maxWidth_;
     const double maxHeight_;
@@ -362,7 +388,7 @@ private:
 };
 
 class Window2D : public dart::gui::SimWindow {
-;
+    ;
 };
 
 int main(int argc, char** argv)
@@ -372,13 +398,20 @@ int main(int argc, char** argv)
     Window2D win;
     win.setWorld(problem.getModel().getWorld());
 
-    Model::Point start(default_radius*1.5, default_radius*1.5);
+    Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    if (problem.plan(start, goal)){
-        problem.recordSolution();
-        problem.recordTreeState();
-        std::cout << "done\n";
+    const double time = 300.0;
+    const double dt = 0.25;
+    const int ITERATIONS = time / dt;
+
+    for (int i = 0; i < ITERATIONS; i++) {
+        bool clearPlanner = (i == 0);
+        if (problem.plan(start, goal, dt, clearPlanner)) {
+            problem.recordSolution(i);
+            problem.recordTreeState(i);
+            std::cout << "done\n";
+        }
     }
 
     glutInit(&argc, argv);
