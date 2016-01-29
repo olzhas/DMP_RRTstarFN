@@ -5,6 +5,8 @@
 #include "DRRTstarFN.h"
 #include <dart/dart.h>
 
+#include <fcl/collision.h>
+
 #include <mutex>
 #include <thread>
 #include <boost/filesystem.hpp>
@@ -243,7 +245,7 @@ public:
         : maxWidth_(2.0)
         , maxHeight_(2.0)
     {
-        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false));
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, false));
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -260,7 +262,7 @@ public:
         space->setup();
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
         ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.1);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.05);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
@@ -401,10 +403,9 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 120.0;
-    const double dt = 0.50;
+    const double time = 300.0;
+    const double dt = 0.25;
     const int ITERATIONS = time / dt;
-
 
     for (int i = 0; i < ITERATIONS; i++) {
         bool clearPlanner = (i == 0);
