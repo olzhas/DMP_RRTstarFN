@@ -173,7 +173,18 @@ public:
 
     void updateObstacles()
     {
+        const double speed = 0.005;
+        const double angleRad = 120.0 / 180.0 * M_PI;
+        Eigen::VectorXd transformation;
 
+        transformation = dynamicObstacle_->getJoint(0)->getPositions();
+
+        transformation[3] += speed * cos(angleRad);
+        transformation[4] += speed * sin(angleRad);
+
+        dynamicObstacle_->getJoint(0)->setPositions(transformation);
+
+        std::cout << transformation[3] << " " << transformation[4] << "\n";
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
@@ -269,6 +280,7 @@ public:
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
         ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.1);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(4000);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
@@ -290,7 +302,7 @@ public:
             if (clearPlanner)
                 ss_->getPlanner()->clear();
 
-        if(dynamic_){
+        if (dynamic_) {
             ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
         }
 
@@ -393,7 +405,8 @@ public:
 
     Model& getModel() { return model_; }
 
-    void updateObstacles() {;}
+    // proxy method
+    void updateObstacles() { model_.updateObstacles(); }
 
 private:
     og::SimpleSetupPtr ss_;
@@ -406,7 +419,13 @@ private:
 };
 
 class Window2D : public dart::gui::SimWindow {
-    ;
+    void drawSkels()
+    {
+        glEnable(GL_LIGHTING);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //glMatrixMode(GL_PROJECTION);
+        dart::gui::SimWindow::drawSkels();
+    }
 };
 
 int main(int argc, char** argv)
@@ -419,7 +438,7 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 300.0;
+    const double time = 120.0;
     const double dt = 0.020;
     const int ITERATIONS = time / dt;
 
@@ -441,9 +460,13 @@ int main(int argc, char** argv)
     }
 
     problem.setDynamic();
-    problem.updateObstacles();
 
-    for (int i = 0; i < ITERATIONS; i++) {
+    for (auto r : std::vector<int>(20)) {
+        problem.updateObstacles();
+    }
+
+    const int DYNAMIC_ITERATIONS = 10;
+    for (int i = 0; i < DYNAMIC_ITERATIONS; i++) {
         if (problem.plan(start, goal, dt, false)) {
             problem.recordSolution(i);
             problem.recordTreeState(i);
