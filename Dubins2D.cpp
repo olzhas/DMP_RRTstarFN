@@ -339,6 +339,18 @@ public:
         p.printAsMatrix(fout);
     }
 
+    //==============================================================================
+    void printEdge(std::ostream& os, const ob::StateSpacePtr& space,
+        const ob::PlannerDataVertex& vertex)
+    {
+        std::vector<double> reals;
+        if (vertex != ob::PlannerData::NO_VERTEX) {
+            space->copyToReals(reals, vertex.getState());
+            for (size_t j(0); j < reals.size(); ++j)
+                os << " " << reals[j];
+        }
+    }
+
     void recordTreeState()
     {
         recordTreeState(-1);
@@ -362,7 +374,7 @@ public:
 
         std::ofstream ofs_v(fileName);
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
-            //printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
+            printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
             ofs_v << std::endl;
         }
 
@@ -452,6 +464,11 @@ int main(int argc, char** argv)
         }
     }
 #endif
+
+    std::cout << time << "\n"
+              << dt << std::endl;
+
+    system("date");
 
     if (problem.plan(start, goal, time)) {
         problem.recordSolution();
