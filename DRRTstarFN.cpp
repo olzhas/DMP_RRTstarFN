@@ -505,8 +505,8 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 OMPL_INFORM("%d > %d", statesGenerated, maxNodes_);
 #endif
                 // FIXME bottleneck
-//                std::vector<Motion*> motions;
-//                nn_->list(motions);
+                std::vector<Motion*> motions;
+                nn_->list(motions);
 //                std::vector<int> childlessNodes;
 //                for (std::size_t i = 0; i < motions.size(); ++i) {
 //                    if (motions[i]->children.size() == 0)
@@ -605,6 +605,10 @@ void ompl::geometric::DRRTstarFN::removeFromParent(Motion* m)
          it != m->parent->children.end(); ++it)
         if (*it == m) {
             m->parent->children.erase(it);
+
+            if(m->parent->children.size() == 0)
+                childlessNodes_.push_back(m->parent);
+
             break;
         }
 }
