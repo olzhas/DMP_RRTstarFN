@@ -446,6 +446,10 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 }
             }
 
+            if (motion->children.size() == 0) {
+                childlessNodes_.push_back(motion);
+            }
+
             // Add the new motion to the goalMotion_ list, if it satisfies the goal
             double distanceFromGoal;
 
@@ -601,6 +605,10 @@ void ompl::geometric::DRRTstarFN::removeFromParent(Motion* m)
          it != m->parent->children.end(); ++it)
         if (*it == m) {
             m->parent->children.erase(it);
+
+            if(m->parent->children.size() == 0)
+                childlessNodes_.push_back(m->parent);
+
             break;
         }
 }
