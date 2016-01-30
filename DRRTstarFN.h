@@ -351,6 +351,8 @@ namespace geometric {
 
         std::vector<ompl::base::State*> previousPath_;
 
+        std::vector<Motion*> childlessNodes_;
+
         //////////////////////////////
         // Planner progress properties
         /** \brief Number of iterations the algorithm performed */

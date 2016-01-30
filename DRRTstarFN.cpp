@@ -446,6 +446,10 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 }
             }
 
+            if (motion->children.size() == 0) {
+                childlessNodes_.push_back(motion);
+            }
+
             // Add the new motion to the goalMotion_ list, if it satisfies the goal
             double distanceFromGoal;
 
@@ -501,27 +505,27 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 OMPL_INFORM("%d > %d", statesGenerated, maxNodes_);
 #endif
                 // FIXME bottleneck
-                std::vector<Motion*> motions;
-                nn_->list(motions);
-                std::vector<int> childlessNodes;
-                for (std::size_t i = 0; i < motions.size(); ++i) {
-                    if (motions[i]->children.size() == 0)
-                        childlessNodes.push_back(i);
-                }
+//                std::vector<Motion*> motions;
+//                nn_->list(motions);
+//                std::vector<int> childlessNodes;
+//                for (std::size_t i = 0; i < motions.size(); ++i) {
+//                    if (motions[i]->children.size() == 0)
+//                        childlessNodes.push_back(i);
+//                }
 #ifdef DEBUG
                 OMPL_INFORM("childless num %d", childlessNodes.size());
 #endif
 
-                if (childlessNodes.size() > 0) {
-                    int rmNode = rng_.uniformInt(0, childlessNodes.size() - 1);
+                if (childlessNodes_.size() > 0) {
+                    int rmNode = rng_.uniformInt(0, childlessNodes_.size() - 1);
                     // removing information about the child in the parent node
                     // did not have a chance to check this line
-                    while (approximation == motions[childlessNodes[rmNode]])
-                        rmNode = rng_.uniformInt(0, childlessNodes.size() - 1);
+                    while (approximation == motions[childlessNodes_[rmNode]])
+                        rmNode = rng_.uniformInt(0, childlessNodes_.size() - 1);
 
-                    removeFromParent(motions[childlessNodes[rmNode]]);
+                    removeFromParent(motions[childlessNodes_[rmNode]]);
                     // removing
-                    bool rmResult = nn_->remove(motions[childlessNodes[rmNode]]);
+                    bool rmResult = nn_->remove(motions[childlessNodes_[rmNode]]);
                     if (rmResult == false)
                         OMPL_WARN("cannot remove the node");
                     else
