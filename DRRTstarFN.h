@@ -225,13 +225,18 @@ namespace geometric {
     protected:
         /** \brief Representation of a motion */
         class Motion {
+
         public:
+            static int nextID;
+
             /** \brief Constructor that allocates memory for the state. This constructor automatically allocates memory for \e state, \e cost, and \e incCost */
             Motion(const base::SpaceInformationPtr& si)
                 : state(si->allocState())
                 , parent(NULL)
                 , nodeType(NORMAL)
             {
+                id = nextID;
+                ++nextID;
             }
 
             ~Motion()
@@ -255,6 +260,10 @@ namespace geometric {
 
             /** \brief removed */
             NodeType nodeType;
+
+            /** \brief unique id */
+
+            int id;
         };
 
         /** \brief Free the memory allocated by this planner */
