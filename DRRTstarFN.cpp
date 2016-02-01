@@ -949,3 +949,9 @@ void ompl::geometric::DRRTstarFN::swapNN()
     bakNN_ = nn_;
     nn_ = subTreeNN_;
 }
+
+bool ompl::geometric::DRRTstarFN::switchToDynamic()
+{
+;
+}
+

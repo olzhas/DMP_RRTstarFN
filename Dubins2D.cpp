@@ -52,7 +52,7 @@ dd::SkeletonPtr createCar()
 
 dd::SkeletonPtr convexObstacle()
 {
-    dd::SkeletonPtr obs = dart::utils::SkelParser::readSkeleton(SAFESPACE_DATA "obstacles/convex_obstacle.skel");
+    dd::SkeletonPtr obs = dart::utils::SkelParser::readSkeleton(SAFESPACE_DATA "obstacles/r1-circle.skel");
     return obs;
 }
 
@@ -174,7 +174,7 @@ public:
     void updateObstacles()
     {
         const double speed = 0.005;
-        const double angleRad = 120.0 / 180.0 * M_PI;
+        const double angleRad = 5.0 / 180.0 * M_PI;
         Eigen::VectorXd transformation;
 
         transformation = dynamicObstacle_->getJoint(0)->getPositions();
@@ -184,7 +184,7 @@ public:
 
         dynamicObstacle_->getJoint(0)->setPositions(transformation);
 
-        std::cout << transformation[3] << " " << transformation[4] << "\n";
+        std::cout << transformation << "\n" << std::endl;
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
@@ -279,9 +279,42 @@ public:
         space->setup();
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
         ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.1);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.05);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(4000);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
+    }
+
+    bool replan(const Model::Point& initial, const Model::Point& final,
+                double time, bool clearPlanner = true)
+    {
+        try {
+            og::PathGeometric& p = ss_->getSolutionPath();
+
+            int from = 3;
+
+            ompl::base::State* s = ss_->getSpaceInformation()
+                    ->cloneState(p.getState(from));
+            std::vector<ompl::base::State*> pathArray = p.getStates();
+
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray, from);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->proxySelectBranch(s);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.1);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.5);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
+
+            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
+            OMPL_INFORM("removed nodes from the sub tree is %d", removed);
+
+            ss_->getProblemDefinition()->clearSolutionPaths();
+            //ss_->solve(cfg->dynamicPlanningTime);
+            //ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
+            //ss_->getProblemDefinition()->clearSolutionPaths();
+            //ss_->solve(1.0);
+        }
+        catch (ompl::Exception e) {
+            dtwarn << "No solution, man\n";
+        }
     }
 
     bool plan(const Model::Point& initial, const Model::Point& final,
@@ -301,10 +334,6 @@ public:
         if (ss_->getPlanner())
             if (clearPlanner)
                 ss_->getPlanner()->clear();
-
-        if (dynamic_) {
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
-        }
 
         ss_->solve(time);
 
@@ -413,7 +442,9 @@ public:
         }
     }
 
-    void setDynamic() { dynamic_ = true; }
+    void setDynamic() {
+        dynamic_ = true;
+    }
 
     Model& getModel() { return model_; }
 
@@ -443,9 +474,6 @@ class Window2D : public dart::gui::SimWindow {
 int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
-
-    //    Window2D win;
-    //    win.setWorld(problem.getModel().getWorld());
 
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
@@ -484,16 +512,18 @@ int main(int argc, char** argv)
 
     const int DYNAMIC_ITERATIONS = 10;
     for (int i = 0; i < DYNAMIC_ITERATIONS; i++) {
-        if (problem.plan(start, goal, dt, false)) {
+        if (problem.replan(start, goal, dt, false)) {
             problem.recordSolution(i);
             problem.recordTreeState(i);
             std::cout << "done\n";
         }
     }
 
-    //    glutInit(&argc, argv);
-    //    win.initWindow(1280, 800, "2D demo");
-    //    glutMainLoop();
+    Window2D win;
+    win.setWorld(problem.getModel().getWorld());
+    glutInit(&argc, argv);
+    win.initWindow(1280, 800, "2D demo");
+    glutMainLoop();
 
     return 0;
 }

@@ -297,6 +297,8 @@ namespace geometric {
 
         void verifyTree();
 
+        bool switchToDynamic();
+
         // TODO write an explanation
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
 
