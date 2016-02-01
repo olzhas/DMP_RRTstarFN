@@ -1,5 +1,6 @@
 #include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/geometric/SimpleSetup.h>
+#include <ompl/base/PlannerDataStorage.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
 #include "DRRTstarFN.h"
@@ -173,18 +174,22 @@ public:
 
     void updateObstacles()
     {
-        const double speed = 0.005;
+        const double speed = 0.05;
         const double angleRad = 5.0 / 180.0 * M_PI;
         Eigen::VectorXd transformation;
 
+        // another approach, consider it later
+        //dynamicObstacle_->getBodyNode(0)->getTransform();
         transformation = dynamicObstacle_->getJoint(0)->getPositions();
 
         transformation[3] += speed * cos(angleRad);
         transformation[4] += speed * sin(angleRad);
 
+        // another approach, consider it later
+        //dynamicObstacle_->getBodyNode(0)->setTransform();
         dynamicObstacle_->getJoint(0)->setPositions(transformation);
 
-        std::cout << transformation << "\n" << std::endl;
+        //std::cout << transformation << "\n" << std::endl;
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
@@ -260,7 +265,6 @@ public:
     DubinsCarEnvironment()
         : maxWidth_(2.0)
         , maxHeight_(2.0)
-        , dynamic_(false)
     {
         ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false));
 
@@ -284,22 +288,23 @@ public:
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
-    bool replan(const Model::Point& initial, const Model::Point& final,
-                double time, bool clearPlanner = true)
+    std::vector<ompl::base::State*> pathArray_;
+
+    void prepareDynamic()
     {
         try {
             og::PathGeometric& p = ss_->getSolutionPath();
 
-            int from = 3;
+            int from = 2;
 
             ompl::base::State* s = ss_->getSpaceInformation()
-                    ->cloneState(p.getState(from));
-            std::vector<ompl::base::State*> pathArray = p.getStates();
+                                       ->cloneState(p.getState(from));
+            pathArray_ = p.getStates();
 
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray, from);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray_, from);
             ss_->getPlanner()->as<og::DRRTstarFN>()->proxySelectBranch(s);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.1);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.5);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.9);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.9);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
             ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
 
@@ -307,14 +312,32 @@ public:
             OMPL_INFORM("removed nodes from the sub tree is %d", removed);
 
             ss_->getProblemDefinition()->clearSolutionPaths();
-            //ss_->solve(cfg->dynamicPlanningTime);
-            //ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
-            //ss_->getProblemDefinition()->clearSolutionPaths();
-            //ss_->solve(1.0);
         }
         catch (ompl::Exception e) {
             dtwarn << "No solution, man\n";
         }
+    }
+
+    void cleanup()
+    {
+        int from = 2;
+
+        ompl::base::State* s = pathArray_[from];
+        ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
+        ss_->getProblemDefinition()->clearSolutionPaths();
+        ss_->solve(1.0);
+    }
+
+    bool replan(const Model::Point& initial, const Model::Point& final,
+        double time, bool clearPlanner = true)
+    {
+        ss_->solve(time);
+
+        // REGRESSION
+        //ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
+        ss_->getProblemDefinition()->clearSolutionPaths();
+        //FIME reevalute solution path without trying to solve it.
+        ss_->solve(0.10);
     }
 
     bool plan(const Model::Point& initial, const Model::Point& final,
@@ -442,14 +465,47 @@ public:
         }
     }
 
-    void setDynamic() {
-        dynamic_ = true;
-    }
-
     Model& getModel() { return model_; }
 
     // proxy method
     void updateObstacles() { model_.updateObstacles(); }
+
+    //==============================================================================
+    void store(const char* filename)
+    {
+        // Get the planner data to visualize the vertices and the edges
+        ob::PlannerData pdat(ss_->getSpaceInformation());
+        ss_->getPlannerData(pdat);
+
+        ob::PlannerDataStorage pdstorage;
+
+        pdstorage.store(pdat, filename);
+    }
+
+    //==============================================================================
+    void load(const char* filename)
+    {
+        if (ss_->getPlanner()) {
+            ss_->getPlanner()->clear();
+        }
+
+        ss_->setup();
+
+        //FIXME
+        Model::Point initial(default_radius * 1.5, default_radius * 1.5);
+        Model::Point final(1.7, 1.0);
+
+        ob::ScopedState<> start(ss_->getStateSpace());
+        start[0] = initial.x();
+        start[1] = initial.y();
+        ob::ScopedState<> goal(ss_->getStateSpace());
+        goal[0] = final.x();
+        goal[1] = final.y();
+
+        ss_->setStartAndGoalStates(start, goal);
+
+        ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(filename);
+    }
 
 private:
     og::SimpleSetupPtr ss_;
@@ -457,8 +513,6 @@ private:
     const double maxHeight_;
 
     Model model_;
-
-    bool dynamic_;
 };
 
 class Window2D : public dart::gui::SimWindow {
@@ -478,8 +532,8 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 120.0;
-    const double dt = 0.020;
+    const double time = 360.0;
+    const double dt = 10.0;
     const int ITERATIONS = time / dt;
 
 #ifdef PLOTTING
@@ -498,32 +552,43 @@ int main(int argc, char** argv)
 
     system("date");
 
-    if (problem.plan(start, goal, time)) {
-        problem.recordSolution();
-        problem.recordTreeState();
-        std::cout << "done\n";
+    bool plan = false;
+    std::string fileDump = "dubins.dump";
+
+    if (plan) {
+        if (problem.plan(start, goal, time)) {
+            problem.recordSolution();
+            problem.recordTreeState();
+            std::cout << "done\n";
+        }
+        problem.store(fileDump.c_str());
+    }
+    else {
+        problem.load(fileDump.c_str());
     }
 
-    problem.setDynamic();
-
-    for (auto r : std::vector<int>(20)) {
+    for (int i=0; i<4; ++i) {
         problem.updateObstacles();
     }
+    problem.prepareDynamic();
 
-    const int DYNAMIC_ITERATIONS = 10;
+    const int DYNAMIC_ITERATIONS = 1;
+
     for (int i = 0; i < DYNAMIC_ITERATIONS; i++) {
         if (problem.replan(start, goal, dt, false)) {
+
+            //problem.cleanup();
             problem.recordSolution(i);
             problem.recordTreeState(i);
             std::cout << "done\n";
         }
     }
 
-    Window2D win;
-    win.setWorld(problem.getModel().getWorld());
-    glutInit(&argc, argv);
-    win.initWindow(1280, 800, "2D demo");
-    glutMainLoop();
+    //    Window2D win;
+    //    win.setWorld(problem.getModel().getWorld());
+    //    glutInit(&argc, argv);
+    //    win.initWindow(1280, 800, "2D demo");
+    //    glutMainLoop();
 
     return 0;
 }
