@@ -847,17 +847,21 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes(
     std::list<Motion*> orphanNodes;
     std::list<Motion*> invalidNodes;
 
-    std::function<void(Motion * m)> markChild =
-        [&](Motion* m) {
+    std::function<void(Motion * m)> followBranch;
+    followBranch = [&](Motion* m) {
         if(!si_->isValid(m->state)){
             m->nodeType = NodeType::INVALID;
             invalidNodes.push_back(m);
         }
-            else{
-            m->nodeType = NodeType::ORPHANED;
-            orphanNodes.push_back(m);
+        for(auto& child : m->children){
+            if(!si_->checkMotion(m->state, child->state)){
+                child->nodeType = NodeType::ORPHANED;
+                followBranch(child);
+                if(child->nodeType == NodeType::ORPHANED)
+                    orphanNodes.push_back(child);
+            }
         }
-        };
+    };
 
     for (auto& obs : obstacles) {
         Motion* m = new Motion(si_);
@@ -867,17 +871,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes(
         subTreeNN_->nearestR(m, radius, nbh);
 
         for (auto& n : nbh) {
-            if (si_->isValid(n->state)) {
-                for (auto& child : n->children) {
-                    if (!si_->checkMotion(n->state, child->state))
-                        markChild(child);
-                }
-            }
-            else {
-                invalidNodes.push_back(n);
-                for (auto& child : n->children)
-                    markChild(child);
-            }
+            followBranch(n);
         }
     }
 
@@ -930,9 +924,4 @@ void ompl::geometric::DRRTstarFN::swapNN()
 {
     bakNN_ = nn_;
     nn_ = subTreeNN_;
-}
-
-bool ompl::geometric::DRRTstarFN::switchToDynamic()
-{
-    ;
 }
