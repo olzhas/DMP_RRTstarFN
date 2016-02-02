@@ -46,6 +46,7 @@
 #include <list>
 #include <utility>
 #include <future>
+#include <tuple>
 
 namespace ompl {
 
@@ -195,7 +196,8 @@ namespace geometric {
         }
 
         /** \brief Remove the states from the tree */
-        int removeInvalidNodes(ompl::base::State*);
+        int removeInvalidNodes(
+                std::vector<std::tuple<ompl::base::State*, double>> obstacles);
 
         /** \brief remove orphaned nodes from the tree */
 

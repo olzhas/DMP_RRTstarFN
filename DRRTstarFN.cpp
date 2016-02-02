@@ -147,34 +147,7 @@ void ompl::geometric::DRRTstarFN::clear()
     iterations_ = 0;
     bestCost_ = base::Cost(std::numeric_limits<double>::quiet_NaN());
 }
-/*
-int ompl::geometric::DRRTstarFN::removeInvalidNodes()
-{
-    if (nn_->size() == 0) {
-        OMPL_ERROR("%s: There are no valid initial states!", getName().c_str());
-        return base::PlannerStatus::INVALID_START;
-    }
 
-    std::vector<Motion*> motions;
-    nn_->list(motions);
-    int removed = 0;
-    for (std::vector<Motion*>::iterator itMotion = motions.begin();
-         itMotion != motions.end(); ++itMotion) {
-        Motion* m = *itMotion;
-
-        if (m->nodeType == REMOVED) {
-            m->parent->children.erase(std::find(m->parent->children.begin(),
-                m->parent->children.end(),
-                m));
-            if (!nn_->remove(m)) {
-                OMPL_ERROR("Cannot remove the node");
-            };
-            ++removed;
-        }
-    }
-    return removed;
-}
-*/
 ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
     const base::PlannerTerminationCondition& ptc)
 {
@@ -557,10 +530,10 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 break;
             }
             mpath.push_back(solution);
-            solution = solution->parent;
-            if(solution == solution->parent){
+            if (solution == solution->parent) {
                 OMPL_WARN("the solution is in the orphaned branch");
             }
+            solution = solution->parent;
         }
 
         // set the solution path
@@ -868,122 +841,57 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s)
     }
 }
 //==============================================================================
-int ompl::geometric::DRRTstarFN::removeInvalidNodes(ompl::base::State* s)
+int ompl::geometric::DRRTstarFN::removeInvalidNodes(
+    std::vector<std::tuple<ompl::base::State*, double> > obstacles)
 {
-    std::function<Motion*(ompl::base::State*, Motion * initial)> bfs;
+    std::list<Motion*> orphanNodes;
+    std::list<Motion*> invalidNodes;
 
-    bfs = [&](ompl::base::State* state, Motion* initial) -> Motion* {
-        std::queue<Motion*> queue;
+    std::function<void(Motion * m)> markChild =
+        [&](Motion* m) {
+        if(!si_->isValid(m->state)){
+            m->nodeType = NodeType::INVALID;
+            invalidNodes.push_back(m);
+        }
+            else{
+            m->nodeType = NodeType::ORPHANED;
+            orphanNodes.push_back(m);
+        }
+        };
 
-        queue.push(initial);
+    for (auto& obs : obstacles) {
+        Motion* m = new Motion(si_);
+        m->state = std::get<0>(obs);
+        double radius = std::get<1>(obs);
+        std::vector<Motion*> nbh;
+        subTreeNN_->nearestR(m, radius, nbh);
 
-        auto currentMotion = initial;
-        while (queue.size() > 0) {
-            if (currentMotion != nullptr){
-                for (auto& m : currentMotion->children) {
-                    if (si_->equalStates(state, m->state)) {
-                        return m;
-                    }
-                    queue.push(m);
+        for (auto& n : nbh) {
+            if (si_->isValid(n->state)) {
+                for (auto& child : n->children) {
+                    if (!si_->checkMotion(n->state, child->state))
+                        markChild(child);
                 }
             }
-            currentMotion = queue.front();
-            queue.pop();
+            else {
+                invalidNodes.push_back(n);
+                for (auto& child : n->children)
+                    markChild(child);
+            }
         }
-        return nullptr;
-    };
+    }
+
+    for (auto& m : orphanNodes) {
+        if (m->nodeType == NodeType::ORPHANED)
+            removeFromParent(m);
+        m->parent = m;
+    }
 
     int removed = 0;
-    std::vector<Motion*> motions;
-    subTreeNN_->list(motions);
-
-    auto start = std::find_if(motions.begin(), motions.end(),
-        [&](Motion* m) -> bool {return si_->equalStates(m->state, s); });
-    if (start == motions.end())
-        return -1;
-
-    Motion* motion = *start;
-    Motion* nextMotion = nullptr;
-
-    // FIXME hardcoded
-    std::list<Motion*> orphanedRoots;
-    std::list<Motion*> invalidMotions;
-    std::queue<Motion*> vicinityCheck;
-    int from = 2;
-
-    for (int i = from; i < previousPath_.size() - 1; ++i) {
-        ompl::base::State* s1 = previousPath_[i];
-        motion = bfs(s1, motion);
-        ompl::base::State* s2 = previousPath_[i + 1];
-        nextMotion = bfs(s2, motion);
-        if (!si_->checkMotion(motion->state, nextMotion->state)) {
-            vicinityCheck.push(motion);
-            if(!si_->isValid(motion->state)){
-                motion->nodeType = NodeType::INVALID;
-                invalidMotions.push_back(motion);
-                ++removed;
-            }
-            if(!si_->isValid(nextMotion->state)){
-                nextMotion->nodeType = NodeType::INVALID;
-                invalidMotions.push_back(nextMotion);
-                ++removed;
-            } else {
-                nextMotion->nodeType = NodeType::ORPHANED;
-                orphanedRoots.push_back(nextMotion);
-            }
-        }
+    for (auto& m : invalidNodes) {
+        subTreeNN_->remove(m);
+        ++removed;
     }
-
-    while (vicinityCheck.size() > 0) {
-        Motion* m = vicinityCheck.front();
-        for (auto& child : m->children) {
-            if (!si_->checkMotion(child->state, m->state)) {
-                if (!si_->isValid(child->state)) {
-                    child->nodeType = NodeType::INVALID;
-                    vicinityCheck.push(child);
-                }
-                else{
-                    child->nodeType = NodeType::ORPHANED;
-                    orphanedRoots.push_back(child);
-                }
-            }
-        }
-        vicinityCheck.pop();
-    }
-
-    for (auto it = orphanedRoots.begin(); it != orphanedRoots.end(); ++it) {
-        Motion *node = *it;
-//        if (node->nodeType == NodeType::INVALID){
-//            orphanedRoots.erase(it);
-//            OMPL_WARN("invalid infiltrated orphans");
-//        }
-        if (node->nodeType == NodeType::ORPHANED){
-            removeFromParent(nextMotion);
-            nextMotion->parent = nextMotion;
-        }
-    }
-
-
-    //    for (auto& m : motions) {
-    //        for (auto& child : m->children) {
-    //            if (child->parent == nullptr)
-    //                continue;
-    //            if (!si_->checkMotion(m->state, child->state)) {
-    //                child->nodeType = NEW_ORPHANED;
-    //                //removeFromParent(child);
-    //                child->parent = nullptr;
-
-    //                if (!si_->isValid(child->state)) {
-    //                    subTreeNN_->remove(child);
-    //                    ++removed;
-    //                }
-    //            }
-    //        }
-    //        if (!si_->isValid(m->state)) {
-    //            subTreeNN_->remove(m);
-    //            ++removed;
-    //        }
-    //    }
     return removed;
 }
 
@@ -992,16 +900,17 @@ void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s)
     std::vector<Motion*> motions;
     nn_->list(motions);
 
+    std::function<void(Motion * m)> rmBranch;
+    rmBranch = [&](Motion* m) {
+        nn_->remove(m);
+        for (auto child : m->children) {
+            rmBranch(child);
+        }
+    };
+
     for (auto m : motions) {
         if (m->parent == nullptr) {
             if (!si_->equalStates(m->state, s)) {
-                std::function<void(Motion * m)> rmBranch;
-                rmBranch = [&](Motion* m) {
-                    nn_->remove(m);
-                    for (auto child : m->children) {
-                        rmBranch(child);
-                    }
-                };
                 rmBranch(m);
             }
         }

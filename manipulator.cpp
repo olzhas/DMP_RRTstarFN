@@ -234,8 +234,8 @@ bool Manipulator::newReplan()
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
     ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
 
-    int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
-    OMPL_INFORM("removed nodes from the sub tree is %d", removed);
+    //int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
+    //OMPL_INFORM("removed nodes from the sub tree is %d", removed);
 
     ss_->getProblemDefinition()->clearSolutionPaths();
     ss_->solve(cfg->dynamicPlanningTime);

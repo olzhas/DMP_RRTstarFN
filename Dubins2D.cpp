@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <tuple>
 
 #include <ompl/config.h>
 #include "config/config2D.h"
@@ -294,6 +295,8 @@ public:
     {
         dart::common::Timer t1("test");
         try {
+
+            ob::SpaceInformationPtr si = ss_->getSpaceInformation();
             og::PathGeometric& p = ss_->getSolutionPath();
 
             int from = 2;
@@ -309,7 +312,14 @@ public:
             ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
             ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
             t1.start();
-            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
+            ompl::base::State* myState = si->allocState();
+
+            si->getStateSpace()->copyFromReals(myState, std::vector<double>{0.8, 1.01, 0});
+            std::vector<std::tuple<ob::State*, double>> obstacles;
+            obstacles.push_back(std::make_tuple(myState, 0.4));
+
+            //int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
+            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(obstacles);
             t1.stop();
             t1.print();
             OMPL_INFORM("removed nodes from the sub tree is %d", removed);
