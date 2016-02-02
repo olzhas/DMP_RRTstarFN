@@ -45,6 +45,7 @@
 #include <vector>
 #include <list>
 #include <utility>
+#include <future>
 
 namespace ompl {
 
@@ -194,17 +195,14 @@ namespace geometric {
         }
 
         /** \brief Remove the states from the tree */
-        int removeInvalidNodes();
+        int removeInvalidNodes(ompl::base::State*);
 
         /** \brief remove orphaned nodes from the tree */
 
         void removeOrphaned();
 
-        /** \brief */
-        void proxySelectBranch(ompl::base::State* s)
-        {
-            selectBranch(s);
-        }
+        /** \brief selects the branch */
+        void selectBranch(ompl::base::State* s);
 
         void swapNN();
 
@@ -218,9 +216,8 @@ namespace geometric {
 
         enum NodeType : char { NORMAL = 0,
             ORPHANED = 1,
-            NEW_DYNAMIC = 2,
-            REMOVED = 3,
-            NEW_ORPHANED = 4 };
+            INVALID = 2
+                             };
 
     protected:
         /** \brief Representation of a motion */
@@ -230,7 +227,7 @@ namespace geometric {
             Motion(const base::SpaceInformationPtr& si)
                 : state(si->allocState())
                 , parent(NULL)
-                , nodeType(NORMAL)
+                , nodeType(NodeType::NORMAL)
             {
             }
 
@@ -255,6 +252,9 @@ namespace geometric {
 
             /** \brief removed */
             NodeType nodeType;
+
+            /** \brief root node*/
+            Motion* root;
         };
 
         /** \brief Free the memory allocated by this planner */
@@ -292,18 +292,12 @@ namespace geometric {
           Returns the number of motions pruned. Depends on the parameter set by setPruneStatesImprovementThreshold() */
         //int pruneTree(const base::Cost pruneTreeCost);
 
-        /** \brief Deletes (frees memory) the motion and its children motions. */
-        void deleteBranch(Motion* motion);
-
         void verifyTree();
 
         bool switchToDynamic();
 
         // TODO write an explanation
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
-
-        /** \brief selects the branch */
-        void selectBranch(ompl::base::State* s);
 
         /** \brief Computes the Cost To Go heuristically as the cost to come from start to motion plus
           the cost to go from motion to goal. If \e shortest is true, the estimated cost to come

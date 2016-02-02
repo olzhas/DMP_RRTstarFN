@@ -228,13 +228,13 @@ bool Manipulator::newReplan()
     std::vector<ompl::base::State*> pathArray = p.getStates();
 
     ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray, from);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->proxySelectBranch(s);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->selectBranch(s);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(cfg->orphanedSampleRadius.getRadians());
     ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(cfg->orphanedBias);
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
     ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
 
-    int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
+    int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
     OMPL_INFORM("removed nodes from the sub tree is %d", removed);
 
     ss_->getProblemDefinition()->clearSolutionPaths();

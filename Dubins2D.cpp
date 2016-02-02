@@ -292,6 +292,7 @@ public:
 
     void prepareDynamic()
     {
+        dart::common::Timer t1("test");
         try {
             og::PathGeometric& p = ss_->getSolutionPath();
 
@@ -302,13 +303,15 @@ public:
             pathArray_ = p.getStates();
 
             ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray_, from);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->proxySelectBranch(s);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->selectBranch(s);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.9);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.9);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
             ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
-
-            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
+            t1.start();
+            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
+            t1.stop();
+            t1.print();
             OMPL_INFORM("removed nodes from the sub tree is %d", removed);
 
             ss_->getProblemDefinition()->clearSolutionPaths();
@@ -567,7 +570,7 @@ int main(int argc, char** argv)
         problem.load(fileDump.c_str());
     }
 
-    for (int i=0; i<4; ++i) {
+    for (int i = 0; i < 4; ++i) {
         problem.updateObstacles();
     }
     problem.prepareDynamic();
