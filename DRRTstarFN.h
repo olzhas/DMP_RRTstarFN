@@ -347,7 +347,8 @@ namespace geometric {
         /** \brief Stores the Motion containing the last added initial start state. */
         Motion* startMotion_;
 
-        std::vector<ompl::base::State*> previousPath_;
+
+        std::vector<ompl::base::State*> orphanedBiasNodes_;
 
         //////////////////////////////
         // Planner progress properties

@@ -307,8 +307,8 @@ public:
 
             ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray_, from);
             ss_->getPlanner()->as<og::DRRTstarFN>()->selectBranch(s);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.9);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.9);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.4);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.4);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
             ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
             t1.start();
@@ -546,7 +546,7 @@ int main(int argc, char** argv)
     Model::Point goal(1.7, 1.0);
 
     const double time = 360.0;
-    const double dt = 10.0;
+    const double dt = 60.00;
     const int ITERATIONS = time / dt;
 
 #ifdef PLOTTING
@@ -597,11 +597,11 @@ int main(int argc, char** argv)
         }
     }
 
-    //    Window2D win;
-    //    win.setWorld(problem.getModel().getWorld());
-    //    glutInit(&argc, argv);
-    //    win.initWindow(1280, 800, "2D demo");
-    //    glutMainLoop();
+//    Window2D win;
+//    win.setWorld(problem.getModel().getWorld());
+//    glutInit(&argc, argv);
+//    win.initWindow(1280, 800, "2D demo");
+//    glutMainLoop();
 
     return 0;
 }

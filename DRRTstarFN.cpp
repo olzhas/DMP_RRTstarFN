@@ -231,9 +231,9 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
         // tree, to prohibit duplicate goal states.
         if (localPlanning_) {
             if (rng_.uniform01() < orphanedBias_) {
-                size_t whereSample = rng_.uniformInt(0, previousPath_.size() - 1);
+                size_t whereSample = rng_.uniformInt(0, orphanedBiasNodes_.size() - 1);
                 sampler_->sampleUniformNear(rstate,
-                    previousPath_[whereSample],
+                    orphanedBiasNodes_[whereSample],
                     sampleRadius_);
             }
             else {
@@ -258,6 +258,10 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             OMPL_ERROR("tried to connect to an ORPHANED node %d\n", nmotion->nodeType);
             OMPL_ERROR("tried to connect to a REMOVED node %d\n", nmotion->nodeType);
 #endif
+            double my_radius = 0.5;
+            std::vector<Motion*> my_motions;
+            Motion* nmotion = nn_->nearestR(rmotion, my_radius, my_motions);
+            while()
             continue;
         }
 
@@ -526,7 +530,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             std::vector<Motion*>::iterator it;
             it = find(mpath.begin(), mpath.end(), solution);
             if (mpath.end() != it) {
-                OMPL_WARN("sheep");
+                OMPL_WARN("cycle detected, this solution may be invalid");
                 break;
             }
             mpath.push_back(solution);
@@ -876,9 +880,11 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes(
     }
 
     for (auto& m : orphanNodes) {
-        if (m->nodeType == NodeType::ORPHANED)
+        if (m->nodeType == NodeType::ORPHANED){
+            orphanedBiasNodes_.push_back(si_->cloneState(m->state));
             removeFromParent(m);
-        m->parent = m;
+            m->parent = m;
+        }
     }
 
     int removed = 0;
@@ -913,10 +919,10 @@ void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s)
 
 void ompl::geometric::DRRTstarFN::setPreviousPath(std::vector<ompl::base::State*> stateList, int stateIndex)
 {
-    previousPath_.clear();
+    orphanedBiasNodes_.clear();
     for (auto it = stateList.begin() + stateIndex; it < stateList.end(); ++it) {
         ompl::base::State* s = *it;
-        previousPath_.push_back(si_->cloneState(s));
+        orphanedBiasNodes_.push_back(si_->cloneState(s));
     }
 }
 
