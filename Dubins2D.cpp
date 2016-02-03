@@ -301,9 +301,11 @@ public:
 
             int from = 2;
 
-            ompl::base::State* s = ss_->getSpaceInformation()
-                                       ->cloneState(p.getState(from));
-            pathArray_ = p.getStates();
+            ompl::base::State* s = si->cloneState(p.getState(from));
+
+            for (auto& st : p.getStates()){
+                pathArray_.push_back(si->cloneState(st));
+            }
 
             ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray_, from);
             ss_->getPlanner()->as<og::DRRTstarFN>()->selectBranch(s);
@@ -546,7 +548,7 @@ int main(int argc, char** argv)
     Model::Point goal(1.7, 1.0);
 
     const double time = 360.0;
-    const double dt = 60.00;
+    const double dt = 10.700;
     const int ITERATIONS = time / dt;
 
 #ifdef PLOTTING
@@ -590,7 +592,7 @@ int main(int argc, char** argv)
     for (int i = 0; i < DYNAMIC_ITERATIONS; i++) {
         if (problem.replan(start, goal, dt, false)) {
 
-            //problem.cleanup();
+            problem.cleanup();
             problem.recordSolution(i);
             problem.recordTreeState(i);
             std::cout << "done\n";

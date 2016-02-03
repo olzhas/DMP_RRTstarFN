@@ -260,9 +260,10 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 #endif
             double my_radius = 0.5;
             std::vector<Motion*> my_motions;
-            Motion* nmotion = nn_->nearestR(rmotion, my_radius, my_motions);
-            while()
-            continue;
+            nn_->nearestR(rmotion, my_radius, my_motions);
+            int j = 0;
+            while(my_motions[++j]->nodeType == NodeType::ORPHANED);
+            nmotion = my_motions[j];
         }
 
         if (intermediateSolutionCallback && si_->equalStates(nmotion->state, rstate))
@@ -390,7 +391,8 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
             bool checkForSolution = false;
             for (std::size_t i = 0; i < nbh.size(); ++i) {
-                if (nbh[i] != motion->parent) {
+                if (nbh[i] != motion->parent
+                    && nbh[i]->nodeType == NORMAL) {
                     base::Cost nbhIncCost;
                     if (symCost)
                         nbhIncCost = incCosts[i];
@@ -419,6 +421,29 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
                             checkForSolution = true;
                         }
+                    }
+                }
+                if (nbh[i]->nodeType == ORPHANED) {
+                    if (si_->checkMotion(motion->state, nbh[i]->state)) {
+
+                        base::Cost nbhIncCost;
+                        if (symCost)
+                            nbhIncCost = incCosts[i];
+                        else
+                            nbhIncCost = opt_->motionCost(motion->state, nbh[i]->state);
+                        base::Cost nbhNewCost = opt_->combineCosts(motion->cost, nbhIncCost);
+
+                        // Add this node to the new parent
+                        nbh[i]->parent = motion;
+                        nbh[i]->incCost = nbhIncCost;
+                        nbh[i]->cost = nbhNewCost;
+                        nbh[i]->parent->children.push_back(nbh[i]);
+                        nbh[i]->nodeType = NORMAL;
+
+                        // Update the costs of the node's children
+                        updateChildCosts(nbh[i]);
+
+                        checkForSolution = true;
                     }
                 }
             }
@@ -909,7 +934,7 @@ void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s)
     };
 
     for (auto m : motions) {
-        if (m->parent == nullptr) {
+        if (m->parent == m) {
             if (!si_->equalStates(m->state, s)) {
                 rmBranch(m);
             }
