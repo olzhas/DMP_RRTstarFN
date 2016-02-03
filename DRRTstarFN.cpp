@@ -223,6 +223,18 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
     OMPL_INFORM("size of the tree %d", nn_->size());
 
+    // XXX this should be a cheap operation
+    std::function<bool(Motion*)> majorTree =
+        [&](Motion* m) -> bool {
+
+        if (m->parent == nullptr)
+            return true;
+        else if (m->nodeType == ORPHANED)
+            return false;
+        else
+            return majorTree(m->parent);
+        };
+
     while (ptc == false) {
         iterations_++;
 
@@ -262,7 +274,9 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             std::vector<Motion*> my_motions;
             nn_->nearestR(rmotion, my_radius, my_motions);
             int j = 0;
-            while(my_motions[++j]->nodeType == NodeType::ORPHANED);
+            while (my_motions[j]->nodeType == NodeType::ORPHANED
+                || my_motions[j]->nodeType == NodeType::INVALID)
+                ++j;
             nmotion = my_motions[j];
         }
 
@@ -346,6 +360,14 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 // nmotion (with populated cost fields!).
                 for (std::vector<std::size_t>::const_iterator i = sortedCostIndices.begin();
                      i != sortedCostIndices.begin() + nbh.size(); ++i) {
+                    // skip orphaned nodes at this stage
+                    if (nbh[*i]->nodeType == NodeType::ORPHANED
+                        || nbh[*i]->nodeType == NodeType::INVALID)
+                        continue;
+
+                    if (!majorTree(nbh[*i]))
+                        continue;
+
                     if (nbh[*i] == nmotion || si_->checkMotion(nbh[*i]->state, motion->state)) {
                         motion->incCost = incCosts[*i];
                         motion->cost = costs[*i];
@@ -363,6 +385,14 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 motion->cost = opt_->combineCosts(nmotion->cost, motion->incCost);
                 // find which one we connect the new state to
                 for (std::size_t i = 0; i < nbh.size(); ++i) {
+
+                    // skip orphaned nodes at this stage
+                    if (nbh[i]->nodeType == NodeType::ORPHANED
+                        || nbh[i]->nodeType == NodeType::INVALID)
+                        continue;
+                    if (!majorTree(nbh[i]))
+                        continue;
+
                     if (nbh[i] != nmotion) {
                         incCosts[i] = opt_->motionCost(nbh[i]->state, motion->state);
                         costs[i] = opt_->combineCosts(nbh[i]->cost, incCosts[i]);
@@ -424,8 +454,9 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                     }
                 }
                 if (nbh[i]->nodeType == ORPHANED) {
+                    OMPL_INFORM("> about to connect an orphan branch");
                     if (si_->checkMotion(motion->state, nbh[i]->state)) {
-
+                        OMPL_INFORM(">> valid connection might happen");
                         base::Cost nbhIncCost;
                         if (symCost)
                             nbhIncCost = incCosts[i];
@@ -440,10 +471,16 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                         nbh[i]->parent->children.push_back(nbh[i]);
                         nbh[i]->nodeType = NORMAL;
 
+                        orphanedBiasNodes_.erase(std::find_if(orphanedBiasNodes_.begin(),
+                            orphanedBiasNodes_.end(),
+                            [&](ompl::base::State* st) -> bool {
+                            return si_->equalStates(nbh[i]->state, st); }));
+
                         // Update the costs of the node's children
                         updateChildCosts(nbh[i]);
 
                         checkForSolution = true;
+                        OMPL_INFORM(">>> orphan tree connected");
                     }
                 }
             }
@@ -655,8 +692,10 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
         else {
             base::PlannerDataVertex myVertex(motions[i]->state);
             myVertex.setTag(motions[i]->nodeType);
+            /*
             if (motions[i]->parent == motions[i])
                 continue;
+                */
             base::PlannerDataVertex myVertexParent(motions[i]->parent->state);
             myVertexParent.setTag(motions[i]->nodeType);
             data.addEdge(myVertexParent, myVertex);
@@ -853,18 +892,19 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s)
         [&](Motion* m) -> bool {return si_->equalStates(m->state, s); });
 
     if (start != tree.end()) {
-        std::function<void(Motion * m)> markNewOrphaned;
+
+        std::function<void(Motion*)> markNewOrphaned;
         markNewOrphaned = [&](Motion* m) {
             subTreeNN_->add(m);
             //m->nodeType = NEW_ORPHANED;
             for (auto child : m->children) {
-                //std::async(std::launch::async, markNewOrphaned, child);
+                //std::future<void> f = std::async(std::launch::async, markNewOrphaned, child);
                 markNewOrphaned(child);
             }
         };
+
         Motion* m = *start;
         m->parent = nullptr;
-
         markNewOrphaned(m);
         //std::async(std::launch::async, markNewOrphaned, m);
     }
@@ -876,7 +916,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes(
     std::list<Motion*> orphanNodes;
     std::list<Motion*> invalidNodes;
 
-    std::function<void(Motion * m)> followBranch;
+    std::function<void(Motion*)> followBranch;
     followBranch = [&](Motion* m) {
         if(!si_->isValid(m->state)){
             m->nodeType = NodeType::INVALID;
@@ -905,7 +945,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes(
     }
 
     for (auto& m : orphanNodes) {
-        if (m->nodeType == NodeType::ORPHANED){
+        if (m->nodeType == NodeType::ORPHANED) {
             orphanedBiasNodes_.push_back(si_->cloneState(m->state));
             removeFromParent(m);
             m->parent = m;
@@ -925,7 +965,7 @@ void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s)
     std::vector<Motion*> motions;
     nn_->list(motions);
 
-    std::function<void(Motion * m)> rmBranch;
+    std::function<void(Motion*)> rmBranch;
     rmBranch = [&](Motion* m) {
         nn_->remove(m);
         for (auto child : m->children) {
@@ -935,9 +975,9 @@ void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s)
 
     for (auto m : motions) {
         if (m->parent == m) {
-            if (!si_->equalStates(m->state, s)) {
-                rmBranch(m);
-            }
+            //if (!si_->equalStates(m->state, s)) {
+            rmBranch(m);
+            //}
         }
     }
 }

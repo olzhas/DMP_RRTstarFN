@@ -267,7 +267,8 @@ public:
         : maxWidth_(2.0)
         , maxHeight_(2.0)
     {
-        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false));
+        //ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, true));
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false)); // only forward
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -308,18 +309,21 @@ public:
             }
 
             ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray_, from);
+            t1.start();
             ss_->getPlanner()->as<og::DRRTstarFN>()->selectBranch(s);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.4);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.4);
+            t1.stop();
+            t1.print();
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.075);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.1);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
             ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
-            t1.start();
+
             ompl::base::State* myState = si->allocState();
 
             si->getStateSpace()->copyFromReals(myState, std::vector<double>{0.8, 1.01, 0});
             std::vector<std::tuple<ob::State*, double>> obstacles;
             obstacles.push_back(std::make_tuple(myState, 0.4));
-
+            t1.start();
             //int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
             int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(obstacles);
             t1.stop();
@@ -340,7 +344,7 @@ public:
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
         ss_->getProblemDefinition()->clearSolutionPaths();
-        ss_->solve(1.0);
+        ss_->solve(0.010);
     }
 
     bool replan(const Model::Point& initial, const Model::Point& final,
@@ -548,7 +552,7 @@ int main(int argc, char** argv)
     Model::Point goal(1.7, 1.0);
 
     const double time = 360.0;
-    const double dt = 10.700;
+    const double dt = 8000000.700;
     const int ITERATIONS = time / dt;
 
 #ifdef PLOTTING
