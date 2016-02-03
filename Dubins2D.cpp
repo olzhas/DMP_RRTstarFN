@@ -267,8 +267,8 @@ public:
         : maxWidth_(2.0)
         , maxHeight_(2.0)
     {
-        //ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, true));
-        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false)); // only forward
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, true));
+        //ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false)); // only forward
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -287,7 +287,7 @@ public:
         ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.05);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(4000);
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0015);
     }
 
     std::vector<ompl::base::State*> pathArray_;
@@ -313,8 +313,9 @@ public:
             ss_->getPlanner()->as<og::DRRTstarFN>()->selectBranch(s);
             t1.stop();
             t1.print();
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.075);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.1);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.15);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.35);
+            ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.003);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
             ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
 
@@ -343,8 +344,8 @@ public:
 
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
-        ss_->getProblemDefinition()->clearSolutionPaths();
-        ss_->solve(0.010);
+        //ss_->getProblemDefinition()->clearSolutionPaths();
+        //ss_->solve(0.010);
     }
 
     bool replan(const Model::Point& initial, const Model::Point& final,
@@ -356,8 +357,11 @@ public:
         //ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
         ss_->getProblemDefinition()->clearSolutionPaths();
         //FIME reevalute solution path without trying to solve it.
-        ss_->solve(0.10);
+        //ss_->solve(0.10);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
+        return true;
     }
+
 
     bool plan(const Model::Point& initial, const Model::Point& final,
         double time, bool clearPlanner = true)
@@ -552,7 +556,7 @@ int main(int argc, char** argv)
     Model::Point goal(1.7, 1.0);
 
     const double time = 360.0;
-    const double dt = 8000000.700;
+    const double dt = 28.700;
     const int ITERATIONS = time / dt;
 
 #ifdef PLOTTING
@@ -592,7 +596,7 @@ int main(int argc, char** argv)
     problem.prepareDynamic();
 
     const int DYNAMIC_ITERATIONS = 1;
-
+    std::cout << std::endl;
     for (int i = 0; i < DYNAMIC_ITERATIONS; i++) {
         if (problem.replan(start, goal, dt, false)) {
 
