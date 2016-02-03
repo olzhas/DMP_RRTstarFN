@@ -1,5 +1,6 @@
 #include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/geometric/SimpleSetup.h>
+#include <ompl/base/PlannerDataStorage.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
 #include "DRRTstarFN.h"
@@ -11,6 +12,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <tuple>
 
 #include <ompl/config.h>
 #include "config/config2D.h"
@@ -52,7 +54,7 @@ dd::SkeletonPtr createCar()
 
 dd::SkeletonPtr convexObstacle()
 {
-    dd::SkeletonPtr obs = dart::utils::SkelParser::readSkeleton(SAFESPACE_DATA "obstacles/convex_obstacle.skel");
+    dd::SkeletonPtr obs = dart::utils::SkelParser::readSkeleton(SAFESPACE_DATA "obstacles/r1-circle.skel");
     return obs;
 }
 
@@ -171,6 +173,26 @@ public:
         return !world_->checkCollision();
     }
 
+    void updateObstacles()
+    {
+        const double speed = 0.05;
+        const double angleRad = 5.0 / 180.0 * M_PI;
+        Eigen::VectorXd transformation;
+
+        // another approach, consider it later
+        //dynamicObstacle_->getBodyNode(0)->getTransform();
+        transformation = dynamicObstacle_->getJoint(0)->getPositions();
+
+        transformation[3] += speed * cos(angleRad);
+        transformation[4] += speed * sin(angleRad);
+
+        // another approach, consider it later
+        //dynamicObstacle_->getBodyNode(0)->setTransform();
+        dynamicObstacle_->getJoint(0)->setPositions(transformation);
+
+        //std::cout << transformation << "\n" << std::endl;
+    }
+
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
 
 private:
@@ -222,8 +244,8 @@ private:
 
             world_->addSkeleton(box);
         }
-
-        world_->addSkeleton(convexObstacle());
+        dynamicObstacle_ = convexObstacle();
+        world_->addSkeleton(dynamicObstacle_);
 
         car_ = createCar();
         world_->addSkeleton(car_);
@@ -231,6 +253,8 @@ private:
 
     dart::simulation::WorldPtr world_;
     dd::SkeletonPtr car_;
+
+    dd::SkeletonPtr dynamicObstacle_;
 
     ob::SpaceInformationPtr si_;
 
@@ -243,7 +267,8 @@ public:
         : maxWidth_(2.0)
         , maxHeight_(2.0)
     {
-        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false));
+        //ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, true));
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false)); // only forward
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -260,8 +285,78 @@ public:
         space->setup();
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
         ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.1);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.05);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(4000);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
+    }
+
+    std::vector<ompl::base::State*> pathArray_;
+
+    void prepareDynamic()
+    {
+        dart::common::Timer t1("test");
+        try {
+
+            ob::SpaceInformationPtr si = ss_->getSpaceInformation();
+            og::PathGeometric& p = ss_->getSolutionPath();
+
+            int from = 2;
+
+            ompl::base::State* s = si->cloneState(p.getState(from));
+
+            for (auto& st : p.getStates()){
+                pathArray_.push_back(si->cloneState(st));
+            }
+
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray_, from);
+            t1.start();
+            ss_->getPlanner()->as<og::DRRTstarFN>()->selectBranch(s);
+            t1.stop();
+            t1.print();
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.075);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.1);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
+
+            ompl::base::State* myState = si->allocState();
+
+            si->getStateSpace()->copyFromReals(myState, std::vector<double>{0.8, 1.01, 0});
+            std::vector<std::tuple<ob::State*, double>> obstacles;
+            obstacles.push_back(std::make_tuple(myState, 0.4));
+            t1.start();
+            //int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
+            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(obstacles);
+            t1.stop();
+            t1.print();
+            OMPL_INFORM("removed nodes from the sub tree is %d", removed);
+
+            ss_->getProblemDefinition()->clearSolutionPaths();
+        }
+        catch (ompl::Exception e) {
+            dtwarn << "No solution, man\n";
+        }
+    }
+
+    void cleanup()
+    {
+        int from = 2;
+
+        ompl::base::State* s = pathArray_[from];
+        ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
+        ss_->getProblemDefinition()->clearSolutionPaths();
+        ss_->solve(0.010);
+    }
+
+    bool replan(const Model::Point& initial, const Model::Point& final,
+        double time, bool clearPlanner = true)
+    {
+        ss_->solve(time);
+
+        // REGRESSION
+        //ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
+        ss_->getProblemDefinition()->clearSolutionPaths();
+        //FIME reevalute solution path without trying to solve it.
+        ss_->solve(0.10);
     }
 
     bool plan(const Model::Point& initial, const Model::Point& final,
@@ -315,6 +410,18 @@ public:
         p.printAsMatrix(fout);
     }
 
+    //==============================================================================
+    void printEdge(std::ostream& os, const ob::StateSpacePtr& space,
+        const ob::PlannerDataVertex& vertex)
+    {
+        std::vector<double> reals;
+        if (vertex != ob::PlannerData::NO_VERTEX) {
+            space->copyToReals(reals, vertex.getState());
+            for (size_t j(0); j < reals.size(); ++j)
+                os << " " << reals[j];
+        }
+    }
+
     void recordTreeState()
     {
         recordTreeState(-1);
@@ -338,7 +445,7 @@ public:
 
         std::ofstream ofs_v(fileName);
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
-            //printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
+            printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
             ofs_v << std::endl;
         }
 
@@ -379,6 +486,46 @@ public:
 
     Model& getModel() { return model_; }
 
+    // proxy method
+    void updateObstacles() { model_.updateObstacles(); }
+
+    //==============================================================================
+    void store(const char* filename)
+    {
+        // Get the planner data to visualize the vertices and the edges
+        ob::PlannerData pdat(ss_->getSpaceInformation());
+        ss_->getPlannerData(pdat);
+
+        ob::PlannerDataStorage pdstorage;
+
+        pdstorage.store(pdat, filename);
+    }
+
+    //==============================================================================
+    void load(const char* filename)
+    {
+        if (ss_->getPlanner()) {
+            ss_->getPlanner()->clear();
+        }
+
+        ss_->setup();
+
+        //FIXME
+        Model::Point initial(default_radius * 1.5, default_radius * 1.5);
+        Model::Point final(1.7, 1.0);
+
+        ob::ScopedState<> start(ss_->getStateSpace());
+        start[0] = initial.x();
+        start[1] = initial.y();
+        ob::ScopedState<> goal(ss_->getStateSpace());
+        goal[0] = final.x();
+        goal[1] = final.y();
+
+        ss_->setStartAndGoalStates(start, goal);
+
+        ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(filename);
+    }
+
 private:
     og::SimpleSetupPtr ss_;
     const double maxWidth_;
@@ -388,24 +535,27 @@ private:
 };
 
 class Window2D : public dart::gui::SimWindow {
-    ;
+    void drawSkels()
+    {
+        glEnable(GL_LIGHTING);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //glMatrixMode(GL_PROJECTION);
+        dart::gui::SimWindow::drawSkels();
+    }
 };
 
 int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
 
-//    Window2D win;
-//    win.setWorld(problem.getModel().getWorld());
-
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 120.0;
-    const double dt = 0.50;
+    const double time = 360.0;
+    const double dt = 8000000.700;
     const int ITERATIONS = time / dt;
 
-
+#ifdef PLOTTING
     for (int i = 0; i < ITERATIONS; i++) {
         bool clearPlanner = (i == 0);
         if (problem.plan(start, goal, dt, clearPlanner)) {
@@ -414,7 +564,47 @@ int main(int argc, char** argv)
             std::cout << "done\n";
         }
     }
+#endif
 
+    std::cout << time << "\n"
+              << dt << std::endl;
+
+    system("date");
+
+    bool plan = false;
+    std::string fileDump = "dubins.dump";
+
+    if (plan) {
+        if (problem.plan(start, goal, time)) {
+            problem.recordSolution();
+            problem.recordTreeState();
+            std::cout << "done\n";
+        }
+        problem.store(fileDump.c_str());
+    }
+    else {
+        problem.load(fileDump.c_str());
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        problem.updateObstacles();
+    }
+    problem.prepareDynamic();
+
+    const int DYNAMIC_ITERATIONS = 1;
+
+    for (int i = 0; i < DYNAMIC_ITERATIONS; i++) {
+        if (problem.replan(start, goal, dt, false)) {
+
+            problem.cleanup();
+            problem.recordSolution(i);
+            problem.recordTreeState(i);
+            std::cout << "done\n";
+        }
+    }
+
+//    Window2D win;
+//    win.setWorld(problem.getModel().getWorld());
 //    glutInit(&argc, argv);
 //    win.initWindow(1280, 800, "2D demo");
 //    glutMainLoop();
