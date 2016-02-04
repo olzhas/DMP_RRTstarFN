@@ -241,7 +241,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
         // Goal samples are only sampled until maxSampleCount() goals are in the
         // tree, to prohibit duplicate goal states.
         if (localPlanning_) {
-            if (rng_.uniform01() < orphanedBias_) {
+            if (rng_.uniform01() < orphanedBias_ && orphanedBiasNodes_.size() > 0) {
                 size_t whereSample = rng_.uniformInt(0, orphanedBiasNodes_.size() - 1);
                 sampler_->sampleUniformNear(rstate,
                     orphanedBiasNodes_[whereSample],

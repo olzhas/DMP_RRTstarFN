@@ -267,8 +267,8 @@ public:
         : maxWidth_(2.0)
         , maxHeight_(2.0)
     {
-        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, true));
-        //ob::StateSpacePtr space(new ob::DubinsStateSpace(0.1, false)); // only forward
+        //ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, false)); // only forward
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -287,7 +287,7 @@ public:
         ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.05);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(4000);
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0015);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
     std::vector<ompl::base::State*> pathArray_;
@@ -314,8 +314,8 @@ public:
             t1.stop();
             t1.print();
             ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(0.15);
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.35);
-            ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.003);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(0.1);
+            ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
             ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
             ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
 
@@ -556,7 +556,7 @@ int main(int argc, char** argv)
     Model::Point goal(1.7, 1.0);
 
     const double time = 360.0;
-    const double dt = 28.700;
+    const double dt = 30.700;
     const int ITERATIONS = time / dt;
 
 #ifdef PLOTTING
