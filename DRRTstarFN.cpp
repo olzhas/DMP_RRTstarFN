@@ -265,7 +265,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
         Motion* nmotion = nn_->nearest(rmotion);
 
         if (nmotion->nodeType == ORPHANED || nmotion->nodeType == INVALID
-                || !majorTree(nmotion)) {
+            || !majorTree(nmotion)) {
 #ifdef DEBUG
             OMPL_ERROR("tried to connect to an ORPHANED node %d\n", nmotion->nodeType);
             OMPL_ERROR("tried to connect to a REMOVED node %d\n", nmotion->nodeType);
@@ -274,13 +274,13 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             std::vector<Motion*> my_motions;
             nn_->nearestR(rmotion, my_radius, my_motions);
             int j = 0;
-            for(;j<my_motions.size(); ++j){
+            for (; j < my_motions.size(); ++j) {
                 if (my_motions[j]->nodeType != NodeType::ORPHANED
-                        && my_motions[j]->nodeType != NodeType::INVALID
-                        && majorTree(my_motions[j]))
+                    && my_motions[j]->nodeType != NodeType::INVALID
+                    && majorTree(my_motions[j]))
                     break;
             }
-            if(j >= my_motions.size())
+            if (j >= my_motions.size())
                 continue; // skip if every neighbor is invalid
             nmotion = my_motions[j];
         }
@@ -312,11 +312,11 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             motion->incCost = opt_->motionCost(nmotion->state, motion->state);
             motion->cost = opt_->combineCosts(nmotion->cost, motion->incCost);
 
-//            //
-//            if(!majorTree(motion))
-//            {
-//                OMPL_INFORM("$$ holy shit");
-//            }
+            //            //
+            //            if(!majorTree(motion))
+            //            {
+            //                OMPL_INFORM("$$ holy shit");
+            //            }
 
             // Find nearby neighbors of the new motion - k-nearest RRT*
             unsigned int k = std::ceil(k_rrg * log((double)(nn_->size() + 1)));
@@ -476,7 +476,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                         base::Cost nbhNewCost = opt_->combineCosts(motion->cost, nbhIncCost);
 
                         // Add this node to the new parent
-                        if(nbh[i]->nodeType != ORPHANED){
+                        if (nbh[i]->nodeType != ORPHANED) {
                             removeFromParent(nbh[i]);
                         }
                         nbh[i]->parent = motion;
@@ -669,15 +669,15 @@ void ompl::geometric::DRRTstarFN::evaluateSolutionPath()
 
     std::vector<Motion*> motions;
     nn_->list(motions);
-    if (goalMotions_.size() > 1){
+    if (goalMotions_.size() > 1) {
         OMPL_WARN("I did not think that it would be possible");
     }
     Motion* m = goalMotions_.back();
 
     std::vector<Motion*> solutions;
     nn_->nearestR(m, 0.5, solutions);
-    int j =0;
-    for(;j<solutions.size(); ++j)
+    int j = 0;
+    for (; j < solutions.size(); ++j)
         if (majorTree(solutions[j]))
             break;
 
@@ -1062,7 +1062,6 @@ void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s)
         else
             return majorTree(m->parent);
     };
-
 
     for (auto m : motions) {
         if (!majorTree(m)) {
