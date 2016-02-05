@@ -199,6 +199,8 @@ namespace geometric {
         int removeInvalidNodes(
                 std::vector<std::tuple<ompl::base::State*, double>> obstacles);
 
+        int removeInvalidNodes();
+
         void evaluateSolutionPath();
 
         /** \brief remove orphaned nodes from the tree */

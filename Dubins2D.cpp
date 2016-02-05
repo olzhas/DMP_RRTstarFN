@@ -304,7 +304,10 @@ public:
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
-            for (auto& st : p.getStates()){
+            //OMPL_WARN("%d", p.getStates().size());
+            p.interpolate();
+            for (int i = from; i < p.getStates().size(); ++i) {
+                ompl::base::State* st = p.getState(i);
                 pathArray_.push_back(si->cloneState(st));
             }
 
@@ -319,14 +322,14 @@ public:
             ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
             ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
 
-            ompl::base::State* myState = si->allocState();
-
-            si->getStateSpace()->copyFromReals(myState, std::vector<double>{0.8, 1.01, 0});
-            std::vector<std::tuple<ob::State*, double>> obstacles;
-            obstacles.push_back(std::make_tuple(myState, 0.4));
+//            ompl::base::State* myState = si->allocState();
+//            si->getStateSpace()->copyFromReals(myState, std::vector<double>{0.8, 1.01, 0});
+//            std::vector<std::tuple<ob::State*, double>> obstacles;
+//            obstacles.push_back(std::make_tuple(myState, 0.4));
             t1.start();
-            //int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
-            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(obstacles);
+//            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(obstacles);
+            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
+
             t1.stop();
             t1.print();
             OMPL_INFORM("removed nodes from the sub tree is %d", removed);
@@ -356,8 +359,7 @@ public:
         // REGRESSION
         //ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
         ss_->getProblemDefinition()->clearSolutionPaths();
-        //FIME reevalute solution path without trying to solve it.
-        //ss_->solve(0.10);
+        //FIXME reevalute solution path without trying to solve it.
         ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
         return true;
     }
@@ -556,7 +558,8 @@ int main(int argc, char** argv)
     Model::Point goal(1.7, 1.0);
 
     const double time = 360.0;
-    const double dt = 30.700;
+    //const double dt = 30.700;
+    const double dt = 1;
     const int ITERATIONS = time / dt;
 
 #ifdef PLOTTING
@@ -600,7 +603,7 @@ int main(int argc, char** argv)
     for (int i = 0; i < DYNAMIC_ITERATIONS; i++) {
         if (problem.replan(start, goal, dt, false)) {
 
-            problem.cleanup();
+            //problem.cleanup();
             problem.recordSolution(i);
             problem.recordTreeState(i);
             std::cout << "done\n";
