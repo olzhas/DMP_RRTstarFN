@@ -670,7 +670,7 @@ void ompl::geometric::DRRTstarFN::evaluateSolutionPath()
     std::vector<Motion*> motions;
     nn_->list(motions);
     if (goalMotions_.size() > 1) {
-        OMPL_WARN("I did not think that it would be possible");
+        OMPL_WARN("I did not think that it would be possible, goal motions count: %d", goalMotions_.size());
     }
     Motion* m = goalMotions_.back();
 
