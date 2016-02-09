@@ -19,7 +19,7 @@ bool ManipulatorMotionValidator::checkMotion(const ob::State* s1, const ob::Stat
         return false;
     }
 
-    ob::State* s3;
+    ob::State* s3 = si_->allocState();
     double d = si_->distance(s1, s2);
     double interpStep = cfg_->rangeRad / d;//* 0.5;
     // fixme hardcoded

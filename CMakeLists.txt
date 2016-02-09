@@ -15,7 +15,7 @@ find_package(Boost ${MIN_BOOST_VERSTION} REQUIRED system regex thread chrono ser
 find_package(OMPL)
 find_library(FLANN_LIBRARIES flann)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native -mtune=native -O3 -g3 -Wall")
 
 include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${BULLET_INCLUDE_DIR})
