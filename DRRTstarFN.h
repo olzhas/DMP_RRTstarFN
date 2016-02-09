@@ -37,9 +37,10 @@
 #ifndef OMPL_GEOMETRIC_PLANNERS_RRT_DRRTSTARFN_
 #define OMPL_GEOMETRIC_PLANNERS_RRT_DRRTSTARFN_
 
-#include "ompl/geometric/planners/PlannerIncludes.h"
-#include "ompl/base/OptimizationObjective.h"
-#include "ompl/datastructures/NearestNeighbors.h"
+#include <ompl/geometric/planners/PlannerIncludes.h>
+#include <ompl/base/OptimizationObjective.h>
+#include <ompl/datastructures/NearestNeighbors.h>
+#include <ompl/base/goals/GoalState.h>
 
 #include <limits>
 #include <vector>
@@ -198,6 +199,8 @@ namespace geometric {
         /** \brief Remove the states from the tree */
         int removeInvalidNodes(
                 std::vector<std::tuple<ompl::base::State*, double>> obstacles);
+
+        int removeInvalidNodes();
 
         void evaluateSolutionPath();
 

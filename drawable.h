@@ -96,10 +96,6 @@ protected:
 };
 //==============================================================================
 class DrawableLiveTime : public Drawable {
-    double liveTime_;
-    double stepSize_;
-    double sizeLimit_;
-
 public:
     DrawableLiveTime()
         : stepSize_(0.001)
@@ -118,6 +114,13 @@ public:
     }
 
     void setLiveTime(double l) { liveTime_ = l; }
+
+private:
+    double liveTime_;
+    double stepSize_;
+    double sizeLimit_;
+
+
 };
 //==============================================================================
 class DrawableEdge : public Drawable {
@@ -150,10 +153,9 @@ public:
 class DrawableCollection {
 private:
     std::vector<Drawable*> data_;
+    Drawable::DrawableVisibility visible_;
     std::string caption_;
     uint32_t id_;
-
-    Drawable::DrawableVisibility visible_;
 
     std::mutex dcMutex_;
 
@@ -185,6 +187,7 @@ public:
     {
         if (n < data_.size())
             return data_[n];
+        return nullptr;
     }
 
     /* setters */

@@ -176,7 +176,7 @@ private:
         map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.90));
         map[9] = new Line(Point(0.20, 1.60), Point(0.70, 1.60));
 
-        for (int i = 0; i < map.size(); ++i) {
+        for (size_t i = 0; i < map.size(); ++i) {
             auto& l = map[i];
 
             dd::BodyNode::Properties body;

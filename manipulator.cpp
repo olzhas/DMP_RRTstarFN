@@ -234,14 +234,19 @@ bool Manipulator::newReplan()
     ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
     ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
 
-    //int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(s);
-    //OMPL_INFORM("removed nodes from the sub tree is %d", removed);
+    dart::common::Timer t1("removal");
+    t1.start();
+    int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
+    t1.stop();
+    t1.print();
+    OMPL_INFORM("removed nodes from the sub tree is %d", removed);
 
     ss_->getProblemDefinition()->clearSolutionPaths();
     ss_->solve(cfg->dynamicPlanningTime);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
+
     ss_->getProblemDefinition()->clearSolutionPaths();
-    ss_->solve(1.0);
+    ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
+
     OMPL_INFORM("Dynamic planning completed");
     cfg->dynamicReplanning = true;
 
