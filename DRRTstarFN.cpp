@@ -758,6 +758,20 @@ void ompl::geometric::DRRTstarFN::freeMemory()
 void ompl::geometric::DRRTstarFN::getPlannerData(
     base::PlannerData& data) const
 {
+    std::function<bool(Motion*)> isMajorTree;
+    isMajorTree = [&](Motion* m) -> bool {
+
+    if(m == nullptr)
+        return true;
+
+    if (m->parent == nullptr)
+      return true;
+    else if (m->nodeType == ORPHANED)
+      return false;
+    else
+      return isMajorTree(m->parent);
+    };
+
     Planner::getPlannerData(data);
 
     std::vector<Motion*> motions;
@@ -768,18 +782,24 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
         data.addGoalVertex(base::PlannerDataVertex(lastGoalMotion_->state));
 
     for (std::size_t i = 0; i < motions.size(); ++i) {
-        if (motions[i]->parent == nullptr)
-            data.addStartVertex(base::PlannerDataVertex(motions[i]->state));
+        if (motions[i]->parent == nullptr){
+            base::PlannerDataVertex rootVertex(motions[i]->state);
+            // major tree by default
+            rootVertex.setTag(true);
+            data.addStartVertex(rootVertex);
+        }
         else {
             base::PlannerDataVertex myVertex(motions[i]->state);
-            myVertex.setTag(motions[i]->nodeType);
-            /*
-if (motions[i]->parent == motions[i])
-    continue;
-    */
-            base::PlannerDataVertex myVertexParent(motions[i]->parent->state);
-            myVertexParent.setTag(motions[i]->nodeType);
-            data.addEdge(myVertexParent, myVertex);
+
+            myVertex.setTag(isMajorTree(motions[i]));
+
+            if(motions[i]->parent != nullptr){
+                base::PlannerDataVertex myVertexParent(motions[i]->parent->state);
+
+                myVertexParent.setTag(isMajorTree(motions[i]->parent));
+
+                data.addEdge(myVertexParent, myVertex);
+            }
         }
     }
 }
@@ -1048,6 +1068,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
 {
     const static int LIMIT_PATH = 250;
     int removed = 0;
+    int error_removed = 0;
 
     if (goalMotions_.size() == 0) {
         OMPL_WARN("No goal state is not in the tree");
@@ -1074,7 +1095,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
           if(nn_->remove(m))
             removed++;
           else {
-            OMPL_WARN("failed to remove a node from the nn_");
+              error_removed++;
           }
     };
 
@@ -1133,6 +1154,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
             }
         }
     }
+    OMPL_WARN("failed to remove a node from the nn_ %d points", error_removed);
     return removed;
 }
 //==============================================================================
