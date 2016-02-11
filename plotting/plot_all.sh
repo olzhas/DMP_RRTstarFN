@@ -50,6 +50,7 @@ do
 	gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameOutput='$fout'; circle=2; dynamic=1" tree.gnu
 done
 
-
-mkdir dynamic_reconnect
-cd dynamic_reconnect
+if [ ! -d "dynamic_reconnect" ]; then
+	echo "does not exist"
+	mkdir "dynamic_reconnect"
+fi

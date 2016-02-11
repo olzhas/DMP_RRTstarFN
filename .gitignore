@@ -1,6 +1,6 @@
 data/
 build/
-plotting/
+plotting/*/
 CMakeFiles
 CMakeLists.txt.*
 *.bak

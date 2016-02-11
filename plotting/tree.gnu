@@ -1,7 +1,9 @@
+file_exists(file) = system("[ -f '".file."' ] && echo '1' || echo '0'") + 0
+
 if (!exists("filenameEdges")) filenameEdges='dubins-edges.dat'
 if (!exists("filenameVertices")) filenameVertices='dubins-vertices.dat'
 if (!exists("filenameResults")) filenameResults='dubins-results-interp.txt'
-if (!exists("filenameResultsMilestones")) filenameResults='dubins-results.txt'
+if (!exists("filenameResultsMilestones")) filenameResultsMilestones='dubins-results.txt'
 if (!exists("filenameOutput")) filenameOutput='output.eps'
 
 set term pngcairo size 1440, 1440
@@ -51,6 +53,8 @@ if (exists("obstacle")) {
 	plot filenameResults using 1:2 notitle linestyle 1 pointtype 1	
 }
 
-plot filenameResuts using 1:2 notitle linestyle 1 pointtype 1
+if (file_exists(filenameResultsMilestones)) {
+	plot filenameResultsMilestones using 1:2 notitle linestyle 1 pointtype 1
+}
 
 plot 'obstacles.dat' using 1:2:($3-$1):($4-$2):($5) notitle with vectors nohead lw 10 linecolor rgbcolor variable
