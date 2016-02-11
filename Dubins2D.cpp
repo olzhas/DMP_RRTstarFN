@@ -200,18 +200,30 @@ private:
         world_ = std::make_shared<ds::World>();
         world_->setGravity(Eigen::Vector3d(0.0, 0.0, 0.0));
         std::vector<Line*> map;
-        // map.reserve(9);
-        map.resize(10);
-        map[0] = new Line(Point(0.00, 0.50), Point(0.40, 0.50));
-        map[1] = new Line(Point(0.50, 0.00), Point(0.50, 0.30));
-        map[2] = new Line(Point(1.40, 0.00), Point(1.40, 0.50));
-        map[3] = new Line(Point(1.70, 0.40), Point(1.70, 0.70));
-        map[4] = new Line(Point(1.10, 0.80), Point(2.00, 0.80));
-        map[5] = new Line(Point(1.09, 0.80), Point(1.09, 1.30));
-        map[6] = new Line(Point(1.30, 1.10), Point(1.80, 1.10));
-        map[7] = new Line(Point(1.30, 1.70), Point(1.60, 1.70));
-        map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.90));
-        map[9] = new Line(Point(0.20, 1.60), Point(0.70, 1.60));
+
+        enum class Scenario : char {DEFAULT, DETOUR };
+        Scenario scenario = Scenario::DEFAULT;
+        switch (scenario) {
+        case Scenario::DETOUR:
+
+            break;
+
+        default:
+            // map.reserve(9);
+            map.resize(10);
+            map[0] = new Line(Point(0.00, 0.50), Point(0.40, 0.50));
+            map[1] = new Line(Point(0.50, 0.00), Point(0.50, 0.30));
+            map[2] = new Line(Point(1.40, 0.00), Point(1.40, 0.50));
+            map[3] = new Line(Point(1.70, 0.40), Point(1.70, 0.70));
+            map[4] = new Line(Point(1.10, 0.80), Point(2.00, 0.80));
+            map[5] = new Line(Point(1.09, 0.80), Point(1.09, 1.30));
+            map[6] = new Line(Point(1.30, 1.10), Point(1.80, 1.10));
+            map[7] = new Line(Point(1.30, 1.70), Point(1.60, 1.70));
+            map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.90));
+            map[9] = new Line(Point(0.20, 1.60), Point(0.70, 1.60));
+            break;
+
+        }
 
         for (size_t i = 0; i < map.size(); ++i) {
             auto& l = map[i];
@@ -357,6 +369,44 @@ public:
         // ss_->solve(0.010);
     }
 
+    void prepare_step1()
+    {
+        dart::common::Timer t1("test");
+        try {
+
+            ob::SpaceInformationPtr si = ss_->getSpaceInformation();
+            og::PathGeometric& p = ss_->getSolutionPath();
+            og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
+
+            int from = 2;
+
+            ompl::base::State* s = si->cloneState(p.getState(from));
+
+            // OMPL_WARN("%d", p.getStates().size());
+            p.interpolate();
+            for (size_t i = from; i < p.getStates().size(); ++i) {
+                ompl::base::State* st = p.getState(i);
+                pathArray_.push_back(si->cloneState(st));
+            }
+
+            localPlanner->setPreviousPath(pathArray_, from);
+            t1.start();
+            localPlanner->selectBranch(s);
+            t1.stop();
+            t1.print();
+            localPlanner->setSampleRadius(0.15);
+            localPlanner->setOrphanedBias(0.1);
+            si->setStateValidityCheckingResolution(0.005);
+            localPlanner->setLocalPlanning(true);
+            localPlanner->swapNN();
+
+            ss_->getProblemDefinition()->clearSolutionPaths();
+        }
+        catch (ompl::Exception e) {
+            dtwarn << "No solution, man\n";
+        }
+    }
+
     bool replan(const Model::Point& initial, const Model::Point& final,
         double time, bool clearPlanner = true)
     {
@@ -436,6 +486,7 @@ public:
             space->copyToReals(reals, vertex.getState());
             for (size_t j(0); j < reals.size(); ++j)
                 os << " " << reals[j];
+            os << " " << vertex.getTag() ;
         }
     }
 
@@ -475,10 +526,12 @@ public:
         std::vector<unsigned int> edge_list;
         std::vector<double> reals;
         std::vector<double> realsOld;
+        bool isMajorTree = false;
         ob::State* s3 = space->allocState();
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             unsigned int n_edge = pdat.getEdges(i, edge_list);
             const ob::State* s1 = pdat.getVertex(i).getState();
+            isMajorTree = pdat.getVertex(i).getTag();
             for (unsigned int i2(0); i2 < n_edge; ++i2) {
                 const ob::State* s2 = pdat.getVertex(edge_list[i2]).getState();
                 const double step = 0.1;
@@ -492,7 +545,8 @@ public:
                     realsOld = reals;
                     for (const auto& r : reals)
                         ofs_e << r << " ";
-                    ofs_e << std::endl;
+                    //
+                    ofs_e << "0x" << std::hex << (isMajorTree ? 0x4488AA : 0xDD6060) << std::endl;
                 }
             }
         }
@@ -612,25 +666,26 @@ int main(int argc, char** argv)
     for (int i = 0; i < 4; ++i) {
         problem.updateObstacles();
     }
-    problem.prepareDynamic();
+    //problem.prepareDynamic();
+    problem.prepare_step1();
 
     //==============================================================================
-    problem.recordSolution(ITERATIONS);
-    problem.recordTreeState(ITERATIONS);
+    problem.recordSolution(800);
+    problem.recordTreeState(800);
     std::cout << "invalid branch removal: done\n";
     //==============================================================================
 
-    const int DYNAMIC_ITERATIONS = 1;
-    std::cout << std::endl;
-    for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
-        if (problem.replan(start, goal, dt * 4, false)) {
+//    const int DYNAMIC_ITERATIONS = 1;
+//    std::cout << std::endl;
+//    for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
+//        if (problem.replan(start, goal, dt * 4, false)) {
 
-            // problem.cleanup();
-            problem.recordSolution(i);
-            problem.recordTreeState(i);
-            std::cout << "done\n";
-        }
-    }
+//            // problem.cleanup();
+//            problem.recordSolution(i);
+//            problem.recordTreeState(i);
+//            std::cout << "done\n";
+//        }
+//    }
 
     //  Window2D win;
     //  win.setWorld(problem.getModel().getWorld());
