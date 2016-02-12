@@ -2,7 +2,7 @@
 
 gnuplot tree.gnu
 
-for i in `seq 0 299`;
+for i in `seq 0 1119`;
 do
 	res="dubins-results-interp$i.txt"
 	vert="dubins-vertices$i.dat"
@@ -41,7 +41,7 @@ gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$r
 # gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameOutput='$fout'; circle=2" tree.gnu
 
 
-for i in `seq 300 301`;
+for i in `seq 1200 1201`;
 do
 	res="dubins-results-interp$i.txt"
 	vert="dubins-vertices$i.dat"
@@ -50,7 +50,7 @@ do
 	gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameOutput='$fout'; circle=2; dynamic=1" tree.gnu
 done
 
-if [ ! -d "dynamic_reconnect" ]; then
-	echo "does not exist"
-	mkdir "dynamic_reconnect"
-fi
+# if [ ! -d "dynamic_reconnect" ]; then
+# 	echo "does not exist"
+# 	mkdir "dynamic_reconnect"
+# fi

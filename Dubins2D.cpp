@@ -343,21 +343,28 @@ public:
             //            std::vector<double>{0.8, 1.01, 0});
             //            std::vector<std::tuple<ob::State*, double>> obstacles;
             //            obstacles.push_back(std::make_tuple(myState, 0.4));
-            t1.start();
-            //            int removed =
-            //            ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(obstacles);
-            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
 
-            t1.stop();
-            t1.print();
-            OMPL_INFORM("removed nodes from the sub tree is %d", removed);
-
-            ss_->getProblemDefinition()->clearSolutionPaths();
         }
         catch (ompl::Exception e) {
             dtwarn << "No solution, man\n";
         }
     }
+
+    void removeInvalidNodes()
+    {
+        dart::common::Timer t1("node removal");
+        t1.start();
+        //            int removed =
+        //            ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(obstacles);
+        int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
+
+        t1.stop();
+        t1.print();
+        OMPL_INFORM("removed nodes from the sub tree is %d", removed);
+
+        ss_->getProblemDefinition()->clearSolutionPaths();
+    }
+
 
     void cleanup()
     {
@@ -367,44 +374,6 @@ public:
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
         // ss_->getProblemDefinition()->clearSolutionPaths();
         // ss_->solve(0.010);
-    }
-
-    void prepare_step1()
-    {
-        dart::common::Timer t1("test");
-        try {
-
-            ob::SpaceInformationPtr si = ss_->getSpaceInformation();
-            og::PathGeometric& p = ss_->getSolutionPath();
-            og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
-
-            int from = 2;
-
-            ompl::base::State* s = si->cloneState(p.getState(from));
-
-            // OMPL_WARN("%d", p.getStates().size());
-            p.interpolate();
-            for (size_t i = from; i < p.getStates().size(); ++i) {
-                ompl::base::State* st = p.getState(i);
-                pathArray_.push_back(si->cloneState(st));
-            }
-
-            localPlanner->setPreviousPath(pathArray_, from);
-            t1.start();
-            localPlanner->selectBranch(s);
-            t1.stop();
-            t1.print();
-            localPlanner->setSampleRadius(0.15);
-            localPlanner->setOrphanedBias(0.1);
-            si->setStateValidityCheckingResolution(0.005);
-            localPlanner->setLocalPlanning(true);
-            localPlanner->swapNN();
-
-            ss_->getProblemDefinition()->clearSolutionPaths();
-        }
-        catch (ompl::Exception e) {
-            dtwarn << "No solution, man\n";
-        }
     }
 
     bool replan(const Model::Point& initial, const Model::Point& final,
@@ -619,11 +588,11 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 1.5, default_radius * 1.5);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 600.0;
-    const double dt = 2;
+    const double time = 390.0;
+    const double dt = 0.5;
     const int ITERATIONS = time / dt;
 
-    std::string fileDump = "dubins.dump";
+    std::string fileDump = "dubins2.dump";
     bool plan = false;
 
 #define PLOTTING
@@ -666,26 +635,28 @@ int main(int argc, char** argv)
     for (int i = 0; i < 4; ++i) {
         problem.updateObstacles();
     }
-    //problem.prepareDynamic();
-    problem.prepare_step1();
+
+    problem.prepareDynamic();
 
     //==============================================================================
     problem.recordSolution(800);
     problem.recordTreeState(800);
+
+    problem.removeInvalidNodes();
     std::cout << "invalid branch removal: done\n";
     //==============================================================================
 
-//    const int DYNAMIC_ITERATIONS = 1;
-//    std::cout << std::endl;
-//    for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
-//        if (problem.replan(start, goal, dt * 4, false)) {
+    const int DYNAMIC_ITERATIONS = 1;
+    std::cout << std::endl;
+    for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
+        if (problem.replan(start, goal, 15, false)) {
 
-//            // problem.cleanup();
-//            problem.recordSolution(i);
-//            problem.recordTreeState(i);
-//            std::cout << "done\n";
-//        }
-//    }
+            // problem.cleanup();
+            problem.recordSolution(i);
+            problem.recordTreeState(i);
+            std::cout << "done\n";
+        }
+    }
 
     //  Window2D win;
     //  win.setWorld(problem.getModel().getWorld());

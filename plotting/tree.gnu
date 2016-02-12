@@ -4,7 +4,7 @@ if (!exists("filenameEdges")) filenameEdges='dubins-edges.dat'
 if (!exists("filenameVertices")) filenameVertices='dubins-vertices.dat'
 if (!exists("filenameResults")) filenameResults='dubins-results-interp.txt'
 if (!exists("filenameResultsMilestones")) filenameResultsMilestones='dubins-results.txt'
-if (!exists("filenameOutput")) filenameOutput='output.eps'
+if (!exists("filenameOutput")) filenameOutput='output.png'
 
 set term pngcairo size 1440, 1440
 #set terminal postscript eps enhanced color font 'Helvetica,10' size 8,8
@@ -14,12 +14,14 @@ unset ytics
 unset xtics
 set size square
 set style arrow 1 nohead linecolor rgb "#999999" linewidth 1
+set style arrow 2 nohead linecolor rgb "#FFA500" linewidth 1
+
 set style arrow 3 nohead linewidth 5
 set style line 1 linecolor rgb "#11CC22" linewidth 4
 
 set multiplot
 
-set object 1 circle at 1.7,1.0 size .025 fc rgb "#336699"
+set object 1 circle at 1.7,1.0 size .025 fc rgb "#336699" lw 5
 
 set style fill solid 1.0 border -1
 
@@ -58,3 +60,7 @@ if (file_exists(filenameResultsMilestones)) {
 }
 
 plot 'obstacles.dat' using 1:2:($3-$1):($4-$2):($5) notitle with vectors nohead lw 10 linecolor rgbcolor variable
+
+if (exists("highlight")) {
+	plot "highlight.dat" using 1:2:($4-$1):($5-$2) notitle with vectors arrowstyle 2
+}
