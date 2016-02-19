@@ -183,7 +183,7 @@ public:
 
     void add(Drawable* d) { data_.push_back(d); }
     void draw();
-    Drawable* getElement(int n)
+    Drawable* getElement(size_t n)
     {
         if (n < data_.size())
             return data_[n];

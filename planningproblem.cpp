@@ -66,7 +66,7 @@ void PlanningProblem::treeUpdate()
 
     DrawableCollection edges("edges");
     DrawableCollection* tree = new DrawableCollection("tree");
-    DrawableCollection* treeBak;
+    //DrawableCollection* treeBak;
     DrawableCollection orphans("orphans");
     frontend.getWindow()->drawables.push_back(tree);
     frontend.getWindow()->drawables.push_back(&edges);
@@ -165,7 +165,6 @@ void PlanningProblem::treeUpdate()
                     // ORPHANED == 1
                     if (pdat.getVertex(i).getTag() == 1) {
                         const ob::State* s = pdat.getVertex(i).getState();
-                        bool exists = false;
                         for (int j = 0; j < orphans.size(); ++j) {
                             if (ss_->getSpaceInformation()->equalStates(orphans.getElement(j)->getState(), s)) {
 

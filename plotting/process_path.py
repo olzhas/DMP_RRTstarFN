@@ -2,7 +2,7 @@
 
 import numpy as np
 
-n = 299
+n = 239
 
 filename = 'dubins-results-interp' + str(n) + '.txt'
 filenameRAW = 'dubins-results' + str(n) + '.txt'

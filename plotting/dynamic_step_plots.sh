@@ -6,7 +6,7 @@ if [ ! -d $OUTPUT_DIRECTORY ]; then
 	mkdir $OUTPUT_DIRECTORY
 fi
 
-n=301
+n=241
 for i in `seq 1 12`;
 do 
 	res="dubins-colored-results-$i.dat"
