@@ -308,12 +308,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             motion->incCost = opt_->motionCost(nmotion->state, motion->state);
             motion->cost = opt_->combineCosts(nmotion->cost, motion->incCost);
 
-            //            //
-            //            if(!majorTree(motion))
-            //            {
-            //                OMPL_INFORM("$$ holy shit");
-            //            }
-
             // Find nearby neighbors of the new motion - k-nearest RRT*
             unsigned int k = std::ceil(k_rrg * log((double)(nn_->size() + 1)));
             nn_->nearestK(motion, k, nbh);
@@ -456,6 +450,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                         }
                     }
                 }
+
                 if (nbh[i]->nodeType == ORPHANED || !majorTree(nbh[i])) {
                     // OMPL_INFORM("> about to connect an orphan branch");
                     if (si_->checkMotion(motion->state, nbh[i]->state)) {
@@ -1105,7 +1100,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     // (double)si_->getStateSpace()->getDimension());
     // Find nearby neighbors of the new motion - k-nearest RRT*
     // unsigned int k = std::ceil(k_rrg * log((double)(bakNN_->size() + 1)));
-    unsigned int k = std::ceil(nn_->size() * 0.1);
+    unsigned int k = std::ceil(nn_->size() * 0.2);
 
     for (size_t watchdog = 0; node->parent != nullptr && watchdog < LIMIT_PATH;
          ++watchdog, node = node->parent) {

@@ -254,7 +254,7 @@ bool Manipulator::newReplan()
     try {
         og::PathGeometric& path = ss_->getSolutionPath();
 
-        //p.interpolate(200);
+        path.interpolate(200);
 
         sp->set(path, ss_->getSpaceInformation(), staubli_);
         pWindow->drawables.push_back(&sp->getDrawables());

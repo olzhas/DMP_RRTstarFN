@@ -42,8 +42,8 @@ dd::SkeletonPtr createCar()
 
     Eigen::Vector6d positions(Eigen::Vector6d::Zero());
 
-    positions[3] = default_radius;
-    positions[4] = default_radius;
+    positions[3] = default_radius*25;
+    positions[4] = default_radius*25;
 
     car->getJoint(0)->setPositions(positions);
 
@@ -175,7 +175,7 @@ public:
     void updateObstacles()
     {
         const double speed = 0.05;
-        const double angleRad = 5.0 / 180.0 * M_PI;
+        const double angleRad = 75.0 / 180.0 * M_PI;
         Eigen::VectorXd transformation;
 
         // another approach, consider it later
@@ -301,7 +301,7 @@ public:
         ss_->setPlanner(
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.05);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(4000);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(6000);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
 
@@ -311,7 +311,6 @@ public:
     {
         dart::common::Timer t1("test");
         try {
-
             ob::SpaceInformationPtr si = ss_->getSpaceInformation();
             og::PathGeometric& p = ss_->getSolutionPath();
             og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
@@ -320,7 +319,6 @@ public:
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
-            // OMPL_WARN("%d", p.getStates().size());
             p.interpolate();
             for (size_t i = from; i < p.getStates().size(); ++i) {
                 ompl::base::State* st = p.getState(i);
@@ -334,30 +332,27 @@ public:
             t1.print();
             localPlanner->setSampleRadius(0.15);
             localPlanner->setOrphanedBias(0.1);
-            si->setStateValidityCheckingResolution(0.005);
             localPlanner->setLocalPlanning(true);
             localPlanner->swapNN();
-
-            //            ompl::base::State* myState = si->allocState();
-            //            si->getStateSpace()->copyFromReals(myState,
-            //            std::vector<double>{0.8, 1.01, 0});
-            //            std::vector<std::tuple<ob::State*, double>> obstacles;
-            //            obstacles.push_back(std::make_tuple(myState, 0.4));
-            t1.start();
-            //            int removed =
-            //            ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes(obstacles);
-            int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
-
-            t1.stop();
-            t1.print();
-            OMPL_INFORM("removed nodes from the sub tree is %d", removed);
-
-            ss_->getProblemDefinition()->clearSolutionPaths();
         }
         catch (ompl::Exception e) {
             dtwarn << "No solution, man\n";
         }
     }
+
+    void removeInvalidNodes()
+    {
+        dart::common::Timer t1("node removal");
+        t1.start();
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0005);
+        int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
+        t1.stop();
+        t1.print();
+        OMPL_INFORM("removed nodes from the sub tree is %d", removed);
+
+        ss_->getProblemDefinition()->clearSolutionPaths();
+    }
+
 
     void cleanup()
     {
@@ -369,47 +364,10 @@ public:
         // ss_->solve(0.010);
     }
 
-    void prepare_step1()
-    {
-        dart::common::Timer t1("test");
-        try {
-
-            ob::SpaceInformationPtr si = ss_->getSpaceInformation();
-            og::PathGeometric& p = ss_->getSolutionPath();
-            og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
-
-            int from = 2;
-
-            ompl::base::State* s = si->cloneState(p.getState(from));
-
-            // OMPL_WARN("%d", p.getStates().size());
-            p.interpolate();
-            for (size_t i = from; i < p.getStates().size(); ++i) {
-                ompl::base::State* st = p.getState(i);
-                pathArray_.push_back(si->cloneState(st));
-            }
-
-            localPlanner->setPreviousPath(pathArray_, from);
-            t1.start();
-            localPlanner->selectBranch(s);
-            t1.stop();
-            t1.print();
-            localPlanner->setSampleRadius(0.15);
-            localPlanner->setOrphanedBias(0.1);
-            si->setStateValidityCheckingResolution(0.005);
-            localPlanner->setLocalPlanning(true);
-            localPlanner->swapNN();
-
-            ss_->getProblemDefinition()->clearSolutionPaths();
-        }
-        catch (ompl::Exception e) {
-            dtwarn << "No solution, man\n";
-        }
-    }
-
     bool replan(const Model::Point& initial, const Model::Point& final,
         double time, bool clearPlanner = true)
     {
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.001);
         ss_->solve(time);
 
         // REGRESSION
@@ -455,26 +413,35 @@ public:
 
     void recordSolution(int num)
     {
+        if (!ss_ || !ss_->haveSolutionPath())
+            return;
+
         std::string fileName;
         std::string filenameInterp;
+        std::string filenameSolution;
 
         if (num != -1) {
             fileName = "dubins-results" + std::to_string(num) + ".txt";
             filenameInterp = "dubins-results-interp" + std::to_string(num) + ".txt";
+            filenameSolution = "dubins-results-is_solution" + std::to_string(num) + ".txt";
         }
         else {
             fileName = "dubins-results.txt";
             filenameInterp = "dubins-results-interp.txt";
+            filenameSolution = "dubins-results-is_solution.txt";
         }
 
         std::ofstream fout(fileName);
         std::ofstream foutInterp(filenameInterp);
-        if (!ss_ || !ss_->haveSolutionPath())
-            return;
+        std::ofstream foutSolution(filenameSolution);
+
+        foutSolution << ss_->haveExactSolutionPath() << std::endl;
+
         og::PathGeometric& p = ss_->getSolutionPath();
         p.printAsMatrix(fout);
-        p.interpolate();
+        p.interpolate(100);
         p.printAsMatrix(foutInterp);
+
     }
 
     //==============================================================================
@@ -579,7 +546,7 @@ public:
         ss_->setup();
 
         // FIXME
-        Model::Point initial(default_radius * 1.5, default_radius * 1.5);
+        Model::Point initial(default_radius * 25, default_radius * 25);
         Model::Point final(1.7, 1.0);
 
         ob::ScopedState<> start(ss_->getStateSpace());
@@ -616,15 +583,15 @@ int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
 
-    Model::Point start(default_radius * 1.5, default_radius * 1.5);
+    Model::Point start(default_radius * 25, default_radius * 25);
     Model::Point goal(1.7, 1.0);
 
     const double time = 600.0;
-    const double dt = 2;
+    const double dt = 2.5;
     const int ITERATIONS = time / dt;
 
-    std::string fileDump = "dubins.dump";
-    bool plan = false;
+    std::string fileDump = "dubins2.dump";
+    bool plan = true;
 
 #define PLOTTING
 #ifdef PLOTTING
@@ -646,7 +613,7 @@ int main(int argc, char** argv)
 
     std::cout << time << "\n" << dt << std::endl;
     if (!system("date")) {
-        std::cout << "cannot run system()";
+        std::cout << "cannot run system()\n";
     }
 
 #ifdef SOLVING
@@ -666,26 +633,35 @@ int main(int argc, char** argv)
     for (int i = 0; i < 4; ++i) {
         problem.updateObstacles();
     }
-    //problem.prepareDynamic();
-    problem.prepare_step1();
+    std::cout << "obstacle has moved\n";
+
+    problem.prepareDynamic();
+
+    std::cout << "prepared tree for removal\n";
 
     //==============================================================================
     problem.recordSolution(800);
     problem.recordTreeState(800);
+    std::cout << "recorded 800\n";
+
+    problem.removeInvalidNodes();
+
     std::cout << "invalid branch removal: done\n";
+    problem.recordTreeState(801);
+
     //==============================================================================
 
-//    const int DYNAMIC_ITERATIONS = 1;
-//    std::cout << std::endl;
-//    for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
-//        if (problem.replan(start, goal, dt * 4, false)) {
+    const int DYNAMIC_ITERATIONS = 1;
+    std::cout << std::endl;
+    for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
+        if (problem.replan(start, goal, 30, false)) {
 
-//            // problem.cleanup();
-//            problem.recordSolution(i);
-//            problem.recordTreeState(i);
-//            std::cout << "done\n";
-//        }
-//    }
+            // problem.cleanup();
+            problem.recordSolution(i);
+            problem.recordTreeState(i);
+            std::cout << "done\n";
+        }
+    }
 
     //  Window2D win;
     //  win.setWorld(problem.getModel().getWorld());
