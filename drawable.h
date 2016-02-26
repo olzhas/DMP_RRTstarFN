@@ -87,9 +87,9 @@ public:
     ompl::base::State* getState() { return s_; }
 
 protected:
+    double size_;
     Eigen::Vector3d point_;
     Eigen::Vector4d color_;
-    double size_;
     DrawableType type_;
     DrawableVisibility visible_;
     ompl::base::State* s_;

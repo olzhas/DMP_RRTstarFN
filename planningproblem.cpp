@@ -165,7 +165,7 @@ void PlanningProblem::treeUpdate()
                     // ORPHANED == 1
                     if (pdat.getVertex(i).getTag() == 1) {
                         const ob::State* s = pdat.getVertex(i).getState();
-                        for (int j = 0; j < orphans.size(); ++j) {
+                        for (size_t j = 0; j < orphans.size(); ++j) {
                             if (ss_->getSpaceInformation()->equalStates(orphans.getElement(j)->getState(), s)) {
 
                                 std::vector<double> reals;

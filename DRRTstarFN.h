@@ -208,6 +208,9 @@ namespace geometric {
 
         void removeOrphaned();
 
+        /** \brief reconnect orphaned nodes to the tree */
+        void reconnect();
+
         /** \brief selects the branch */
         void selectBranch(ompl::base::State* s);
 
@@ -351,7 +354,6 @@ namespace geometric {
 
         /** \brief Stores the Motion containing the last added initial start state. */
         Motion* startMotion_;
-
 
         std::vector<ompl::base::State*> orphanedBiasNodes_;
 
