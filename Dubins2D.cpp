@@ -22,6 +22,7 @@ namespace og = ompl::geometric;
 
 namespace dd = dart::dynamics;
 namespace ds = dart::simulation;
+namespace du = dart::utils;
 
 const double default_ground_width = 2;
 const double default_wall_thickness = 0.1;
@@ -59,13 +60,11 @@ dd::SkeletonPtr createCar()
     return car;
 }
 
-#define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
-
-dd::SkeletonPtr convexObstacle()
+dd::SkeletonPtr convexObstacle(const std::string& filename)
 {
     // a circle with radius 0.1 and center in (0.6, 1.0)
-    dd::SkeletonPtr obs = dart::utils::SkelParser::readSkeleton(
-        SAFESPACE_DATA "obstacles/r1-circle.skel");
+    const std::string SAFESPACE_DATA = "/home/olzhas/devel/staubli_dart/data/";
+    dd::SkeletonPtr obs = du::SkelParser::readSkeleton(SAFESPACE_DATA + filename);
     return obs;
 }
 
@@ -151,7 +150,7 @@ public:
 
     bool isStateValid(const ob::State* state)
     {
-        std::lock_guard<std::mutex> guard(mutex_);
+        //std::lock_guard<std::mutex> guard(mutex_);
 
         const ob::SE2StateSpace::StateType* s = state->as<ob::SE2StateSpace::StateType>();
 
@@ -161,8 +160,6 @@ public:
         double x = s->getX();
         double y = s->getY();
         double yaw = s->getYaw();
-
-        //car_->getBodyNode();
 
         Eigen::Isometry3d transform;
         transform.setIdentity();
@@ -180,52 +177,27 @@ public:
         m = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
         transform.rotate(m);
 
-        //car_->getJoint(0)->setPosition(2, yaw);
-        //car_->getJoint(0)->setPosition(3, x);
-        //car_->getJoint(0)->setPosition(4, y);
-        //Eigen::VectorXd pos = car_->getPositions();
-
         dart::dynamics::FreeJoint::setTransform(car_.get(), transform);
 
-        car_->computeForwardKinematics();
-        car_->computeForwardDynamics();
-        car_->computeImpulseForwardDynamics();
-
-        //bool carCol = car_->getBodyNode(0)->isColliding();
         bool worldCol = world_->checkCollision();
         return !worldCol;
-        //return !carCol;
-        //return res>0?false:true;
     }
 
     void updateObstacles()
     {
         const double speed = 0.05;
         const double angleRad = 90.0 / 180.0 * M_PI;
-        //Eigen::VectorXd transformation;
 
-        // another approach, consider it later
-        // dynamicObstacle_->getBodyNode(0)->getTransform();
-        //transformation = dynamicObstacle_->getJoint(0)->getPositions();
         Eigen::Isometry3d transformation;
-        transformation.setIdentity();//= dynamicObstacle_->getBodyNode(0)->getTransform();
+        transformation.setIdentity();
 
-        //transformation[3] += speed * cos(angleRad);
-        //transformation[4] += speed * sin(angleRad);
         Eigen::Vector3d translation(Eigen::Vector3d::Zero());
         translation[0] = 1.07;
         translation[1] = 1.4;
         transformation.translate(translation);
 
         dart::dynamics::FreeJoint::setTransform(dynamicObstacle_.get(), transformation);
-        //transformation[3] = 1.00;
-        //transformation[4] = 1.40;
 
-        // another approach, consider it later
-        // dynamicObstacle_->getBodyNode(0)->setTransform();
-        //dynamicObstacle_->getJoint(0)->setPositions(transformation);
-
-        // std::cout << transformation << "\n" << std::endl;
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
@@ -255,8 +227,8 @@ private:
             map[4] = new Line(Point(1.10, 0.80), Point(2.00, 0.80));
             map[5] = new Line(Point(1.09, 0.80), Point(1.09, 1.30));
             map[6] = new Line(Point(1.30, 1.10), Point(1.80, 1.10));
-            map[7] = new Line(Point(1.30, 1.70), Point(1.60, 1.70));
-            map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.90));
+            map[7] = new Line(Point(1.40, 1.70), Point(1.70, 1.70));
+            map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.75));
             map[9] = new Line(Point(0.20, 1.60), Point(0.70, 1.60));
             break;
         }
@@ -291,11 +263,15 @@ private:
 
             world_->addSkeleton(box);
         }
-        dynamicObstacle_ = convexObstacle();
+        dynamicObstacle_ = convexObstacle("obstacles/r1-circle.skel");
         world_->addSkeleton(dynamicObstacle_);
 
         car_ = createCar();
         world_->addSkeleton(car_);
+
+        world_->addSkeleton(convexObstacle("obstacles/r15-circle.skel"));
+        world_->addSkeleton(convexObstacle("obstacles/r1-circle-side.skel"));
+
     }
 
     dart::simulation::WorldPtr world_;
@@ -336,7 +312,7 @@ public:
         // space->getMaximumExtent());
         ss_->setPlanner(
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.045);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.03);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
     }
@@ -351,7 +327,7 @@ public:
             og::PathGeometric& p = ss_->getSolutionPath();
             og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
 
-            int from = 2;
+            int from = 6;
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
@@ -380,7 +356,7 @@ public:
     {
         dart::common::Timer t1("node removal");
         t1.start();
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0001);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.001);
         int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
         t1.stop();
         t1.print();
@@ -391,7 +367,7 @@ public:
 
     void cleanup()
     {
-        int from = 2;
+        int from = 6;
 
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
@@ -622,12 +598,12 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 25, default_radius * 25);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 900.0;
-    const double dt = 3.75;
+    const double time = 1200.0;
+    const double dt = 5;
     const int ITERATIONS = time / dt;
 
-    std::string fileDump = "dubins2.dump";
-    bool plan = false;
+    std::string fileDump = "dubins3.dump";
+    bool plan = true;
 
 #define PLOTTING
 #ifdef PLOTTING
@@ -690,7 +666,7 @@ int main(int argc, char** argv)
     const int DYNAMIC_ITERATIONS = 1;
     std::cout << std::endl;
     for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
-        if (problem.replan(start, goal, 0.100, false)) {
+        if (problem.replan(start, goal, 120, false)) {
 
             // problem.cleanup();
             problem.recordSolution(i);

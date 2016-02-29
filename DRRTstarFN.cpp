@@ -451,7 +451,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                     }
                 }
 
-                if (nbh[i]->nodeType == ORPHANED || !majorTree(nbh[i])) {
+                if (nbh[i]->nodeType == ORPHANED) {
                     // OMPL_INFORM("> about to connect an orphan branch");
                     if (si_->checkMotion(motion->state, nbh[i]->state)) {
                         // OMPL_INFORM(">> valid connection might happen");
@@ -777,7 +777,7 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
         data.addGoalVertex(base::PlannerDataVertex(lastGoalMotion_->state));
 
     for (std::size_t i = 0; i < motions.size(); ++i) {
-        if (motions[i]->parent == nullptr){
+        if (motions[i]->parent == nullptr) {
             base::PlannerDataVertex rootVertex(motions[i]->state);
             // major tree by default
             rootVertex.setTag(true);
@@ -788,7 +788,7 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
 
             myVertex.setTag(isMajorTree(motions[i]));
 
-            if(motions[i]->parent != nullptr){
+            if (motions[i]->parent != nullptr) {
                 base::PlannerDataVertex myVertexParent(motions[i]->parent->state);
 
                 myVertexParent.setTag(isMajorTree(motions[i]->parent));
@@ -1060,7 +1060,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes(
 }
 //==============================================================================
 int ompl::geometric::DRRTstarFN::removeInvalidNodes()
-{   
+{
     const static int LIMIT_PATH = 2500;
     int removed = 0;
     int error_removed = 0;
@@ -1072,9 +1072,9 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     std::vector<Motion*> nbh;
 
     Motion* node = nullptr;
-    if(goalMotions_.size()>0)
+    if (goalMotions_.size() > 0)
         node = goalMotions_.back();
-    else{
+    else {
         Motion* temp = new Motion(si_);
         temp->state = pdef_->getGoal()->as<ompl::base::GoalState>()->getState();
         node = nn_->nearest(temp);
@@ -1100,7 +1100,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     // (double)si_->getStateSpace()->getDimension());
     // Find nearby neighbors of the new motion - k-nearest RRT*
     // unsigned int k = std::ceil(k_rrg * log((double)(bakNN_->size() + 1)));
-    unsigned int k = std::ceil(nn_->size());
+    unsigned int k = std::ceil(nn_->size() * 0.5);
 
     for (size_t watchdog = 0; node->parent != nullptr && watchdog < LIMIT_PATH;
          ++watchdog, node = node->parent) {
@@ -1141,10 +1141,20 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
                 }
                 else {
                     for (auto& child : neighbor->children) {
-                        if (!si_->isValid(child->parent->state) ||
-                                !si_->checkMotion(child->parent->state, child->state)) {
+                        if (!si_->isValid(child->parent->state) || !si_->checkMotion(child->parent->state, child->state)) {
                             removeFromParent(child);
                             removeBranch(child);
+                        }
+                    }
+                    if (neighbor->parent != nullptr) {
+                        if (!si_->checkMotion(neighbor->parent->state, neighbor->state)) {
+                            removeFromParent(neighbor);
+                            removeBranch(neighbor);
+                        }
+
+                        if (!si_->isValid(neighbor->parent->state)) {
+                            removeFromParent(neighbor->parent);
+                            removeBranch(neighbor->parent);
                         }
                     }
                 }
@@ -1153,7 +1163,6 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     }
     OMPL_WARN("failed to remove nodes from the nn_ %d points", error_removed);
     return removed;
-
 }
 //==============================================================================
 void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s)
@@ -1225,21 +1234,21 @@ void ompl::geometric::DRRTstarFN::reconnect()
             std::vector<Motion*> nbh;
             nn_->nearestK(m, k, nbh);
             for (auto& neighbor : nbh) {
-                if (majorTree(neighbor)){
+                if (majorTree(neighbor)) {
                     if (si_->checkMotion(neighbor->state, m->state)) {
-                    base::Cost nbhIncCost;
-                    nbhIncCost = opt_->motionCost(neighbor->state, m->state);
-                    base::Cost nbhNewCost = opt_->combineCosts(m->cost, nbhIncCost);
+                        base::Cost nbhIncCost;
+                        nbhIncCost = opt_->motionCost(neighbor->state, m->state);
+                        base::Cost nbhNewCost = opt_->combineCosts(m->cost, nbhIncCost);
 
-                    m->parent = neighbor;
-                    m->incCost = nbhIncCost;
-                    m->cost = nbhNewCost;
-                    m->parent->children.push_back(m);
-                    m->nodeType = NORMAL;
+                        m->parent = neighbor;
+                        m->incCost = nbhIncCost;
+                        m->cost = nbhNewCost;
+                        m->parent->children.push_back(m);
+                        m->nodeType = NORMAL;
 
-                    updateChildCosts(m);
-                    return;
-                }
+                        updateChildCosts(m);
+                        return;
+                    }
                 }
             }
         }
