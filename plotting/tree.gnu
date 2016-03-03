@@ -26,8 +26,8 @@ set style fill solid 1.0 border -1
 if (circle == 1) {
 	#set object 2 circle at 0.8,1.0 size .1 fc rgb "#22FF4444" front
 	#set object 2 circle at 0.9,1.0 size .1 fc rgb "#22FF4444" front
-	set object 2 circle at 0.97,1.05 size .1 fc rgb "#22FF4444" front
-	set object 4 circle at 0.2,1.0 size .15 fc rgb "#22FF4444" front
+	set object 2 circle at 0.9,1.05 size .1 fc rgb "#22FF4444" front
+	set object 4 circle at 0.2,1.0 size .1 fc rgb "#22FF4444" front
 	set object 5 circle at 0.5,1.45 size .1 fc rgb "#22FF4444" front
 }
 if (circle == 2) {
@@ -37,19 +37,19 @@ if (circle == 2) {
 	#set object 3 circle at 0.9,1.2 size .1 fs solid fc rgb "#222244FF" front 
 	#
 	set object 3 circle at 1.07,1.4 size .1 fs solid fc rgb "#222244FF" front 
-	set object 4 circle at 0.2,1.00 size .15 fc rgb "#22FF4444" front
+	set object 4 circle at 0.2,1.00 size .1 fc rgb "#22FF4444" front
 	set object 5 circle at 0.5,1.45 size .1 fc rgb "#22FF4444" front
 }
 if (circle == 3) {
 	#set object 2 circle at 0.6,1.0 size .1 fs solid fc rgb "#22FF4444" front
 	#set object 3 circle at 0.799238939618349,1.01743114854953 size .1 fs solid fc rgb "#222244FF" front
 	#set object 2 circle at 0.9,1.0 size .1 fs solid fc rgb "#22FF4444" front
-	set object 2 circle at 0.97,1.05 size .1 fs solid fc rgb "#22FF4444" front
+	set object 2 circle at 0.9,1.05 size .1 fs solid fc rgb "#22FF4444" front
 	set object 3 circle at 1.07,1.4 size .1 fs solid fc rgb "#222244FF" front 
 	###set object 3 circle at 0.9,1.2 size .1 fs solid fc rgb "#222244FF" front 
 	#set object 3 circle at 0.9518,1.1932 size .1 fs solid fc rgb "#222244FF" front #75
 
-	set object 4 circle at 0.2,1.0 size .15 fc rgb "#22FF4444" front
+	set object 4 circle at 0.2,1.0 size .1 fc rgb "#22FF4444" front
 	set object 5 circle at 0.5,1.45 size .1 fc rgb "#22FF4444" front
 
 }

@@ -240,7 +240,7 @@ private:
             body.mName = "box" + std::to_string(i);
 
             dd::ShapePtr shape(
-                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.01, 1.0)));
+                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.02, 1.0)));
 
             body.mVizShapes.push_back(shape);
             body.mColShapes.push_back(shape);
@@ -287,12 +287,12 @@ private:
 class DubinsCarEnvironment {
 public:
     DubinsCarEnvironment()
-        : maxWidth_(2.0)
-        , maxHeight_(2.0)
+        : maxWidth_(2.160)
+        , maxHeight_(3.840)
     {
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
         ob::StateSpacePtr space(
-            new ob::DubinsStateSpace(0.125, false)); // only forward
+            new ob::DubinsStateSpace(0.11, false)); // only forward
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -314,7 +314,7 @@ public:
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.03);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
     }
 
     std::vector<ompl::base::State*> pathArray_;
@@ -327,7 +327,7 @@ public:
             og::PathGeometric& p = ss_->getSolutionPath();
             og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
 
-            int from = 6;
+            int from = 9;
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
@@ -342,8 +342,8 @@ public:
             localPlanner->selectBranch(s);
             t1.stop();
             t1.print();
-            localPlanner->setSampleRadius(0.15);
-            localPlanner->setOrphanedBias(0.1);
+            localPlanner->setSampleRadius(0.1);
+            localPlanner->setOrphanedBias(0.50);
             localPlanner->setLocalPlanning(true);
             localPlanner->swapNN();
         }
@@ -356,7 +356,7 @@ public:
     {
         dart::common::Timer t1("node removal");
         t1.start();
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.001);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01);
         int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
         t1.stop();
         t1.print();
@@ -367,7 +367,7 @@ public:
 
     void cleanup()
     {
-        int from = 6;
+        int from = 9;
 
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
@@ -378,9 +378,9 @@ public:
     bool replan(const Model::Point& initial, const Model::Point& final,
         double time, bool clearPlanner = true)
     {
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
 
-        ss_->getPlanner()->as<og::DRRTstarFN>()->reconnect();
+        //ss_->getPlanner()->as<og::DRRTstarFN>()->reconnect();
         ss_->solve(time);
 
         // REGRESSION
@@ -598,11 +598,11 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 25, default_radius * 25);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 1200.0;
-    const double dt = 5;
+    const double time = 540.0;
+    const double dt = 2.25;
     const int ITERATIONS = time / dt;
 
-    std::string fileDump = "dubins3.dump";
+    std::string fileDump = "dubins5.dump";
     bool plan = true;
 
 #define PLOTTING
@@ -666,9 +666,9 @@ int main(int argc, char** argv)
     const int DYNAMIC_ITERATIONS = 1;
     std::cout << std::endl;
     for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
-        if (problem.replan(start, goal, 120, false)) {
+        if (problem.replan(start, goal, 120.00, false)) {
 
-            // problem.cleanup();
+            //problem.cleanup();
             problem.recordSolution(i);
             problem.recordTreeState(i);
             std::cout << "done\n";

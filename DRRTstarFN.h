@@ -243,6 +243,7 @@ namespace geometric {
 
             ~Motion()
             {
+                ;
             }
 
             /** \brief The state contained by the motion */
