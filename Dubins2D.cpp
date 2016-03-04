@@ -22,10 +22,13 @@ namespace og = ompl::geometric;
 
 namespace dd = dart::dynamics;
 namespace ds = dart::simulation;
+namespace du = dart::utils;
 
 const double default_ground_width = 2;
 const double default_wall_thickness = 0.1;
 const double default_radius = 0.01;
+const double default_init_x = 0.25;
+const double default_init_y = 0.25;
 
 dd::SkeletonPtr createCar()
 {
@@ -34,47 +37,40 @@ dd::SkeletonPtr createCar()
     dd::BodyNode* bn = car->createJointAndBodyNodePair<dd::FreeJoint>().second;
 
     std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(Eigen::Vector3d(
-        default_radius * 5, default_radius * 3, default_radius * 2));
+        default_radius * 8, default_radius * 5, default_radius * 2));
     shape->setColor(Eigen::Vector3d(1.0, .0, .0));
 
     bn->addCollisionShape(shape);
     bn->addVisualizationShape(shape);
 
-    Eigen::Vector6d positions(Eigen::Vector6d::Zero());
+    Eigen::Vector3d positions(Eigen::Vector3d::Zero());
 
-    positions[3] = default_radius*25;
-    positions[4] = default_radius*25;
+    positions[0] = default_init_x;
+    positions[1] = default_init_y;
+    positions[2] = 0;
 
-    car->getJoint(0)->setPositions(positions);
+    Eigen::Isometry3d transform1;
+    transform1.setIdentity();
+    //transform1.rotate(Eigen::Matrix3d::Identity());
+    transform1.translate(positions);
+
+    //dart::dynamics::FreeJoint::setTransform(car.get(), transform1);
+    //car->setPositions(positions);
 
     return car;
 }
 
-#define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
-
-dd::SkeletonPtr convexObstacle()
+dd::SkeletonPtr convexObstacle(const std::string& filename)
 {
     // a circle with radius 0.1 and center in (0.6, 1.0)
-    dd::SkeletonPtr obs = dart::utils::SkelParser::readSkeleton(
-        SAFESPACE_DATA "obstacles/r1-circle.skel");
+    const std::string SAFESPACE_DATA = "/home/olzhas/devel/staubli_dart/data/";
+    dd::SkeletonPtr obs = du::SkelParser::readSkeleton(SAFESPACE_DATA + filename);
     return obs;
 }
 
 class Model {
+    static constexpr char WORLD_FILE_NAME[] = "data/2d-problem/model.sdf";
 
-    static constexpr const char* WORLD_FILE_NAME = "data/2d-problem/model.sdf";
-    //    class Angle{
-    //        double deg_;
-    //        double rad_;
-
-    //        Angle(): deg_(0), rad_(0) {; }
-
-    //        void setDegrees(double deg) { deg_ = deg; rad_ = deg / 180.0 * M_PI; }
-    //        void setRadians(double rad) { rad_ = rad; deg_ = rad / M_PI * 180.0; }
-
-    //        double degrees() { return deg_; }
-    //        double radians() { return rad_; }
-    //    };
 public:
     class Point {
         double x_;
@@ -154,7 +150,7 @@ public:
 
     bool isStateValid(const ob::State* state)
     {
-        std::lock_guard<std::mutex> guard(mutex_);
+        //std::lock_guard<std::mutex> guard(mutex_);
 
         const ob::SE2StateSpace::StateType* s = state->as<ob::SE2StateSpace::StateType>();
 
@@ -165,31 +161,43 @@ public:
         double y = s->getY();
         double yaw = s->getYaw();
 
-        car_->getJoint(0)->setPosition(2, yaw);
-        car_->getJoint(0)->setPosition(3, x);
-        car_->getJoint(0)->setPosition(4, y);
+        Eigen::Isometry3d transform;
+        transform.setIdentity();
 
-        return !world_->checkCollision();
+        Eigen::Vector3d translation;
+
+        translation[0] = x;
+        translation[1] = y;
+        translation[2] = 0;
+
+        transform.translate(translation);
+
+        Eigen::Matrix3d m;
+        m.setIdentity();
+        m = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
+        transform.rotate(m);
+
+        dart::dynamics::FreeJoint::setTransform(car_.get(), transform);
+
+        bool worldCol = world_->checkCollision();
+        return !worldCol;
     }
 
     void updateObstacles()
     {
         const double speed = 0.05;
-        const double angleRad = 75.0 / 180.0 * M_PI;
-        Eigen::VectorXd transformation;
+        const double angleRad = 90.0 / 180.0 * M_PI;
 
-        // another approach, consider it later
-        // dynamicObstacle_->getBodyNode(0)->getTransform();
-        transformation = dynamicObstacle_->getJoint(0)->getPositions();
+        Eigen::Isometry3d transformation;
+        transformation.setIdentity();
 
-        transformation[3] += speed * cos(angleRad);
-        transformation[4] += speed * sin(angleRad);
+        Eigen::Vector3d translation(Eigen::Vector3d::Zero());
+        translation[0] = 1.07;
+        translation[1] = 1.4;
+        transformation.translate(translation);
 
-        // another approach, consider it later
-        // dynamicObstacle_->getBodyNode(0)->setTransform();
-        dynamicObstacle_->getJoint(0)->setPositions(transformation);
+        dart::dynamics::FreeJoint::setTransform(dynamicObstacle_.get(), transformation);
 
-        // std::cout << transformation << "\n" << std::endl;
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
@@ -201,7 +209,8 @@ private:
         world_->setGravity(Eigen::Vector3d(0.0, 0.0, 0.0));
         std::vector<Line*> map;
 
-        enum class Scenario : char {DEFAULT, DETOUR };
+        enum class Scenario : char { DEFAULT,
+            DETOUR };
         Scenario scenario = Scenario::DEFAULT;
         switch (scenario) {
         case Scenario::DETOUR:
@@ -218,11 +227,10 @@ private:
             map[4] = new Line(Point(1.10, 0.80), Point(2.00, 0.80));
             map[5] = new Line(Point(1.09, 0.80), Point(1.09, 1.30));
             map[6] = new Line(Point(1.30, 1.10), Point(1.80, 1.10));
-            map[7] = new Line(Point(1.30, 1.70), Point(1.60, 1.70));
-            map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.90));
+            map[7] = new Line(Point(1.40, 1.70), Point(1.70, 1.70));
+            map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.75));
             map[9] = new Line(Point(0.20, 1.60), Point(0.70, 1.60));
             break;
-
         }
 
         for (size_t i = 0; i < map.size(); ++i) {
@@ -232,7 +240,7 @@ private:
             body.mName = "box" + std::to_string(i);
 
             dd::ShapePtr shape(
-                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.01, 1.0)));
+                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.02, 1.0)));
 
             body.mVizShapes.push_back(shape);
             body.mColShapes.push_back(shape);
@@ -255,11 +263,15 @@ private:
 
             world_->addSkeleton(box);
         }
-        dynamicObstacle_ = convexObstacle();
+        dynamicObstacle_ = convexObstacle("obstacles/r1-circle.skel");
         world_->addSkeleton(dynamicObstacle_);
 
         car_ = createCar();
         world_->addSkeleton(car_);
+
+        world_->addSkeleton(convexObstacle("obstacles/r15-circle.skel"));
+        world_->addSkeleton(convexObstacle("obstacles/r1-circle-side.skel"));
+
     }
 
     dart::simulation::WorldPtr world_;
@@ -275,12 +287,12 @@ private:
 class DubinsCarEnvironment {
 public:
     DubinsCarEnvironment()
-        : maxWidth_(2.0)
-        , maxHeight_(2.0)
+        : maxWidth_(2.160)
+        , maxHeight_(3.840)
     {
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
         ob::StateSpacePtr space(
-            new ob::DubinsStateSpace(0.05, false)); // only forward
+            new ob::DubinsStateSpace(0.11, false)); // only forward
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -300,22 +312,22 @@ public:
         // space->getMaximumExtent());
         ss_->setPlanner(
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.05);
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(6000);
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.005);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.03);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
     }
 
     std::vector<ompl::base::State*> pathArray_;
 
     void prepareDynamic()
     {
-        dart::common::Timer t1("test");
+        dart::common::Timer t1("select branch");
         try {
             ob::SpaceInformationPtr si = ss_->getSpaceInformation();
             og::PathGeometric& p = ss_->getSolutionPath();
             og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
 
-            int from = 2;
+            int from = 9;
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
@@ -330,8 +342,8 @@ public:
             localPlanner->selectBranch(s);
             t1.stop();
             t1.print();
-            localPlanner->setSampleRadius(0.15);
-            localPlanner->setOrphanedBias(0.1);
+            localPlanner->setSampleRadius(0.1);
+            localPlanner->setOrphanedBias(0.50);
             localPlanner->setLocalPlanning(true);
             localPlanner->swapNN();
         }
@@ -344,7 +356,7 @@ public:
     {
         dart::common::Timer t1("node removal");
         t1.start();
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0005);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01);
         int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
         t1.stop();
         t1.print();
@@ -353,10 +365,9 @@ public:
         ss_->getProblemDefinition()->clearSolutionPaths();
     }
 
-
     void cleanup()
     {
-        int from = 2;
+        int from = 9;
 
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
@@ -367,7 +378,9 @@ public:
     bool replan(const Model::Point& initial, const Model::Point& final,
         double time, bool clearPlanner = true)
     {
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.001);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
+
+        //ss_->getPlanner()->as<og::DRRTstarFN>()->reconnect();
         ss_->solve(time);
 
         // REGRESSION
@@ -439,9 +452,8 @@ public:
 
         og::PathGeometric& p = ss_->getSolutionPath();
         p.printAsMatrix(fout);
-        p.interpolate(100);
+        p.interpolate();
         p.printAsMatrix(foutInterp);
-
     }
 
     //==============================================================================
@@ -453,7 +465,7 @@ public:
             space->copyToReals(reals, vertex.getState());
             for (size_t j(0); j < reals.size(); ++j)
                 os << " " << reals[j];
-            os << " " << vertex.getTag() ;
+            os << " " << vertex.getTag();
         }
     }
 
@@ -586,11 +598,11 @@ int main(int argc, char** argv)
     Model::Point start(default_radius * 25, default_radius * 25);
     Model::Point goal(1.7, 1.0);
 
-    const double time = 600.0;
-    const double dt = 2.5;
+    const double time = 540.0;
+    const double dt = 2.25;
     const int ITERATIONS = time / dt;
 
-    std::string fileDump = "dubins2.dump";
+    std::string fileDump = "dubins5.dump";
     bool plan = true;
 
 #define PLOTTING
@@ -630,9 +642,9 @@ int main(int argc, char** argv)
     }
 #endif
 
-    for (int i = 0; i < 4; ++i) {
-        problem.updateObstacles();
-    }
+    //for (int i = 0; i < 4; ++i) {
+    problem.updateObstacles();
+    //}
     std::cout << "obstacle has moved\n";
 
     problem.prepareDynamic();
@@ -654,20 +666,20 @@ int main(int argc, char** argv)
     const int DYNAMIC_ITERATIONS = 1;
     std::cout << std::endl;
     for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
-        if (problem.replan(start, goal, 30, false)) {
+        if (problem.replan(start, goal, 120.00, false)) {
 
-            // problem.cleanup();
+            //problem.cleanup();
             problem.recordSolution(i);
             problem.recordTreeState(i);
             std::cout << "done\n";
         }
     }
 
-    //  Window2D win;
-    //  win.setWorld(problem.getModel().getWorld());
-    //  glutInit(&argc, argv);
-    //  win.initWindow(1280, 800, "2D demo");
-    //  glutMainLoop();
+    Window2D win;
+    win.setWorld(problem.getModel().getWorld());
+    glutInit(&argc, argv);
+    win.initWindow(1280, 800, "2D demo");
+    glutMainLoop();
 
     return 0;
 }

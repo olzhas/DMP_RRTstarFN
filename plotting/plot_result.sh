@@ -4,11 +4,12 @@
 
 i=239
 res="dubins-results-interp$i.txt"
+resOrig="dubins-results$i.txt"
 vert="dubins-vertices$i.dat"
 edge="dubins-edges$i.dat"
 fout="output$i.png"
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res';  filenameOutput='$fout'; circle=1" tree.gnu
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=1" tree.gnu
 echo "Done: $i"
 
 
@@ -39,7 +40,7 @@ vert="dubins-vertices800.dat"
 edge="dubins-edges800.dat"
 fout="output800.png"
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=2" tree.gnu
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameOutput='$fout'; circle=2" tree.gnu
 
 ##
 
