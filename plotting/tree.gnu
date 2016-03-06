@@ -4,13 +4,13 @@ if (!exists("filenameEdges")) filenameEdges='dubins-edges.dat'
 if (!exists("filenameVertices")) filenameVertices='dubins-vertices.dat'
 if (!exists("filenameOutput")) filenameOutput='output.png'
 
-set term pngcairo size 1440, 1440
+set term pngcairo size 1920,1080
 #set terminal postscript eps enhanced color font 'Helvetica,10' size 8,8
 set output filenameOutput
 
 unset ytics
 unset xtics
-set size square
+set size ratio -1
 set style arrow 1 nohead linecolor rgb "#999999" linewidth 1
 set style arrow 2 nohead linecolor rgb "#FFA500" linewidth 1
 
@@ -27,7 +27,7 @@ if (circle == 1) {
 	#set object 2 circle at 0.8,1.0 size .1 fc rgb "#22FF4444" front
 	#set object 2 circle at 0.9,1.0 size .1 fc rgb "#22FF4444" front
 	set object 2 circle at 0.9,1.05 size .1 fc rgb "#22FF4444" front
-	set object 4 circle at 0.2,1.0 size .1 fc rgb "#22FF4444" front
+	set object 4 circle at 0.2,1.0 size .15 fc rgb "#22FF4444" front
 	set object 5 circle at 0.5,1.45 size .1 fc rgb "#22FF4444" front
 }
 if (circle == 2) {
@@ -37,7 +37,7 @@ if (circle == 2) {
 	#set object 3 circle at 0.9,1.2 size .1 fs solid fc rgb "#222244FF" front 
 	#
 	set object 3 circle at 1.07,1.4 size .1 fs solid fc rgb "#222244FF" front 
-	set object 4 circle at 0.2,1.00 size .1 fc rgb "#22FF4444" front
+	set object 4 circle at 0.2,1.00 size .15 fc rgb "#22FF4444" front
 	set object 5 circle at 0.5,1.45 size .1 fc rgb "#22FF4444" front
 }
 if (circle == 3) {
@@ -49,13 +49,13 @@ if (circle == 3) {
 	###set object 3 circle at 0.9,1.2 size .1 fs solid fc rgb "#222244FF" front 
 	#set object 3 circle at 0.9518,1.1932 size .1 fs solid fc rgb "#222244FF" front #75
 
-	set object 4 circle at 0.2,1.0 size .1 fc rgb "#22FF4444" front
+	set object 4 circle at 0.2,1.0 size .15 fc rgb "#22FF4444" front
 	set object 5 circle at 0.5,1.45 size .1 fc rgb "#22FF4444" front
 
 }
 
-set xrange [0:2]
-set yrange [0:2]
+set yrange [0:2.160]
+set xrange [0:3.840]
 
 if (!exists("dynamic")) {
 	plot filenameEdges using 1:2:($4-$1):($5-$2) notitle with vectors arrowstyle 1
@@ -79,7 +79,7 @@ if (exists("filenameResultsMilestones") && file_exists(filenameResultsMilestones
 	plot filenameResultsMilestones using 1:2 notitle lc rgb "#FFAA11" pointtype 12 pointsize 5 lw 5
 }
 
-plot 'obstacles.dat' using 1:2:($3-$1):($4-$2):($5) notitle with vectors nohead lw 10 linecolor rgbcolor variable
+plot 'obstacles.dat' using 1:2:($3-$1):($4-$2):($5) notitle with vectors nohead lw 50 linecolor rgbcolor variable
 
 if (exists("highlight")) {
 	plot "highlight.dat" using 1:2:($4-$1):($5-$2) notitle with vectors arrowstyle 2
