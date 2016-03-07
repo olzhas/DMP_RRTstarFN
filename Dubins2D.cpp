@@ -21,12 +21,6 @@
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-const double default_ground_width = 2;
-const double default_wall_thickness = 0.1;
-const double default_radius = 0.01;
-const double default_init_x = 0.25;
-const double default_init_y = 0.25;
-
 class Model {
 
 public:
@@ -312,14 +306,6 @@ public:
         void add(Obstacle* a) { data_.push_back(a); }
     };
 
-    void test()
-    {
-        ObstacleCollection obsCollection;
-        ObbObstacle car(Eigen::Vector2d(0, 0), 0, 0.08, 0.05);
-        CircularObstacle circle;
-        ObbObstacle wall;
-    }
-
     Model()
     {
         loadSimpleWorld();
@@ -329,10 +315,10 @@ public:
     {
         std::vector<CircularObstacle*> staticCircle(2);
         staticCircle[0] = new CircularObstacle;
-        staticCircle[0]->move(Eigen::Vector2d(0.5, 1.45), 0.1);
+        staticCircle[0]->move(Eigen::Vector2d(500, 1450), 100);
 
         staticCircle[1] = new CircularObstacle;
-        staticCircle[1]->move(Eigen::Vector2d(0.2, 1.0), 0.15);
+        staticCircle[1]->move(Eigen::Vector2d(200, 1000), 150);
 
         for (auto& obs : staticCircle) {
             obstacles_.add(obs);
@@ -340,7 +326,7 @@ public:
 
         dynamicCircle_.resize(1);
         dynamicCircle_[0] = new CircularObstacle;
-        dynamicCircle_[0]->move(Eigen::Vector2d(0.9, 1.05), 0.1);
+        dynamicCircle_[0]->move(Eigen::Vector2d(900, 1050), 100);
 
         for (auto& obs : dynamicCircle_) {
             obstacles_.add(obs);
@@ -348,42 +334,47 @@ public:
 
         const size_t numObstacles = 10;
         Eigen::MatrixXd obsCenter(numObstacles, 2);
-        obsCenter << 0.20, 0.50,
-            0.50, 0.15,
-            1.40, 0.25,
-            1.70, 0.55,
-            1.8, 0.80,
-            1.09, 1.05,
-            1.55, 1.10,
-            1.55, 1.70,
-            1.10, 1.625,
-            0.45, 1.60;
+        obsCenter << 200, 500,
+            500, 150,
+            1400, 250,
+            1700, 550,
+            1800, 800,
+            1090, 1050,
+            1550, 1100,
+            1550, 1700,
+            1100, 1625,
+            450, 1600;
         bool vertical[numObstacles] = { 0, 1, 1, 1, 0, 1, 0, 0, 1, 0 };
         double widthArray[numObstacles] = {
-            0.4, 0.0, 0.0, 0.0, 1.4, 0.0, 0.5, 0.3, 0.0, 0.5
+            400, 0.0, 0.0, 0.0, 1400, 0.0, 500, 300, 0.0, 500
         };
         double heightArray[numObstacles] = {
-            0.0, 0.3, 0.5, 0.3, 0.0, 0.5, 0.0, 0.0, 0.25, 0.0
+            0.0, 300, 500, 300, 0.0, 500, 0.0, 0.0, 250, 0.0
         };
 
         for (size_t i = 0; i < numObstacles; ++i) {
             ObbObstacle* wall = new ObbObstacle;
             if (!vertical[i]) {
-                wall->setHeight(0.06);
+                wall->setHeight(60);
                 wall->setWidth(widthArray[i]);
             }
             else {
                 wall->setHeight(heightArray[i]);
-                wall->setWidth(0.06);
+                wall->setWidth(60);
             }
 
             wall->move(Eigen::Vector2d(obsCenter(i, 0), obsCenter(i, 1)), 0);
 
             obstacles_.add(wall);
+//
+//            std::cout << "set object " << i+6 << " rect from "
+//                      << wall->vertices(0,2) << "," << wall->vertices(1,2)
+//                      << " to " <<wall->vertices(0,0) << "," << wall->vertices(1,0) << std::endl;
+
         }
 
-        simpleCar_.setWidth(0.08);
-        simpleCar_.setHeight(0.05);
+        simpleCar_.setWidth(80);
+        simpleCar_.setHeight(50);
     }
 
     bool isStateValid(const ob::State* state)
@@ -405,11 +396,32 @@ public:
 
     void updateObstacles()
     {
-        dynamicCircle_[0]->move(Eigen::Vector2d(1.07, 1.4), 0.1);
+        dynamicCircle_[0]->move(Eigen::Vector2d(1070, 1400), 100);
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
 
+    void loadObstacles(const std::string& fname)
+    {
+        std::ifstream fin(fname);
+        if (fin){
+            while(!fin.eof()){
+                char type;
+                fin >> type;
+                switch (type) {
+                case 'c':
+                    //fin >>
+                    break;
+                case 'r':
+                    break;
+                default:
+                    break;
+                }
+            }
+        } else {
+            std::cerr << "could not open file" << std::endl;
+        }
+    }
 private:
     ob::SpaceInformationPtr si_;
 
@@ -424,11 +436,11 @@ private:
 class DubinsCarEnvironment {
 public:
     DubinsCarEnvironment()
-        : maxWidth_(2.440)
-        , maxHeight_(2.160)
+        : maxWidth_(2440.0)
+        , maxHeight_(2160.0)
     {
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
-        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.15, false)); // only forward
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(150, false)); // only forward
         //ob::StateSpacePtr space(new ob::ReedsSheppStateSpace(0.11)); // only forward
 
         ob::RealVectorBounds bounds(2);
@@ -449,7 +461,7 @@ public:
         // space->getMaximumExtent());
         ss_->setPlanner(
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.03);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(30.0);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0125);
     }
@@ -464,7 +476,7 @@ public:
             og::PathGeometric& p = ss_->getSolutionPath();
             og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
 
-            int from = 9;
+            int from = 10;
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
@@ -479,8 +491,8 @@ public:
             localPlanner->selectBranch(s);
             t1.stop();
             t1.print();
-            localPlanner->setSampleRadius(0.1);
-            localPlanner->setOrphanedBias(0.50);
+            localPlanner->setSampleRadius(200);
+            localPlanner->setOrphanedBias(0.550);
             localPlanner->setLocalPlanning(true);
             localPlanner->swapNN();
         }
@@ -504,7 +516,7 @@ public:
 
     void cleanup()
     {
-        int from = 9;
+        int from = 10;
 
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
@@ -542,7 +554,7 @@ public:
         ss_->setStartAndGoalStates(start, goal);
         // generate a few solutions; all will be added to the goal;
 
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.1);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.01);
 
         if (ss_->getPlanner())
             if (clearPlanner)
@@ -698,8 +710,8 @@ public:
         ss_->setup();
 
         // FIXME
-        Model::Point initial(default_radius * 25, default_radius * 25);
-        Model::Point final(1.7, 1.0);
+        Model::Point initial(250, 250);
+        Model::Point final(1700, 1000);
 
         ob::ScopedState<> start(ss_->getStateSpace());
         start[0] = initial.x();
@@ -725,15 +737,15 @@ int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
 
-    Model::Point start(default_radius * 25, default_radius * 25);
-    Model::Point goal(1.7, 1.0);
+    Model::Point start(250, 250);
+    Model::Point goal(1700, 1000);
 
-    const double time = 600.0;
-    const double dt = 2.5;
+    const double time = 300.0;
+    const double dt = 1.25;
     const int ITERATIONS = time / dt;
 
-    std::string fileDump = "dubins5.dump";
-    bool plan = true;
+    std::string fileDump = "dubins300.dump";
+    bool plan = false;
 
 #define PLOTTING
 #ifdef PLOTTING
@@ -797,7 +809,7 @@ int main(int argc, char** argv)
     std::cout << std::endl;
     for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
          i++) {
-        if (problem.replan(start, goal, 120.00, false)) {
+        if (problem.replan(start, goal, 500.00, false)) {
             // problem.cleanup();
             problem.recordSolution(i);
             problem.recordTreeState(i);

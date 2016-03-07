@@ -468,6 +468,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             } else {
                 OMPL_INFORM(">>> reunited the branch");
                 motion->nodeType = NORMAL;
+                ptc.terminate();
             }
             motion->parent->children.push_back(motion);
 
@@ -509,50 +510,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                     // OMPL_INFORM("> about to connect an orphan branch");
                     if (si_->checkMotion(motion->state, nbh[i]->state)) {
                         recover.push(nbh[i]);
-
-                        /*
-                        std::vector<Motion*> vicinity;
-                        nn_->nearestK(nbh[i], k*k, vicinity);
-
-                        for (auto& neighbor : vicinity) {
-                            if (majorTree(neighbor)) {
-                            }
-                        }
-                        */
-
-
-
-                        // OMPL_INFORM(">> valid connection might happen");
-                        /*
-                        base::Cost nbhIncCost;
-                        if (symCost)
-                            nbhIncCost = incCosts[i];
-                        else
-                            nbhIncCost = opt_->motionCost(motion->state, nbh[i]->state);
-                        base::Cost nbhNewCost = opt_->combineCosts(motion->cost, nbhIncCost);
-
-                        // Add this node to the new parent
-                        if (nbh[i]->nodeType != ORPHANED) {
-                            removeFromParent(nbh[i]);
-                        }
-                        nbh[i]->parent = motion;
-                        nbh[i]->incCost = nbhIncCost;
-                        nbh[i]->cost = nbhNewCost;
-                        nbh[i]->parent->children.push_back(nbh[i]);
-                        nbh[i]->nodeType = NORMAL;
-
-
-
-                        // Update the costs of the node's children
-                        // if(!majorTree(nbh[i]))
-                        //    OMPL_WARN("#### invalid line to be run");
-                        updateChildCosts(nbh[i]);
-
-                        checkForSolution = true;
-
-
-                        // OMPL_INFORM(">>> orphan tree connected");
-                        */
                     }
                 }
             }
