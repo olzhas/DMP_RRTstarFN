@@ -3,8 +3,10 @@
 #include <ompl/base/PlannerDataStorage.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
+
+#include <Eigen/Eigen>
+#include <dart/common/common.h>
 #include "DRRTstarFN.h"
-#include <dart/dart.h>
 
 #include <mutex>
 #include <thread>
@@ -19,56 +21,13 @@
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-namespace dd = dart::dynamics;
-namespace ds = dart::simulation;
-namespace du = dart::utils;
-
 const double default_ground_width = 2;
 const double default_wall_thickness = 0.1;
 const double default_radius = 0.01;
 const double default_init_x = 0.25;
 const double default_init_y = 0.25;
 
-dd::SkeletonPtr createCar()
-{
-    dd::SkeletonPtr car = dd::Skeleton::create("car");
-
-    dd::BodyNode* bn = car->createJointAndBodyNodePair<dd::FreeJoint>().second;
-
-    std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(Eigen::Vector3d(
-        default_radius * 8, default_radius * 5, default_radius * 2));
-    shape->setColor(Eigen::Vector3d(1.0, .0, .0));
-
-    bn->addCollisionShape(shape);
-    bn->addVisualizationShape(shape);
-
-    Eigen::Vector3d positions(Eigen::Vector3d::Zero());
-
-    positions[0] = default_init_x;
-    positions[1] = default_init_y;
-    positions[2] = 0;
-
-    Eigen::Isometry3d transform1;
-    transform1.setIdentity();
-    // transform1.rotate(Eigen::Matrix3d::Identity());
-    transform1.translate(positions);
-
-    // dart::dynamics::FreeJoint::setTransform(car.get(), transform1);
-    // car->setPositions(positions);
-
-    return car;
-}
-
-dd::SkeletonPtr convexObstacle(const std::string& filename)
-{
-    // a circle with radius 0.1 and center in (0.6, 1.0)
-    const std::string SAFESPACE_DATA = "/home/olzhas/devel/staubli_dart/data/";
-    dd::SkeletonPtr obs = du::SkelParser::readSkeleton(SAFESPACE_DATA + filename);
-    return obs;
-}
-
 class Model {
-    static constexpr char WORLD_FILE_NAME[] = "data/2d-problem/model.sdf";
 
 public:
     class Point {
@@ -363,7 +322,6 @@ public:
 
     Model()
     {
-        //loadWorld();
         loadSimpleWorld();
     }
 
@@ -380,11 +338,11 @@ public:
             obstacles_.add(obs);
         }
 
-        std::vector<CircularObstacle*> dynamicCircle(1);
-        dynamicCircle[0] = new CircularObstacle;
-        dynamicCircle[0]->move(Eigen::Vector2d(0.9, 1.05), 0.1);
+        dynamicCircle_.resize(1);
+        dynamicCircle_[0] = new CircularObstacle;
+        dynamicCircle_[0]->move(Eigen::Vector2d(0.9, 1.05), 0.1);
 
-        for (auto& obs : dynamicCircle) {
+        for (auto& obs : dynamicCircle_) {
             obstacles_.add(obs);
         }
 
@@ -394,7 +352,7 @@ public:
             0.50, 0.15,
             1.40, 0.25,
             1.70, 0.55,
-            1.55, 0.80,
+            1.8, 0.80,
             1.09, 1.05,
             1.55, 1.10,
             1.55, 1.70,
@@ -402,7 +360,7 @@ public:
             0.45, 1.60;
         bool vertical[numObstacles] = { 0, 1, 1, 1, 0, 1, 0, 0, 1, 0 };
         double widthArray[numObstacles] = {
-            0.4, 0.0, 0.0, 0.0, 0.9, 0.0, 0.5, 0.3, 0.0, 0.5
+            0.4, 0.0, 0.0, 0.0, 1.4, 0.0, 0.5, 0.3, 0.0, 0.5
         };
         double heightArray[numObstacles] = {
             0.0, 0.3, 0.5, 0.3, 0.0, 0.5, 0.0, 0.0, 0.25, 0.0
@@ -428,8 +386,6 @@ public:
         simpleCar_.setHeight(0.05);
     }
 
-    ds::WorldPtr getWorld() const { return world_; }
-
     bool isStateValid(const ob::State* state)
     {
         // std::lock_guard<std::mutex> guard(mutex_);
@@ -445,130 +401,24 @@ public:
 
         simpleCar_.move(Eigen::Vector2d(x, y), yaw);
         return !obstacles_.detectCollision(&simpleCar_);
-        /*
-
-        Eigen::Isometry3d transform;
-        transform.setIdentity();
-
-        Eigen::Vector3d translation;
-
-        translation[0] = x;
-        translation[1] = y;
-        translation[2] = 0;
-
-        transform.translate(translation);
-
-        Eigen::Matrix3d m;
-        m.setIdentity();
-        m = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
-        transform.rotate(m);
-
-        dart::dynamics::FreeJoint::setTransform(car_.get(), transform);
-
-        bool worldCol = world_->checkCollision();
-
-        return !worldCol;
-*/
     }
 
     void updateObstacles()
     {
-        Eigen::Isometry3d transformation;
-        transformation.setIdentity();
-
-        Eigen::Vector3d translation(Eigen::Vector3d::Zero());
-        translation[0] = 1.07;
-        translation[1] = 1.4;
-        transformation.translate(translation);
-
-        dart::dynamics::FreeJoint::setTransform(dynamicObstacle_.get(),
-            transformation);
+        dynamicCircle_[0]->move(Eigen::Vector2d(1.07, 1.4), 0.1);
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
 
 private:
-    void loadWorld()
-    {
-        world_ = std::make_shared<ds::World>();
-        world_->setGravity(Eigen::Vector3d(Eigen::Vector3d::Zero()));
-        std::vector<Line*> map;
-
-        enum class Scenario : char { DEFAULT,
-            DETOUR };
-        Scenario scenario = Scenario::DEFAULT;
-        switch (scenario) {
-        case Scenario::DETOUR:
-
-            break;
-
-        default:
-            // map.reserve(9);
-            map.resize(10);
-            map[0] = new Line(Point(0.00, 0.50), Point(0.40, 0.50));
-            map[1] = new Line(Point(0.50, 0.00), Point(0.50, 0.30));
-            map[2] = new Line(Point(1.40, 0.00), Point(1.40, 0.50));
-            map[3] = new Line(Point(1.70, 0.40), Point(1.70, 0.70));
-            map[4] = new Line(Point(1.10, 0.80), Point(2.00, 0.80));
-            map[5] = new Line(Point(1.09, 0.80), Point(1.09, 1.30));
-            map[6] = new Line(Point(1.30, 1.10), Point(1.80, 1.10));
-            map[7] = new Line(Point(1.40, 1.70), Point(1.70, 1.70));
-            map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.75));
-            map[9] = new Line(Point(0.20, 1.60), Point(0.70, 1.60));
-            break;
-        }
-
-        for (size_t i = 0; i < map.size(); ++i) {
-            auto& l = map[i];
-
-            dd::BodyNode::Properties body;
-            body.mName = "box" + std::to_string(i);
-
-            dd::ShapePtr shape(
-                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.02, 1.0)));
-
-            body.mVizShapes.push_back(shape);
-            body.mColShapes.push_back(shape);
-
-            dd::FreeJoint::Properties properties;
-            properties.mName = "box" + std::to_string(i);
-            dd::SkeletonPtr box = dd::Skeleton::create("box" + std::to_string(i));
-            box->createJointAndBodyNodePair<dd::FreeJoint>(nullptr, properties, body);
-
-            Eigen::Vector6d positions(Eigen::Vector6d::Zero());
-            Eigen::Vector2d middle = l->middle().toVector();
-
-            if (l->getHead().x() == l->getTail().x()) {
-                positions[2] = M_PI / 2.0;
-            }
-
-            positions[3] = middle[0];
-            positions[4] = middle[1];
-            box->getJoint(0)->setPositions(positions);
-
-            world_->addSkeleton(box);
-        }
-        dynamicObstacle_ = convexObstacle("obstacles/r1-circle.skel");
-        world_->addSkeleton(dynamicObstacle_);
-
-        car_ = createCar();
-        world_->addSkeleton(car_);
-
-        world_->addSkeleton(convexObstacle("obstacles/r15-circle.skel"));
-        world_->addSkeleton(convexObstacle("obstacles/r1-circle-side.skel"));
-    }
-
-    dart::simulation::WorldPtr world_;
-    dd::SkeletonPtr car_;
-
-    dd::SkeletonPtr dynamicObstacle_;
-
     ob::SpaceInformationPtr si_;
 
     std::mutex mutex_;
 
     ObstacleCollection obstacles_;
     ObbObstacle simpleCar_;
+
+    std::vector<CircularObstacle*> dynamicCircle_;
 };
 
 class DubinsCarEnvironment {
@@ -578,8 +428,8 @@ public:
         , maxHeight_(2.160)
     {
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
-        ob::StateSpacePtr space(
-            new ob::DubinsStateSpace(0.11, false)); // only forward
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(0.15, false)); // only forward
+        //ob::StateSpacePtr space(new ob::ReedsSheppStateSpace(0.11)); // only forward
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -801,7 +651,7 @@ public:
             for (unsigned int i2(0); i2 < n_edge; ++i2) {
                 const ob::State* s2 = pdat.getVertex(edge_list[i2]).getState();
                 double step = 0.05;
-                if (space->distance(s1, s2) < 0.1) {
+                if (space->distance(s1, s2) < 0.03) {
                     step = 0.2;
                 }
                 space->copyToReals(realsOld, s1);
@@ -869,16 +719,6 @@ private:
     const double maxHeight_;
 
     Model model_;
-};
-
-class Window2D : public dart::gui::SimWindow {
-    void drawSkels()
-    {
-        glEnable(GL_LIGHTING);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        // glMatrixMode(GL_PROJECTION);
-        dart::gui::SimWindow::drawSkels();
-    }
 };
 
 int main(int argc, char** argv)
@@ -964,12 +804,6 @@ int main(int argc, char** argv)
             std::cout << "done\n";
         }
     }
-
-    Window2D win;
-    win.setWorld(problem.getModel().getWorld());
-    glutInit(&argc, argv);
-    win.initWindow(1280, 800, "2D demo");
-    glutMainLoop();
 
     return 0;
 }

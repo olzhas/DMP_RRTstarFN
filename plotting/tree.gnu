@@ -79,7 +79,7 @@ if (exists("filenameResultsMilestones") && file_exists(filenameResultsMilestones
 	plot filenameResultsMilestones using 1:2 notitle lc rgb "#FFAA11" pointtype 12 pointsize 5 lw 5
 }
 
-plot 'obstacles.dat' using 1:2:($3-$1):($4-$2):($5) notitle with vectors nohead lw 50 linecolor rgbcolor variable
+plot 'obstacles.dat' using 1:2:($3-$1):($4-$2):($5) notitle with vectors nohead lw 30 linecolor rgbcolor variable
 
 if (exists("highlight")) {
 	plot "highlight.dat" using 1:2:($4-$1):($5-$2) notitle with vectors arrowstyle 2
