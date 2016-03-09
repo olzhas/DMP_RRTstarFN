@@ -11,8 +11,9 @@ set output filenameOutput
 unset ytics
 unset xtics
 set size ratio -1
-set style arrow 1 nohead linecolor rgb "#999999" linewidth 1
+set style arrow 1 linecolor rgb "#999999" linewidth 1
 set style arrow 2 nohead linecolor rgb "#FFA500" linewidth 1
+set style fill transparent solid 0.5 noborder
 
 set style arrow 3 nohead linewidth 5
 set style line 1 linecolor rgb "#11CC22" linewidth 4
@@ -54,16 +55,16 @@ if (circle == 3) {
 
 }
 
-set object 6 rect from 0,470 to 400,530 fc rgb "#FF4136" front
-set object 7 rect from 470,0 to 530,300 fc rgb "#39CCCC" front
-set object 8 rect from 1370,0 to 1430,500 fc rgb "#3D9970" front
-set object 9 rect from 1670,400 to 1730,700 fc rgb "#B10DC9" front
-set object 10 rect from 1100,770 to 2500,830 fc rgb "#0074D9" front
-set object 11 rect from 1060,800 to 1120,1300 fc rgb "#F012BE" front
-set object 12 rect from 1300,1070 to 1800,1130 fc rgb "#3D9970" front
-set object 13 rect from 1400,1670 to 1700,1730 fc rgb "#39CCCC" front
-set object 14 rect from 1070,1500 to 1130,1750 fc rgb "#FF4136" front
-set object 15 rect from 200,1570 to 700,1630 fc rgb "#0074D9" front
+set object 6 rect from 0,460 to 400,540 fc rgb "#FF4136" front 
+set object 7 rect from 460,0 to 540,300 fc rgb "#39CCCC" front
+set object 8 rect from 1360,0 to 1440,500 fc rgb "#3D9970" front
+set object 9 rect from 1660,400 to 1740,700 fc rgb "#B10DC9" front
+set object 10 rect from 1100,760 to 2500,840 fc rgb "#0074D9" front
+set object 11 rect from 1050,800 to 1130,1300 fc rgb "#F012BE" front
+set object 12 rect from 1300,1060 to 1800,1140 fc rgb "#3D9970" front
+set object 13 rect from 1400,1660 to 1700,1740 fc rgb "#39CCCC" front
+set object 14 rect from 1060,1500 to 1140,1750 fc rgb "#FF4136" front
+set object 15 rect from 200,1560 to 700,1640 fc rgb "#0074D9" front
 
 set yrange [0:2160]
 set xrange [0:3840]

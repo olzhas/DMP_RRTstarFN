@@ -134,6 +134,14 @@ public:
             pos = p;
             radius = r;
         }
+
+        Eigen::Vector2d getPos() const {
+            return pos;
+        }
+
+        double getRadius() const {
+            return radius;
+        }
     };
 
     class ObbObstacle : public Obstacle {
@@ -203,7 +211,7 @@ public:
         }
 
         /** \brief */
-        void calcSquareDiag() { squareDiag = width * width + height * height; }
+        void calcSquareDiag() { squareDiag = width/2.0 * width/2.0 + height/2.0 * height/2.0; }
 
         /** \brief */
         Eigen::Vector2d getPos() const { return pos; }
@@ -313,17 +321,6 @@ public:
 
     void loadSimpleWorld()
     {
-        std::vector<CircularObstacle*> staticCircle(2);
-        staticCircle[0] = new CircularObstacle;
-        staticCircle[0]->move(Eigen::Vector2d(500, 1450), 100);
-
-        staticCircle[1] = new CircularObstacle;
-        staticCircle[1]->move(Eigen::Vector2d(200, 1000), 150);
-
-        for (auto& obs : staticCircle) {
-            obstacles_.add(obs);
-        }
-
         dynamicCircle_.resize(1);
         dynamicCircle_[0] = new CircularObstacle;
         dynamicCircle_[0]->move(Eigen::Vector2d(900, 1050), 100);
@@ -331,47 +328,7 @@ public:
         for (auto& obs : dynamicCircle_) {
             obstacles_.add(obs);
         }
-
-        const size_t numObstacles = 10;
-        Eigen::MatrixXd obsCenter(numObstacles, 2);
-        obsCenter << 200, 500,
-            500, 150,
-            1400, 250,
-            1700, 550,
-            1800, 800,
-            1090, 1050,
-            1550, 1100,
-            1550, 1700,
-            1100, 1625,
-            450, 1600;
-        bool vertical[numObstacles] = { 0, 1, 1, 1, 0, 1, 0, 0, 1, 0 };
-        double widthArray[numObstacles] = {
-            400, 0.0, 0.0, 0.0, 1400, 0.0, 500, 300, 0.0, 500
-        };
-        double heightArray[numObstacles] = {
-            0.0, 300, 500, 300, 0.0, 500, 0.0, 0.0, 250, 0.0
-        };
-
-        for (size_t i = 0; i < numObstacles; ++i) {
-            ObbObstacle* wall = new ObbObstacle;
-            if (!vertical[i]) {
-                wall->setHeight(60);
-                wall->setWidth(widthArray[i]);
-            }
-            else {
-                wall->setHeight(heightArray[i]);
-                wall->setWidth(60);
-            }
-
-            wall->move(Eigen::Vector2d(obsCenter(i, 0), obsCenter(i, 1)), 0);
-
-            obstacles_.add(wall);
-//
-//            std::cout << "set object " << i+6 << " rect from "
-//                      << wall->vertices(0,2) << "," << wall->vertices(1,2)
-//                      << " to " <<wall->vertices(0,0) << "," << wall->vertices(1,0) << std::endl;
-
-        }
+        loadObstacles("data/obstacles/fourth.map");
 
         simpleCar_.setWidth(80);
         simpleCar_.setHeight(50);
@@ -403,25 +360,71 @@ public:
 
     void loadObstacles(const std::string& fname)
     {
+        Obstacle* obs;
+
+        std::string str;
+
         std::ifstream fin(fname);
-        if (fin){
-            while(!fin.eof()){
+        std::ofstream fout("obstacles.gnu");
+
+        if (fin) {
+            size_t i=0;
+            fout << "set object " << i << " ";
+            while (!fin.eof()) {
                 char type;
                 fin >> type;
+                std::getline(fin, str);
                 switch (type) {
                 case 'c':
-                    //fin >>
+                case 'C':
+                    obs = createCircularObstacle(str);
+
+                    fout << "circle at " << obs->
                     break;
                 case 'r':
+                case 'R':
+                    obs = createObbObstacle(str);
                     break;
                 default:
                     break;
                 }
+                obstacles_.add(obs);
             }
-        } else {
+        }
+        else {
             std::cerr << "could not open file" << std::endl;
         }
     }
+
+    CircularObstacle* createCircularObstacle(const std::string& to_parse)
+    {
+        double x, y, r;
+        std::istringstream iss(to_parse);
+
+        iss >> x >> y >> r;
+
+        CircularObstacle* object = new CircularObstacle;
+        object->move(Eigen::Vector2d(x, y), r);
+        return object;
+    }
+
+    ObbObstacle* createObbObstacle(const std::string& to_parse)
+    {
+        double x, y;
+        double width, height;
+
+        std::istringstream iss(to_parse);
+
+        iss >> x >> y >> width >> height;
+
+        ObbObstacle* object = new ObbObstacle;
+
+        object->setWidth(width);
+        object->setHeight(height);
+        object->move(Eigen::Vector2d(x, y), 0);
+        return object;
+    }
+
 private:
     ob::SpaceInformationPtr si_;
 
@@ -554,7 +557,7 @@ public:
         ss_->setStartAndGoalStates(start, goal);
         // generate a few solutions; all will be added to the goal;
 
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.01);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.075);
 
         if (ss_->getPlanner())
             if (clearPlanner)
@@ -737,15 +740,17 @@ int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
 
-    Model::Point start(250, 250);
-    Model::Point goal(1700, 1000);
+//    Model::Point start(250, 250);
+//    Model::Point goal(1700, 1000);
+    Model::Point start(100, 450);
+    Model::Point goal(1300, 1000);
 
-    const double time = 300.0;
-    const double dt = 1.25;
+    const double time = 420.0;
+    const double dt = 1.75;
     const int ITERATIONS = time / dt;
 
-    std::string fileDump = "dubins300.dump";
-    bool plan = false;
+    std::string fileDump = "dubins420.dump";
+    bool plan = true;
 
 #define PLOTTING
 #ifdef PLOTTING
