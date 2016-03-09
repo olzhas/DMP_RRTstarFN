@@ -135,11 +135,13 @@ public:
             radius = r;
         }
 
-        Eigen::Vector2d getPos() const {
+        Eigen::Vector2d getPos() const
+        {
             return pos;
         }
 
-        double getRadius() const {
+        double getRadius() const
+        {
             return radius;
         }
     };
@@ -211,7 +213,7 @@ public:
         }
 
         /** \brief */
-        void calcSquareDiag() { squareDiag = width/2.0 * width/2.0 + height/2.0 * height/2.0; }
+        void calcSquareDiag() { squareDiag = width / 2.0 * width / 2.0 + height / 2.0 * height / 2.0; }
 
         /** \brief */
         Eigen::Vector2d getPos() const { return pos; }
@@ -328,7 +330,7 @@ public:
         for (auto& obs : dynamicCircle_) {
             obstacles_.add(obs);
         }
-        loadObstacles("data/obstacles/fourth.map");
+        loadObstacles("data/obstacles/test.map");
 
         simpleCar_.setWidth(80);
         simpleCar_.setHeight(50);
@@ -365,25 +367,43 @@ public:
         std::string str;
 
         std::ifstream fin(fname);
+
         std::ofstream fout("obstacles.gnu");
 
+        const std::size_t nColors = 6;
+        const std::string colors[nColors] = { "#FF4136", "#39CCCC", "#3D9970",
+            "#B10DC9", "#0074D9", "#F012BE"};
+
         if (fin) {
-            size_t i=0;
-            fout << "set object " << i << " ";
+
+            size_t i = 100;
+
             while (!fin.eof()) {
+
                 char type;
                 fin >> type;
                 std::getline(fin, str);
+
                 switch (type) {
                 case 'c':
                 case 'C':
                     obs = createCircularObstacle(str);
-
-                    fout << "circle at " << obs->
+                    fout << "set object " << ++i << " ";
+                    fout << "circle at " << static_cast<CircularObstacle*>(obs)->getPos()[0] << ","
+                         << static_cast<CircularObstacle*>(obs)->getPos()[1]
+                         << " size " << static_cast<CircularObstacle*>(obs)->getRadius()
+                         << " fc rgb \"#22FF4444\" front" << std::endl;
                     break;
                 case 'r':
                 case 'R':
                     obs = createObbObstacle(str);
+                    fout << "set object " << ++i << " ";
+                    fout << "rect from " << static_cast<ObbObstacle*>(obs)->vertices(0, 2)
+                         << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 2)
+                         << " to " << static_cast<ObbObstacle*>(obs)->vertices(0, 0)
+                         << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 0)
+                         << " fc rgb \"" << colors[i % nColors]<< "\" front" << std::endl;
+
                     break;
                 default:
                     break;
@@ -443,7 +463,7 @@ public:
         , maxHeight_(2160.0)
     {
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
-        ob::StateSpacePtr space(new ob::DubinsStateSpace(150, false)); // only forward
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(125, false)); // only forward
         //ob::StateSpacePtr space(new ob::ReedsSheppStateSpace(0.11)); // only forward
 
         ob::RealVectorBounds bounds(2);
@@ -740,10 +760,10 @@ int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
 
-//    Model::Point start(250, 250);
-//    Model::Point goal(1700, 1000);
-    Model::Point start(100, 450);
-    Model::Point goal(1300, 1000);
+    //    Model::Point start(250, 250);
+    //    Model::Point goal(1700, 1000);
+    Model::Point start(100, 100);
+    Model::Point goal(1600, 1150);
 
     const double time = 420.0;
     const double dt = 1.75;

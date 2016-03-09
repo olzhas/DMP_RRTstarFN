@@ -25,46 +25,50 @@ set object 1 circle at 1.7,1.0 size .025 fc rgb "#336699" lw 5
 set style fill solid 1.0 border -1
 
 if (circle == 1) {
-	#set object 2 circle at 0.8,1.0 size .1 fc rgb "#22FF4444" front
-	#set object 2 circle at 0.9,1.0 size .1 fc rgb "#22FF4444" front
-	set object 2 circle at 900,1050 size 100 fc rgb "#22FF4444" front
-	set object 4 circle at 200,1000 size 150 fc rgb "#22FF4444" front
-	set object 5 circle at 500,1450 size 100 fc rgb "#22FF4444" front
+	#set object 2 circle at 900,1050 size 100 fc rgb "#22FF4444" front
+	#set object 4 circle at 200,1000 size 150 fc rgb "#22FF4444" front
+	#set object 5 circle at 500,1450 size 100 fc rgb "#22FF4444" front
 }
 if (circle == 2) {
-	#set object 3 circle at 0.799238939618349,1.01743114854953 size .1 fs solid fc rgb "#222244FF" front
-	#set object 3 circle at 0.9518,1.1932 size .1 fs solid fc rgb "#222244FF" front
-	#
-	#set object 3 circle at 0.9,1.2 size .1 fs solid fc rgb "#222244FF" front 
-	#
-	set object 3 circle at 1070,1400 size 100 fs solid fc rgb "#222244FF" front 
-	set object 4 circle at 200,1000 size 150 fc rgb "#22FF4444" front
-	set object 5 circle at 500,1450 size 100 fc rgb "#22FF4444" front
+	
+	#set object 3 circle at 1070,1400 size 100 fs solid fc rgb "#222244FF" front 
+	#set object 4 circle at 200,1000 size 150 fc rgb "#22FF4444" front
+	#set object 5 circle at 500,1450 size 100 fc rgb "#22FF4444" front
 }
 if (circle == 3) {
-	#set object 2 circle at 0.6,1.0 size .1 fs solid fc rgb "#22FF4444" front
-	#set object 3 circle at 0.799238939618349,1.01743114854953 size .1 fs solid fc rgb "#222244FF" front
-	#set object 2 circle at 0.9,1.0 size .1 fs solid fc rgb "#22FF4444" front
-	set object 2 circle at 900,1050 size 100 fs solid fc rgb "#22FF4444" front
-	set object 3 circle at 1070,1400 size 100 fs solid fc rgb "#222244FF" front 
-	###set object 3 circle at 0.9,1.2 size .1 fs solid fc rgb "#222244FF" front 
-	#set object 3 circle at 0.9518,1.1932 size .1 fs solid fc rgb "#222244FF" front #75
-
-	set object 4 circle at 200,1000 size 150 fc rgb "#22FF4444" front
-	set object 5 circle at 500,1450 size 100 fc rgb "#22FF4444" front
-
+	#set object 2 circle at 900,1050 size 100 fs solid fc rgb "#22FF4444" front
+	#set object 3 circle at 1070,1400 size 100 fs solid fc rgb "#222244FF" front 
+	#set object 4 circle at 200,1000 size 150 fc rgb "#22FF4444" front
+	#set object 5 circle at 500,1450 size 100 fc rgb "#22FF4444" front
 }
 
-set object 6 rect from 0,460 to 400,540 fc rgb "#FF4136" front 
-set object 7 rect from 460,0 to 540,300 fc rgb "#39CCCC" front
-set object 8 rect from 1360,0 to 1440,500 fc rgb "#3D9970" front
-set object 9 rect from 1660,400 to 1740,700 fc rgb "#B10DC9" front
-set object 10 rect from 1100,760 to 2500,840 fc rgb "#0074D9" front
-set object 11 rect from 1050,800 to 1130,1300 fc rgb "#F012BE" front
-set object 12 rect from 1300,1060 to 1800,1140 fc rgb "#3D9970" front
-set object 13 rect from 1400,1660 to 1700,1740 fc rgb "#39CCCC" front
-set object 14 rect from 1060,1500 to 1140,1750 fc rgb "#FF4136" front
-set object 15 rect from 200,1560 to 700,1640 fc rgb "#0074D9" front
+#set object  6 rect from 0,460 to 400,540 fc rgb "#FF4136" front 
+#set object  7 rect from 460,0 to 540,300 fc rgb "#39CCCC" front
+#set object  8 rect from 1360,0 to 1440,500 fc rgb "#3D9970" front
+#set object  9 rect from 1660,400 to 1740,700 fc rgb "#B10DC9" front
+#set object 10 rect from 1100,760 to 2500,840 fc rgb "#0074D9" front
+#set object 11 rect from 1050,800 to 1130,1300 fc rgb "#F012BE" front
+#set object 12 rect from 1300,1060 to 1800,1140 fc rgb "#3D9970" front
+#set object 13 rect from 1400,1660 to 1700,1740 fc rgb "#39CCCC" front
+#set object 14 rect from 1060,1500 to 1140,1750 fc rgb "#FF4136" front
+#set object 15 rect from 200,1560 to 700,1640 fc rgb "#0074D9" front
+
+set object 101 rect from 0,465 to 400,535 fc rgb "#F012BE" front
+set object 102 rect from 465,0 to 535,300 fc rgb "#FF4136" front
+set object 103 rect from 1365,0 to 1435,500 fc rgb "#39CCCC" front
+set object 104 rect from 1665,400 to 1735,700 fc rgb "#3D9970" front
+set object 105 rect from 1100,765 to 2500,835 fc rgb "#B10DC9" front
+set object 106 rect from 1055,800 to 1125,1300 fc rgb "#0074D9" front
+set object 107 rect from 1300,1065 to 1800,1135 fc rgb "#F012BE" front
+set object 108 rect from 1400,1665 to 1700,1735 fc rgb "#FF4136" front
+set object 109 rect from 1065,1500 to 1135,1750 fc rgb "#39CCCC" front
+set object 110 rect from 200,1565 to 700,1635 fc rgb "#3D9970" front
+set object 111 circle at 500,1450 size 100 fc rgb "#22FF4444" front
+set object 112 circle at 200,1000 size 150 fc rgb "#22FF4444" front
+set object 113 circle at 200,1000 size 150 fc rgb "#22FF4444" front
+
+
+set object 200 circle at 1600,1150 size 50 fc rgb "#22FF4444" front
 
 set yrange [0:2160]
 set xrange [0:3840]
