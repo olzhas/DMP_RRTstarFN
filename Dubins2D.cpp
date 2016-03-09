@@ -135,7 +135,7 @@ public:
         {
             pos = p;
             radius = r;
-            radiusSquare = r*r;
+            radiusSquare = r * r;
         }
 
         Eigen::Vector2d getPos() const
@@ -467,6 +467,8 @@ private:
 
 class DubinsCarEnvironment {
 public:
+    double reconnectTime;
+
     DubinsCarEnvironment(std::string& obstacleFilepath)
         : maxWidth_(2440.0)
         , maxHeight_(2160.0)
@@ -510,6 +512,7 @@ public:
         try {
             ob::SpaceInformationPtr si = ss_->getSpaceInformation();
             og::PathGeometric& p = ss_->getSolutionPath();
+            pathNodeCount_ = p.getStateCount();
             og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
 
             ompl::base::State* s = si->cloneState(p.getState(from));
@@ -552,20 +555,23 @@ public:
     {
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
-        // ss_->getProblemDefinition()->clearSolutionPaths();
-        // ss_->solve(0.010);
     }
 
     bool replan(const Model::Point& initial, const Model::Point& final,
         double time, bool clearPlanner = true)
     {
+        reconnectTime = 0;
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0125);
-
-        // ss_->getPlanner()->as<og::DRRTstarFN>()->reconnect();
-        ss_->solve(time);
-
-        // REGRESSION
-        // ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
+        dart::common::Timer t1("reconnect");
+        t1.start();
+        bool is_reconnected = ss_->getPlanner()->as<og::DRRTstarFN>()->reconnect();
+        t1.stop();
+        if (is_reconnected) {
+            reconnectTime = t1.getElapsedTime();
+        }
+        else {
+            ss_->solve(time);
+        }
         ss_->getProblemDefinition()->clearSolutionPaths();
         // FIXME reevalute solution path without trying to solve it.
         ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
@@ -757,10 +763,34 @@ public:
         ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(filename);
     }
 
+    size_t getPathNodesCount() const
+    {
+        return pathNodeCount_;
+    }
+
+    std::string statistics()
+    {
+        std::string output;
+        og::PathGeometric& p = ss_->getSolutionPath();
+
+        if (reconnectTime > 0) {
+            output += std::to_string(reconnectTime);
+        }
+        else {
+            output += std::to_string(ss_->getLastPlanComputationTime());
+        }
+        output += ", ";
+
+        output += std::to_string(p.length());
+
+        return output;
+    }
+
 private:
     og::SimpleSetupPtr ss_;
     const double maxWidth_;
     const double maxHeight_;
+    size_t pathNodeCount_;
 
     Model* model_;
 };
@@ -777,23 +807,18 @@ std::istream& operator>>(std::istream& is, Model::Point& p)
 int main(int argc, char** argv)
 {
     std::string setupFilename = "config/setup.txt";
-    int from = 0;
     if (argc > 1) {
         for (int i = 0; i < argc; ++i) {
             if (std::string(argv[i]) == std::string("-s") && i + 1 < argc) {
                 setupFilename = argv[++i];
-            }
-
-            if(std::string(argv[i]) == std::string("-from") && i+1 < argc) {
-                from = atoi(argv[++i]);
             }
         }
     }
 
     std::ifstream fin(setupFilename);
 
-    Model::Point start; //(100, 100);
-    Model::Point goal; //(1800, 1800);
+    Model::Point start;
+    Model::Point goal;
     double time;
     size_t iter;
 
@@ -832,9 +857,6 @@ int main(int argc, char** argv)
         }
         problem.store(fileDump.c_str());
     }
-    else {
-        problem.load(fileDump.c_str());
-    }
 #endif
 
     std::cout << time << "\n" << dt << std::endl;
@@ -856,38 +878,46 @@ int main(int argc, char** argv)
     }
 #endif
 
-    // for (int i = 0; i < 4; ++i) {
     problem.updateObstacles();
-    //}
     std::cout << "obstacle has moved\n";
 
-    problem.prepareDynamic(from);
+    std::ofstream fout("benchmark_results.txt");
 
-    std::cout << "prepared tree for removal\n";
+    fout << obstaclesFile << "\n";
 
-    //==============================================================================
-    problem.recordSolution(800);
-    problem.recordTreeState(800);
-    std::cout << "recorded 800\n";
+    fout << "from time cost reached\n";
 
-    problem.removeInvalidNodes();
+    for (size_t from = 0; from < problem.getPathNodesCount(); ++from) {
+        problem.load(fileDump.c_str());
 
-    std::cout << "invalid branch removal: done\n";
-    problem.recordTreeState(801);
+        problem.prepareDynamic(from);
+        std::cout << "prepared tree for removal\n";
 
-    //==============================================================================
+        //==============================================================================
+        problem.recordSolution(800);
+        problem.recordTreeState(800);
+        std::cout << "recorded 800\n";
 
-    const int DYNAMIC_ITERATIONS = 1;
-    std::cout << std::endl;
-    for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
-         i++) {
-        if (problem.replan(start, goal, 500.00, false)) {
-            // problem.cleanup();
-            problem.recordSolution(i);
-            problem.recordTreeState(i);
-            std::cout << "done\n";
+        problem.removeInvalidNodes();
+
+        std::cout << "invalid branch removal: done\n";
+        problem.recordTreeState(801);
+
+        //==============================================================================
+
+        const int DYNAMIC_ITERATIONS = 1;
+        std::cout << std::endl;
+        for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
+             i++) {
+            if (problem.replan(start, goal, 500.00, false)) {
+                // problem.cleanup();
+                problem.recordSolution(i);
+                problem.recordTreeState(i);
+                std::cout << "done\n";
+            }
         }
-    }
 
+        fout << from << ", " << problem.statistics() << std::endl;
+    }
     return 0;
 }
