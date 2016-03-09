@@ -59,6 +59,7 @@ public:
             return out;
         }
     };
+
     class Line {
         Point head_;
         Point tail_;
@@ -372,7 +373,7 @@ public:
 
         const std::size_t nColors = 6;
         const std::string colors[nColors] = { "#FF4136", "#39CCCC", "#3D9970",
-            "#B10DC9", "#0074D9", "#F012BE"};
+            "#B10DC9", "#0074D9", "#F012BE" };
 
         if (fin) {
 
@@ -402,7 +403,7 @@ public:
                          << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 2)
                          << " to " << static_cast<ObbObstacle*>(obs)->vertices(0, 0)
                          << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 0)
-                         << " fc rgb \"" << colors[i % nColors]<< "\" front" << std::endl;
+                         << " fc rgb \"" << colors[i % nColors] << "\" front" << std::endl;
 
                     break;
                 default:
@@ -480,13 +481,11 @@ public:
         ss_->setStateValidityChecker(
             boost::bind(&Model::isStateValid, &model_, _1));
         space->setup();
-        // ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 /
-        // space->getMaximumExtent());
         ss_->setPlanner(
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
         ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(30.0);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0125);
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
     }
 
     std::vector<ompl::base::State*> pathArray_;
@@ -756,21 +755,51 @@ private:
     Model model_;
 };
 
+
+std::istream& operator>>(std::istream& is, Model::Point& p) {
+    double x, y;
+
+    is >> x;
+    is >> y;
+    p = Model::Point(x,y);
+}
+
 int main(int argc, char** argv)
 {
     DubinsCarEnvironment problem;
 
-    //    Model::Point start(250, 250);
-    //    Model::Point goal(1700, 1000);
-    Model::Point start(100, 100);
-    Model::Point goal(1600, 1150);
+    std::string setupFilename = "config/setup.txt";
+    if (argc > 1) {
+        for(size_t i=0; i<argc; ++i){
+            if(std::string(argv[i]) == std::string("-s") && i+1 < argc){
+                setupFilename = argv[++i];
+            }
+        }
+    }
 
-    const double time = 420.0;
-    const double dt = 1.75;
-    const int ITERATIONS = time / dt;
+    std::ifstream fin(setupFilename);
 
-    std::string fileDump = "dubins420.dump";
-    bool plan = true;
+    Model::Point start;//(100, 100);
+    Model::Point goal;//(1800, 1800);
+    double time;
+    size_t iter;
+
+    assert(!fin.fail() && "Cannot open file");
+
+    fin >> start;
+    fin >> goal;
+
+    fin >> time;
+    fin >> iter;
+
+    double dt = time / iter;
+    int ITERATIONS = iter;
+
+    std::string fileDump;
+    fin >> fileDump;
+
+    bool plan;
+    fin >> plan;
 
 #define PLOTTING
 #ifdef PLOTTING

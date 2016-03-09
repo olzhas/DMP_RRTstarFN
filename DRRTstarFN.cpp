@@ -317,7 +317,9 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             // OMPL_INFORM("upd d = %f, max = %f, max/d = %f", d, maxDistance_,
             // maxDistance_ / d);
             dstate = xstate;
-        }
+        } /*else {
+            continue;
+        }*/
 
         // Check if the motion between the nearest state and the state to add is
         // valid

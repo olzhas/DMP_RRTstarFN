@@ -68,7 +68,7 @@ set object 112 circle at 200,1000 size 150 fc rgb "#22FF4444" front
 set object 113 circle at 200,1000 size 150 fc rgb "#22FF4444" front
 
 
-set object 200 circle at 1600,1150 size 50 fc rgb "#22FF4444" front
+set object 200 circle at 1600,900 size 50 fc rgb "#22FF4444" front
 
 set yrange [0:2160]
 set xrange [0:3840]
