@@ -2,7 +2,7 @@
 
 #gnuplot tree.gnu
 
-i=186
+i=150
 res="dubins-results-interp$i.txt"
 resOrig="dubins-results$i.txt"
 vert="dubins-vertices$i.dat"

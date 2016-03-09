@@ -110,6 +110,7 @@ public:
     private:
         Eigen::Vector2d pos;
         double radius;
+        double radiusSquare;
 
     public:
         CircularObstacle()
@@ -124,16 +125,17 @@ public:
             Eigen::Vector2d diff = (obb->getPos() - pos);
             double squareDistance = diff.dot(diff);
 
-            if (squareDistance > radius * radius + obb->getSquareDiag()) {
-                return false;
+            if (squareDistance < (radiusSquare + obb->getSquareDiag())) {
+                return true;
             }
-            return true;
+            return false;
         }
 
         void move(const Eigen::Vector2d& p, const double& r)
         {
             pos = p;
             radius = r;
+            radiusSquare = r*r;
         }
 
         Eigen::Vector2d getPos() const
@@ -214,7 +216,13 @@ public:
         }
 
         /** \brief */
-        void calcSquareDiag() { squareDiag = width / 2.0 * width / 2.0 + height / 2.0 * height / 2.0; }
+        void calcSquareDiag() { squareDiag = width * width + height * height; }
+
+        double getSquareDiag() const
+        {
+            const double factorOfSafety = 1.25;
+            return factorOfSafety * squareDiag;
+        }
 
         /** \brief */
         Eigen::Vector2d getPos() const { return pos; }
@@ -288,8 +296,6 @@ public:
             minY = min[1];
         }
 
-        double getSquareDiag() const { return squareDiag; }
-
     private:
         Eigen::Vector2d pos;
         double yaw;
@@ -317,8 +323,9 @@ public:
         void add(Obstacle* a) { data_.push_back(a); }
     };
 
-    Model()
+    Model(std::string& filename)
     {
+        mapFilename_ = filename;
         loadSimpleWorld();
     }
 
@@ -331,7 +338,7 @@ public:
         for (auto& obs : dynamicCircle_) {
             obstacles_.add(obs);
         }
-        loadObstacles("data/obstacles/test.map");
+        loadObstacles(mapFilename_);
 
         simpleCar_.setWidth(80);
         simpleCar_.setHeight(50);
@@ -453,16 +460,18 @@ private:
 
     ObstacleCollection obstacles_;
     ObbObstacle simpleCar_;
+    std::string mapFilename_;
 
     std::vector<CircularObstacle*> dynamicCircle_;
 };
 
 class DubinsCarEnvironment {
 public:
-    DubinsCarEnvironment()
+    DubinsCarEnvironment(std::string& obstacleFilepath)
         : maxWidth_(2440.0)
         , maxHeight_(2160.0)
     {
+        model_ = new Model(obstacleFilepath);
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
         ob::StateSpacePtr space(new ob::DubinsStateSpace(125, false)); // only forward
         //ob::StateSpacePtr space(new ob::ReedsSheppStateSpace(0.11)); // only forward
@@ -477,15 +486,20 @@ public:
         ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
         // set state validity checking for this space
         ob::SpaceInformationPtr si = ss_->getSpaceInformation();
-        model_.setSpaceInformation(si);
+        model_->setSpaceInformation(si);
         ss_->setStateValidityChecker(
-            boost::bind(&Model::isStateValid, &model_, _1));
+            boost::bind(&Model::isStateValid, model_, _1));
         space->setup();
         ss_->setPlanner(
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(30.0);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(25.0);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
+    }
+
+    ~DubinsCarEnvironment()
+    {
+        delete model_;
     }
 
     std::vector<ompl::base::State*> pathArray_;
@@ -498,7 +512,7 @@ public:
             og::PathGeometric& p = ss_->getSolutionPath();
             og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
 
-            int from = 10;
+            int from = fromWhereToReplan_;
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
@@ -538,7 +552,7 @@ public:
 
     void cleanup()
     {
-        int from = 10;
+        int from = fromWhereToReplan_;
 
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
@@ -705,10 +719,10 @@ public:
         }
     }
 
-    Model& getModel() { return model_; }
+    Model* getModel() { return model_; }
 
     // proxy method
-    void updateObstacles() { model_.updateObstacles(); }
+    void updateObstacles() { model_->updateObstacles(); }
 
     //==============================================================================
     void store(const char* filename)
@@ -747,31 +761,36 @@ public:
         ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(filename);
     }
 
+    void setFromWhere(size_t from)
+    {
+        fromWhereToReplan_ = from;
+    }
+
 private:
     og::SimpleSetupPtr ss_;
     const double maxWidth_;
     const double maxHeight_;
 
-    Model model_;
+    Model* model_;
+
+    size_t fromWhereToReplan_;
 };
 
-
-std::istream& operator>>(std::istream& is, Model::Point& p) {
+std::istream& operator>>(std::istream& is, Model::Point& p)
+{
     double x, y;
 
     is >> x;
     is >> y;
-    p = Model::Point(x,y);
+    p = Model::Point(x, y);
 }
 
 int main(int argc, char** argv)
 {
-    DubinsCarEnvironment problem;
-
     std::string setupFilename = "config/setup.txt";
     if (argc > 1) {
-        for(size_t i=0; i<argc; ++i){
-            if(std::string(argv[i]) == std::string("-s") && i+1 < argc){
+        for (int i = 0; i < argc; ++i) {
+            if (std::string(argv[i]) == std::string("-s") && i + 1 < argc) {
                 setupFilename = argv[++i];
             }
         }
@@ -779,8 +798,8 @@ int main(int argc, char** argv)
 
     std::ifstream fin(setupFilename);
 
-    Model::Point start;//(100, 100);
-    Model::Point goal;//(1800, 1800);
+    Model::Point start; //(100, 100);
+    Model::Point goal; //(1800, 1800);
     double time;
     size_t iter;
 
@@ -800,6 +819,11 @@ int main(int argc, char** argv)
 
     bool plan;
     fin >> plan;
+
+    std::string obstaclesFile;
+    fin >> obstaclesFile;
+
+    DubinsCarEnvironment problem(obstaclesFile);
 
 #define PLOTTING
 #ifdef PLOTTING
