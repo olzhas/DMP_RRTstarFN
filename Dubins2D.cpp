@@ -504,15 +504,13 @@ public:
 
     std::vector<ompl::base::State*> pathArray_;
 
-    void prepareDynamic()
+    void prepareDynamic(int from)
     {
         dart::common::Timer t1("select branch");
         try {
             ob::SpaceInformationPtr si = ss_->getSpaceInformation();
             og::PathGeometric& p = ss_->getSolutionPath();
             og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
-
-            int from = fromWhereToReplan_;
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
@@ -550,10 +548,8 @@ public:
         ss_->getProblemDefinition()->clearSolutionPaths();
     }
 
-    void cleanup()
+    void cleanup(int from)
     {
-        int from = fromWhereToReplan_;
-
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
         // ss_->getProblemDefinition()->clearSolutionPaths();
@@ -761,19 +757,12 @@ public:
         ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(filename);
     }
 
-    void setFromWhere(size_t from)
-    {
-        fromWhereToReplan_ = from;
-    }
-
 private:
     og::SimpleSetupPtr ss_;
     const double maxWidth_;
     const double maxHeight_;
 
     Model* model_;
-
-    size_t fromWhereToReplan_;
 };
 
 std::istream& operator>>(std::istream& is, Model::Point& p)
@@ -788,10 +777,15 @@ std::istream& operator>>(std::istream& is, Model::Point& p)
 int main(int argc, char** argv)
 {
     std::string setupFilename = "config/setup.txt";
+    int from = 0;
     if (argc > 1) {
         for (int i = 0; i < argc; ++i) {
             if (std::string(argv[i]) == std::string("-s") && i + 1 < argc) {
                 setupFilename = argv[++i];
+            }
+
+            if(std::string(argv[i]) == std::string("-from") && i+1 < argc) {
+                from = atoi(argv[++i]);
             }
         }
     }
@@ -867,7 +861,7 @@ int main(int argc, char** argv)
     //}
     std::cout << "obstacle has moved\n";
 
-    problem.prepareDynamic();
+    problem.prepareDynamic(from);
 
     std::cout << "prepared tree for removal\n";
 
