@@ -694,6 +694,8 @@ void ompl::geometric::DRRTstarFN::evaluateSolutionPath()
         m = goalMotions_.back();
     else {
         OMPL_WARN("Goal state is not in the tree providing solution with an approximation");
+
+        assert(pdef_ && "Problem definition is null");
         Motion* goal_motion = new Motion(si_);
         si_->copyState(goal_motion->state,
             pdef_->getGoal()->as<ompl::base::GoalState>()->getState());
@@ -1107,9 +1109,14 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     if (goalMotions_.size() > 0)
         node = goalMotions_.back();
     else {
-        Motion* temp = new Motion(si_);
-        temp->state = pdef_->getGoal()->as<ompl::base::GoalState>()->getState();
-        node = nn_->nearest(temp);
+        //if (!pdef_) {
+            Motion* temp = new Motion(si_);
+            si_->copyState(temp->state,
+                pdef_->getGoal()
+                    ->as<ompl::base::GoalState>()
+                    ->getState());
+            node = nn_->nearest(temp);
+        //}
     }
 
     // think about error handling
