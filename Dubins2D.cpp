@@ -3,6 +3,10 @@
 #include <ompl/base/PlannerDataStorage.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
+#include <ompl/util/Exception.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <Eigen/Eigen>
 #include <dart/common/common.h>
@@ -347,7 +351,6 @@ public:
     bool isStateValid(const ob::State* state)
     {
         // std::lock_guard<std::mutex> guard(mutex_);
-
         const ob::SE2StateSpace::StateType* s = state->as<ob::SE2StateSpace::StateType>();
 
         if (!si_->satisfiesBounds(s))
@@ -472,6 +475,7 @@ public:
     DubinsCarEnvironment(std::string& obstacleFilepath)
         : maxWidth_(2440.0)
         , maxHeight_(2160.0)
+        , prefix_("")
     {
         model_ = new Model(obstacleFilepath);
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
@@ -508,7 +512,7 @@ public:
 
     void prepareDynamic(int from)
     {
-        dart::common::Timer t1("select branch");
+        //dart::common::Timer t1("select branch");
         try {
             ob::SpaceInformationPtr si = ss_->getSpaceInformation();
             og::PathGeometric& p = ss_->getSolutionPath();
@@ -524,10 +528,10 @@ public:
             }
 
             localPlanner->setPreviousPath(pathArray_, from);
-            t1.start();
+            //t1.start();
             localPlanner->selectBranch(s);
-            t1.stop();
-            t1.print();
+            //t1.stop();
+            //t1.print();
             localPlanner->setSampleRadius(200);
             localPlanner->setOrphanedBias(0.550);
             localPlanner->setLocalPlanning(true);
@@ -540,12 +544,12 @@ public:
 
     void removeInvalidNodes()
     {
-        dart::common::Timer t1("node removal");
-        t1.start();
+        //dart::common::Timer t1("node removal");
+        //t1.start();
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01);
         int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
-        t1.stop();
-        t1.print();
+        //t1.stop();
+        //t1.print();
         OMPL_INFORM("removed nodes from the sub tree is %d", removed);
 
         ss_->getProblemDefinition()->clearSolutionPaths();
@@ -562,16 +566,16 @@ public:
     {
         reconnectTime = 0;
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0125);
-        dart::common::Timer t1("reconnect");
-        t1.start();
+        //dart::common::Timer t1("reconnect");
+        //t1.start();
         bool is_reconnected = ss_->getPlanner()->as<og::DRRTstarFN>()->reconnect();
-        t1.stop();
-        if (is_reconnected) {
-            reconnectTime = t1.getElapsedTime();
-        }
-        else {
+        //t1.stop();
+        if (!is_reconnected) {
             ss_->solve(time);
         }
+        //        else {
+        //            reconnectTime = t1.getElapsedTime();
+        //        }
         ss_->getProblemDefinition()->clearSolutionPaths();
         // FIXME reevalute solution path without trying to solve it.
         ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
@@ -631,9 +635,9 @@ public:
             filenameSolution = "dubins-results-is_solution.txt";
         }
 
-        std::ofstream fout(fileName);
-        std::ofstream foutInterp(filenameInterp);
-        std::ofstream foutSolution(filenameSolution);
+        std::ofstream fout(prefix_ + fileName);
+        std::ofstream foutInterp(prefix_ + filenameInterp);
+        std::ofstream foutSolution(prefix_ + filenameSolution);
 
         foutSolution << ss_->haveExactSolutionPath() << std::endl;
 
@@ -674,7 +678,7 @@ public:
         else
             fileName = "dubins-vertices" + std::to_string(num) + ".dat";
 
-        std::ofstream ofs_v(fileName);
+        std::ofstream ofs_v(prefix_ + fileName);
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
             ofs_v << std::endl;
@@ -688,7 +692,7 @@ public:
             fileName = "dubins-edges.dat";
         else
             fileName = "dubins-edges" + std::to_string(num) + ".dat";
-        std::ofstream ofs_e(fileName);
+        std::ofstream ofs_e(prefix_ + fileName);
         std::vector<unsigned int> edge_list;
         std::vector<double> reals;
         std::vector<double> realsOld;
@@ -771,8 +775,8 @@ public:
     std::string statistics()
     {
         std::string output;
-        og::PathGeometric& p = ss_->getSolutionPath();
 
+        /*
         if (reconnectTime > 0) {
             output += std::to_string(reconnectTime);
         }
@@ -780,10 +784,25 @@ public:
             output += std::to_string(ss_->getLastPlanComputationTime());
         }
         output += ", ";
-
-        output += std::to_string(p.length());
+        */
+        try {
+            og::PathGeometric& p = ss_->getSolutionPath();
+            output += std::to_string(p.length());
+        }
+        catch (ompl::Exception e) {
+            ;
+        }
 
         return output;
+    }
+
+    void setRecordDirectoryPrefix(std::string path)
+    {
+        struct stat buff;
+        if (stat(path.c_str(), &buff) != 0)
+            mkdir(path.c_str(), 0777);
+
+        prefix_ = path + "/";
     }
 
 private:
@@ -791,6 +810,8 @@ private:
     const double maxWidth_;
     const double maxHeight_;
     size_t pathNodeCount_;
+
+    std::string prefix_;
 
     Model* model_;
 };
@@ -890,6 +911,9 @@ int main(int argc, char** argv)
     for (size_t from = 0; from < problem.getPathNodesCount(); ++from) {
         problem.load(fileDump.c_str());
 
+        dart::common::Timer t1("benchmark");
+        t1.start();
+
         problem.prepareDynamic(from);
         std::cout << "prepared tree for removal\n";
 
@@ -909,15 +933,15 @@ int main(int argc, char** argv)
         std::cout << std::endl;
         for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
              i++) {
-            if (problem.replan(start, goal, 500.00, false)) {
-                // problem.cleanup();
+            if (problem.replan(start, goal, 1200.00, false)) {
+                problem.setRecordDirectoryPrefix(std::string("path_node_") + std::to_string(from));
                 problem.recordSolution(i);
                 problem.recordTreeState(i);
                 std::cout << "done\n";
             }
         }
-
-        fout << from << ", " << problem.statistics() << std::endl;
+        t1.stop();
+        fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << std::endl;
     }
     return 0;
 }
