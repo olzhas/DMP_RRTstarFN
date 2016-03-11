@@ -3,16 +3,19 @@
 #include <ompl/base/PlannerDataStorage.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
-#include "DRRTstarFN.h"
-#include <dart/dart.h>
 
-#include <mutex>
-#include <thread>
-#include <boost/filesystem.hpp>
+#include <ompl/geometric/planners/rrt/RRTstar.h>
+#include <ompl/util/Exception.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#include <Eigen/Eigen>
+#include <dart/common/common.h>
+#include "DRRTstarFN.h"
 
 #include <iostream>
 #include <fstream>
-#include <tuple>
 
 #include <ompl/config.h>
 #include "config/config2D.h"
@@ -20,56 +23,7 @@
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-namespace dd = dart::dynamics;
-namespace ds = dart::simulation;
-namespace du = dart::utils;
-
-const double default_ground_width = 2;
-const double default_wall_thickness = 0.1;
-const double default_radius = 0.01;
-const double default_init_x = 0.25;
-const double default_init_y = 0.25;
-
-dd::SkeletonPtr createCar()
-{
-    dd::SkeletonPtr car = dd::Skeleton::create("car");
-
-    dd::BodyNode* bn = car->createJointAndBodyNodePair<dd::FreeJoint>().second;
-
-    std::shared_ptr<dd::BoxShape> shape = std::make_shared<dd::BoxShape>(Eigen::Vector3d(
-        default_radius * 8, default_radius * 5, default_radius * 2));
-    shape->setColor(Eigen::Vector3d(1.0, .0, .0));
-
-    bn->addCollisionShape(shape);
-    bn->addVisualizationShape(shape);
-
-    Eigen::Vector3d positions(Eigen::Vector3d::Zero());
-
-    positions[0] = default_init_x;
-    positions[1] = default_init_y;
-    positions[2] = 0;
-
-    Eigen::Isometry3d transform1;
-    transform1.setIdentity();
-    //transform1.rotate(Eigen::Matrix3d::Identity());
-    transform1.translate(positions);
-
-    //dart::dynamics::FreeJoint::setTransform(car.get(), transform1);
-    //car->setPositions(positions);
-
-    return car;
-}
-
-dd::SkeletonPtr convexObstacle(const std::string& filename)
-{
-    // a circle with radius 0.1 and center in (0.6, 1.0)
-    const std::string SAFESPACE_DATA = "/home/olzhas/devel/staubli_dart/data/";
-    dd::SkeletonPtr obs = du::SkelParser::readSkeleton(SAFESPACE_DATA + filename);
-    return obs;
-}
-
 class Model {
-    static constexpr char WORLD_FILE_NAME[] = "data/2d-problem/model.sdf";
 
 public:
     class Point {
@@ -107,6 +61,7 @@ public:
             return out;
         }
     };
+
     class Line {
         Point head_;
         Point tail_;
@@ -144,14 +99,256 @@ public:
         }
     };
 
-    Model() { loadWorld(); }
+    class Obstacle {
 
-    ds::WorldPtr getWorld() const { return world_; }
+    public:
+        virtual bool detectCollision(Obstacle* target)
+        {
+            return true;
+        }
+    };
+
+    class CircularObstacle : public Obstacle {
+    private:
+        Eigen::Vector2d pos;
+        double radius;
+        double radiusSquare;
+
+    public:
+        CircularObstacle()
+        {
+            ;
+        }
+
+        bool detectCollision(Obstacle* target)
+        {
+            ObbObstacle* obb = static_cast<ObbObstacle*>(target);
+
+            Eigen::Vector2d diff = (obb->getPos() - pos);
+            double squareDistance = diff.dot(diff);
+
+            if (squareDistance < (radiusSquare + obb->getSquareDiag())) {
+                return true;
+            }
+            return false;
+        }
+
+        void move(const Eigen::Vector2d& p, const double& r)
+        {
+            pos = p;
+            radius = r;
+            radiusSquare = r * r;
+        }
+
+        Eigen::Vector2d getPos() const
+        {
+            return pos;
+        }
+
+        double getRadius() const
+        {
+            return radius;
+        }
+    };
+
+    class ObbObstacle : public Obstacle {
+    public:
+        size_t maxX, minX;
+        size_t maxY, minY;
+
+        Eigen::MatrixXd vertices;
+
+        /** \brief constructor */
+        ObbObstacle()
+            : vertices(2, 4)
+            , yaw(0)
+            , width(0)
+            , height(0)
+        {
+            pos << 0, 0;
+            update();
+        }
+
+        /** \brief constructor */
+        ObbObstacle(const Eigen::Vector2d p, double y, double w, double h)
+            : vertices(2, 4)
+            , yaw(y)
+            , width(w)
+            , height(h)
+        {
+            pos = p;
+            calcSquareDiag();
+            update();
+        }
+
+        /** \brief */
+        bool detectCollision(Obstacle* target)
+        {
+            bool intersectX = false,
+                 intersectY = false;
+            ObbObstacle* obb = static_cast<ObbObstacle*>(target);
+            //Eigen::Vector2d diff = pos - obb->getPos();
+            //double squareDistance = diff.dot(diff);
+
+            ObbObstacle* left = pos[0] > obb->getPos()[0] ? obb : this;
+            ObbObstacle* right = pos[0] > obb->getPos()[0] ? this : obb;
+
+            double leftX = left->vertices(0, left->maxX) - left->getPos()[0];
+            double rightX = right->getPos()[0] - right->vertices(0, right->minX);
+
+            double x = right->getPos()[0] - left->getPos()[0];
+
+            if (x < leftX + rightX) {
+                intersectX = true;
+            }
+
+            ObbObstacle* down = pos[1] > obb->getPos()[1] ? obb : this;
+            ObbObstacle* up = pos[1] > obb->getPos()[1] ? this : obb;
+
+            double downY = down->vertices(1, down->maxY) - down->getPos()[1];
+            double upY = up->getPos()[1] - up->vertices(1, up->minY);
+
+            double y = up->getPos()[1] - down->getPos()[1];
+
+            if (y < downY + upY) {
+                intersectY = true;
+            }
+
+            return intersectX & intersectY;
+        }
+
+        /** \brief */
+        void calcSquareDiag() { squareDiag = width * width + height * height; }
+
+        double getSquareDiag() const
+        {
+            const double factorOfSafety = 1.25;
+            return factorOfSafety * squareDiag;
+        }
+
+        /** \brief */
+        Eigen::Vector2d getPos() const { return pos; }
+
+        /** \brief */
+        void setPos(const Eigen::Vector2d& position)
+        {
+            pos = position;
+            //update();
+        }
+
+        /** \brief */
+
+        void move(const Eigen::Vector2d& position, const double y)
+        {
+            pos = position;
+            yaw = y;
+            update();
+        }
+
+        /** \brief */
+        void setWidth(const double& w)
+        {
+            width = w;
+            calcSquareDiag();
+            update();
+        }
+
+        /** \brief */
+        void setHeight(const double& h)
+        {
+            height = h;
+            calcSquareDiag();
+            update();
+        }
+
+        void update()
+        {
+            // ugly initialization
+            Eigen::MatrixXd temp(2, 4);
+
+            /*
+                3---0
+                |   |
+                2---1
+            */
+            temp << width / 2.0 * cos(yaw) - height / 2.0 * sin(yaw), width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw),
+                -width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw), -width / 2.0 * cos(yaw) - height / 2.0 * sin(yaw),
+                width / 2.0 * sin(yaw) + height / 2.0 * cos(yaw), width / 2.0 * sin(yaw) - height / 2.0 * cos(yaw),
+                -width / 2.0 * sin(yaw) - height / 2.0 * cos(yaw), -width / 2.0 * sin(yaw) + height / 2.0 * cos(yaw);
+            vertices = temp;
+            //std::cout << vertices << std::endl;
+
+            Eigen::MatrixXd offset(2, 4);
+            offset << pos[0], pos[0], pos[0], pos[0], pos[1], pos[1], pos[1], pos[1];
+
+            vertices += offset;
+
+            Eigen::MatrixXd::Index max[2];
+            Eigen::MatrixXd::Index min[2];
+
+            for (size_t i = 0; i < 2; ++i) {
+                vertices.row(i).maxCoeff(&max[i]);
+                vertices.row(i).minCoeff(&min[i]);
+            }
+
+            maxX = max[0];
+            maxY = max[1];
+
+            minX = min[0];
+            minY = min[1];
+        }
+
+    private:
+        Eigen::Vector2d pos;
+        double yaw;
+
+        double width;
+        double height;
+        double squareDiag;
+    };
+
+    class ObstacleCollection {
+    private:
+        std::vector<Obstacle*> data_;
+
+    public:
+        bool detectCollision(Obstacle* ob)
+        {
+            for (auto& elem : data_) {
+                if (elem->detectCollision(ob) == true) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        void add(Obstacle* a) { data_.push_back(a); }
+    };
+
+    Model(std::string& filename)
+    {
+        mapFilename_ = filename;
+        loadSimpleWorld();
+    }
+
+    void loadSimpleWorld()
+    {
+        dynamicCircle_.resize(1);
+        dynamicCircle_[0] = new CircularObstacle;
+        dynamicCircle_[0]->move(Eigen::Vector2d(900, 1050), 100);
+
+        for (auto& obs : dynamicCircle_) {
+            obstacles_.add(obs);
+        }
+        loadObstacles(mapFilename_);
+
+        simpleCar_.setWidth(80);
+        simpleCar_.setHeight(50);
+    }
 
     bool isStateValid(const ob::State* state)
     {
-        //std::lock_guard<std::mutex> guard(mutex_);
-
+        // std::lock_guard<std::mutex> guard(mutex_);
         const ob::SE2StateSpace::StateType* s = state->as<ob::SE2StateSpace::StateType>();
 
         if (!si_->satisfiesBounds(s))
@@ -161,138 +358,127 @@ public:
         double y = s->getY();
         double yaw = s->getYaw();
 
-        Eigen::Isometry3d transform;
-        transform.setIdentity();
-
-        Eigen::Vector3d translation;
-
-        translation[0] = x;
-        translation[1] = y;
-        translation[2] = 0;
-
-        transform.translate(translation);
-
-        Eigen::Matrix3d m;
-        m.setIdentity();
-        m = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ());
-        transform.rotate(m);
-
-        dart::dynamics::FreeJoint::setTransform(car_.get(), transform);
-
-        bool worldCol = world_->checkCollision();
-        return !worldCol;
+        simpleCar_.move(Eigen::Vector2d(x, y), yaw);
+        return !obstacles_.detectCollision(&simpleCar_);
     }
 
     void updateObstacles()
     {
-        const double speed = 0.05;
-        const double angleRad = 90.0 / 180.0 * M_PI;
-
-        Eigen::Isometry3d transformation;
-        transformation.setIdentity();
-
-        Eigen::Vector3d translation(Eigen::Vector3d::Zero());
-        translation[0] = 1.07;
-        translation[1] = 1.4;
-        transformation.translate(translation);
-
-        dart::dynamics::FreeJoint::setTransform(dynamicObstacle_.get(), transformation);
-
+        dynamicCircle_[0]->move(Eigen::Vector2d(1070, 1400), 100);
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
 
-private:
-    void loadWorld()
+    void loadObstacles(const std::string& fname)
     {
-        world_ = std::make_shared<ds::World>();
-        world_->setGravity(Eigen::Vector3d(0.0, 0.0, 0.0));
-        std::vector<Line*> map;
+        Obstacle* obs;
 
-        enum class Scenario : char { DEFAULT,
-            DETOUR };
-        Scenario scenario = Scenario::DEFAULT;
-        switch (scenario) {
-        case Scenario::DETOUR:
+        std::string str;
 
-            break;
+        std::ifstream fin(fname);
 
-        default:
-            // map.reserve(9);
-            map.resize(10);
-            map[0] = new Line(Point(0.00, 0.50), Point(0.40, 0.50));
-            map[1] = new Line(Point(0.50, 0.00), Point(0.50, 0.30));
-            map[2] = new Line(Point(1.40, 0.00), Point(1.40, 0.50));
-            map[3] = new Line(Point(1.70, 0.40), Point(1.70, 0.70));
-            map[4] = new Line(Point(1.10, 0.80), Point(2.00, 0.80));
-            map[5] = new Line(Point(1.09, 0.80), Point(1.09, 1.30));
-            map[6] = new Line(Point(1.30, 1.10), Point(1.80, 1.10));
-            map[7] = new Line(Point(1.40, 1.70), Point(1.70, 1.70));
-            map[8] = new Line(Point(1.10, 1.50), Point(1.10, 1.75));
-            map[9] = new Line(Point(0.20, 1.60), Point(0.70, 1.60));
-            break;
-        }
+        std::ofstream fout("obstacles.gnu");
 
-        for (size_t i = 0; i < map.size(); ++i) {
-            auto& l = map[i];
+        const std::size_t nColors = 6;
+        const std::string colors[nColors] = { "#FF4136", "#39CCCC", "#3D9970",
+            "#B10DC9", "#0074D9", "#F012BE" };
 
-            dd::BodyNode::Properties body;
-            body.mName = "box" + std::to_string(i);
+        if (fin) {
 
-            dd::ShapePtr shape(
-                new dd::BoxShape(Eigen::Vector3d(l->getLength(), 0.02, 1.0)));
+            size_t i = 100;
 
-            body.mVizShapes.push_back(shape);
-            body.mColShapes.push_back(shape);
+            while (!fin.eof()) {
 
-            dd::FreeJoint::Properties properties;
-            properties.mName = "box" + std::to_string(i);
-            dd::SkeletonPtr box = dd::Skeleton::create("box" + std::to_string(i));
-            box->createJointAndBodyNodePair<dd::FreeJoint>(nullptr, properties, body);
+                char type;
+                fin >> type;
+                std::getline(fin, str);
 
-            Eigen::Vector6d positions(Eigen::Vector6d::Zero());
-            Eigen::Vector2d middle = l->middle().toVector();
+                switch (type) {
+                case 'c':
+                case 'C':
+                    obs = createCircularObstacle(str);
+                    fout << "set object " << ++i << " ";
+                    fout << "circle at " << static_cast<CircularObstacle*>(obs)->getPos()[0] << ","
+                         << static_cast<CircularObstacle*>(obs)->getPos()[1]
+                         << " size " << static_cast<CircularObstacle*>(obs)->getRadius()
+                         << " fc rgb \"#22FF4444\" front" << std::endl;
+                    break;
+                case 'r':
+                case 'R':
+                    obs = createObbObstacle(str);
+                    fout << "set object " << ++i << " ";
+                    fout << "rect from " << static_cast<ObbObstacle*>(obs)->vertices(0, 2)
+                         << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 2)
+                         << " to " << static_cast<ObbObstacle*>(obs)->vertices(0, 0)
+                         << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 0)
+                         << " fc rgb \"" << colors[i % nColors] << "\" front" << std::endl;
 
-            if (l->getHead().x() == l->getTail().x()) {
-                positions[2] = M_PI / 2.0;
+                    break;
+                default:
+                    break;
+                }
+                obstacles_.add(obs);
             }
-
-            positions[3] = middle[0];
-            positions[4] = middle[1];
-            box->getJoint(0)->setPositions(positions);
-
-            world_->addSkeleton(box);
         }
-        dynamicObstacle_ = convexObstacle("obstacles/r1-circle.skel");
-        world_->addSkeleton(dynamicObstacle_);
-
-        car_ = createCar();
-        world_->addSkeleton(car_);
-
-        world_->addSkeleton(convexObstacle("obstacles/r15-circle.skel"));
-        world_->addSkeleton(convexObstacle("obstacles/r1-circle-side.skel"));
-
+        else {
+            std::cerr << "could not open file" << std::endl;
+        }
     }
 
-    dart::simulation::WorldPtr world_;
-    dd::SkeletonPtr car_;
+    CircularObstacle* createCircularObstacle(const std::string& to_parse)
+    {
+        double x, y, r;
+        std::istringstream iss(to_parse);
 
-    dd::SkeletonPtr dynamicObstacle_;
+        iss >> x >> y >> r;
 
+        CircularObstacle* object = new CircularObstacle;
+        object->move(Eigen::Vector2d(x, y), r);
+        return object;
+    }
+
+    ObbObstacle* createObbObstacle(const std::string& to_parse)
+    {
+        double x, y;
+        double width, height;
+
+        std::istringstream iss(to_parse);
+
+        iss >> x >> y >> width >> height;
+
+        ObbObstacle* object = new ObbObstacle;
+
+        object->setWidth(width);
+        object->setHeight(height);
+        object->move(Eigen::Vector2d(x, y), 0);
+        return object;
+    }
+
+private:
     ob::SpaceInformationPtr si_;
 
     std::mutex mutex_;
+
+    ObstacleCollection obstacles_;
+    ObbObstacle simpleCar_;
+    std::string mapFilename_;
+
+    std::vector<CircularObstacle*> dynamicCircle_;
 };
 
 class DubinsCarEnvironment {
 public:
-    DubinsCarEnvironment()
-        : maxWidth_(2.160)
-        , maxHeight_(3.840)
+    double reconnectTime;
+
+    DubinsCarEnvironment(std::string& obstacleFilepath)
+        : maxWidth_(2440.0)
+        , maxHeight_(2160.0)
+        , prefix_("")
     {
+        model_ = new Model(obstacleFilepath);
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
-        ob::StateSpacePtr space(
-            new ob::DubinsStateSpace(0.11, false)); // only forward
+        ob::StateSpacePtr space(new ob::DubinsStateSpace(125, false)); // only forward
+        //ob::StateSpacePtr space(new ob::ReedsSheppStateSpace(0.11)); // only forward
 
         ob::RealVectorBounds bounds(2);
         bounds.setLow(0);
@@ -304,30 +490,32 @@ public:
         ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
         // set state validity checking for this space
         ob::SpaceInformationPtr si = ss_->getSpaceInformation();
-        model_.setSpaceInformation(si);
+        model_->setSpaceInformation(si);
         ss_->setStateValidityChecker(
-            boost::bind(&Model::isStateValid, &model_, _1));
+            boost::bind(&Model::isStateValid, model_, _1));
         space->setup();
-        // ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 /
-        // space->getMaximumExtent());
         ss_->setPlanner(
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(0.03);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(25.0);
         ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
     }
 
+    ~DubinsCarEnvironment()
+    {
+        delete model_;
+    }
+
     std::vector<ompl::base::State*> pathArray_;
 
-    void prepareDynamic()
+    void prepareDynamic(int from)
     {
-        dart::common::Timer t1("select branch");
+        //dart::common::Timer t1("select branch");
         try {
             ob::SpaceInformationPtr si = ss_->getSpaceInformation();
             og::PathGeometric& p = ss_->getSolutionPath();
+            pathNodeCount_ = p.getStateCount();
             og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
-
-            int from = 9;
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
@@ -338,12 +526,12 @@ public:
             }
 
             localPlanner->setPreviousPath(pathArray_, from);
-            t1.start();
+            //t1.start();
             localPlanner->selectBranch(s);
-            t1.stop();
-            t1.print();
-            localPlanner->setSampleRadius(0.1);
-            localPlanner->setOrphanedBias(0.50);
+            //t1.stop();
+            //t1.print();
+            localPlanner->setSampleRadius(200);
+            localPlanner->setOrphanedBias(0.250);
             localPlanner->setLocalPlanning(true);
             localPlanner->swapNN();
         }
@@ -352,39 +540,66 @@ public:
         }
     }
 
+    void prepareFromScratchRRTstar(const size_t from, Model::Point& final)
+    {
+        //dart::common::Timer t1("select branch");
+        try {
+            ob::SpaceInformationPtr si = ss_->getSpaceInformation();
+            og::PathGeometric& p = ss_->getSolutionPath();
+            pathNodeCount_ = p.getStateCount();
+
+            ompl::base::State* s = si->cloneState(p.getState(from));
+
+            ss_->setPlanner(
+                ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
+            ss_->getPlanner()->as<og::RRTstar>()->setRange(25.0);
+            ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
+
+            ob::ScopedState<> start(ss_->getStateSpace(), s);
+            ob::ScopedState<> goal(ss_->getStateSpace());
+            goal[0] = final.x();
+            goal[1] = final.y();
+            ss_->setStartAndGoalStates(start, goal);
+        }
+        catch (ompl::Exception e) {
+            dtwarn << "No solution, man\n";
+        }
+    }
+
     void removeInvalidNodes()
     {
-        dart::common::Timer t1("node removal");
-        t1.start();
+        //dart::common::Timer t1("node removal");
+        //t1.start();
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01);
         int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
-        t1.stop();
-        t1.print();
+        //t1.stop();
+        //t1.print();
         OMPL_INFORM("removed nodes from the sub tree is %d", removed);
 
         ss_->getProblemDefinition()->clearSolutionPaths();
     }
 
-    void cleanup()
+    void cleanup(int from)
     {
-        int from = 9;
-
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
-        // ss_->getProblemDefinition()->clearSolutionPaths();
-        // ss_->solve(0.010);
     }
 
     bool replan(const Model::Point& initial, const Model::Point& final,
         double time, bool clearPlanner = true)
     {
-        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
-
-        //ss_->getPlanner()->as<og::DRRTstarFN>()->reconnect();
-        ss_->solve(time);
-
-        // REGRESSION
-        // ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
+        reconnectTime = 0;
+        ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0125);
+        dart::common::Timer t1("reconnect");
+        t1.start();
+        bool is_reconnected = ss_->getPlanner()->as<og::DRRTstarFN>()->reconnect();
+        t1.stop();
+        if (!is_reconnected) {
+            ss_->solve(time);
+        }
+        else {
+            reconnectTime = t1.getElapsedTime();
+        }
         ss_->getProblemDefinition()->clearSolutionPaths();
         // FIXME reevalute solution path without trying to solve it.
         ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
@@ -405,7 +620,7 @@ public:
         ss_->setStartAndGoalStates(start, goal);
         // generate a few solutions; all will be added to the goal;
 
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.05);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.075);
 
         if (ss_->getPlanner())
             if (clearPlanner)
@@ -444,9 +659,9 @@ public:
             filenameSolution = "dubins-results-is_solution.txt";
         }
 
-        std::ofstream fout(fileName);
-        std::ofstream foutInterp(filenameInterp);
-        std::ofstream foutSolution(filenameSolution);
+        std::ofstream fout(prefix_ + fileName);
+        std::ofstream foutInterp(prefix_ + filenameInterp);
+        std::ofstream foutSolution(prefix_ + filenameSolution);
 
         foutSolution << ss_->haveExactSolutionPath() << std::endl;
 
@@ -487,7 +702,7 @@ public:
         else
             fileName = "dubins-vertices" + std::to_string(num) + ".dat";
 
-        std::ofstream ofs_v(fileName);
+        std::ofstream ofs_v(prefix_ + fileName);
         for (unsigned int i(0); i < pdat.numVertices(); ++i) {
             printEdge(ofs_v, ss_->getStateSpace(), pdat.getVertex(i));
             ofs_v << std::endl;
@@ -501,7 +716,7 @@ public:
             fileName = "dubins-edges.dat";
         else
             fileName = "dubins-edges" + std::to_string(num) + ".dat";
-        std::ofstream ofs_e(fileName);
+        std::ofstream ofs_e(prefix_ + fileName);
         std::vector<unsigned int> edge_list;
         std::vector<double> reals;
         std::vector<double> realsOld;
@@ -513,10 +728,12 @@ public:
             isMajorTree = pdat.getVertex(i).getTag();
             for (unsigned int i2(0); i2 < n_edge; ++i2) {
                 const ob::State* s2 = pdat.getVertex(edge_list[i2]).getState();
-                const double step = 0.1;
+                double step = 0.05;
+                if (space->distance(s1, s2) < 0.03) {
+                    step = 0.2;
+                }
                 space->copyToReals(realsOld, s1);
                 for (double t = step; t <= 1.01; t += step) {
-
                     space->interpolate(s1, s2, t, s3);
                     space->copyToReals(reals, s3);
                     for (const auto& r : realsOld)
@@ -525,16 +742,17 @@ public:
                     for (const auto& r : reals)
                         ofs_e << r << " ";
                     //
-                    ofs_e << "0x" << std::hex << (isMajorTree ? 0x4488AA : 0xDD6060) << std::endl;
+                    ofs_e << "0x" << std::hex << (isMajorTree ? 0x4488AA : 0xDD6060)
+                          << std::endl;
                 }
             }
         }
     }
 
-    Model& getModel() { return model_; }
+    Model* getModel() { return model_; }
 
     // proxy method
-    void updateObstacles() { model_.updateObstacles(); }
+    void updateObstacles() { model_->updateObstacles(); }
 
     //==============================================================================
     void store(const char* filename)
@@ -558,8 +776,8 @@ public:
         ss_->setup();
 
         // FIXME
-        Model::Point initial(default_radius * 25, default_radius * 25);
-        Model::Point final(1.7, 1.0);
+        Model::Point initial(250, 250);
+        Model::Point final(1700, 1000);
 
         ob::ScopedState<> start(ss_->getStateSpace());
         start[0] = initial.x();
@@ -573,37 +791,96 @@ public:
         ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(filename);
     }
 
+    size_t getPathNodesCount() const
+    {
+        return pathNodeCount_;
+    }
+
+    std::string statistics()
+    {
+        std::string output;
+        output += std::to_string(ss_->getLastPlanComputationTime());
+        output += ", ";
+
+        try {
+            og::PathGeometric& p = ss_->getSolutionPath();
+            output += std::to_string(p.length());
+        }
+        catch (ompl::Exception e) {
+            ;
+        }
+
+        return output;
+    }
+
+    void setRecordDirectoryPrefix(std::string path)
+    {
+        struct stat buff;
+        if (stat(path.c_str(), &buff) != 0)
+            mkdir(path.c_str(), 0777);
+
+        prefix_ = path + "/";
+    }
+
 private:
     og::SimpleSetupPtr ss_;
     const double maxWidth_;
     const double maxHeight_;
+    size_t pathNodeCount_;
 
-    Model model_;
+    std::string prefix_;
+
+    Model* model_;
 };
 
-class Window2D : public dart::gui::SimWindow {
-    void drawSkels()
-    {
-        glEnable(GL_LIGHTING);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        // glMatrixMode(GL_PROJECTION);
-        dart::gui::SimWindow::drawSkels();
-    }
-};
+std::istream& operator>>(std::istream& is, Model::Point& p)
+{
+    double x, y;
+
+    is >> x;
+    is >> y;
+    p = Model::Point(x, y);
+}
 
 int main(int argc, char** argv)
 {
-    DubinsCarEnvironment problem;
+    std::string setupFilename = "config/setup.txt";
+    if (argc > 1) {
+        for (int i = 0; i < argc; ++i) {
+            if (std::string(argv[i]) == std::string("-s") && i + 1 < argc) {
+                setupFilename = argv[++i];
+            }
+        }
+    }
 
-    Model::Point start(default_radius * 25, default_radius * 25);
-    Model::Point goal(1.7, 1.0);
+    std::ifstream fin(setupFilename);
 
-    const double time = 540.0;
-    const double dt = 2.25;
-    const int ITERATIONS = time / dt;
+    Model::Point start;
+    Model::Point goal;
+    double time;
+    size_t iter;
 
-    std::string fileDump = "dubins5.dump";
-    bool plan = true;
+    assert(!fin.fail() && "Cannot open file");
+
+    fin >> start;
+    fin >> goal;
+
+    fin >> time;
+    fin >> iter;
+
+    double dt = time / iter;
+    int ITERATIONS = iter;
+
+    std::string fileDump;
+    fin >> fileDump;
+
+    bool plan;
+    fin >> plan;
+
+    std::string obstaclesFile;
+    fin >> obstaclesFile;
+
+    DubinsCarEnvironment problem(obstaclesFile);
 
 #define PLOTTING
 #ifdef PLOTTING
@@ -617,9 +894,6 @@ int main(int argc, char** argv)
             }
         }
         problem.store(fileDump.c_str());
-    }
-    else {
-        problem.load(fileDump.c_str());
     }
 #endif
 
@@ -642,44 +916,89 @@ int main(int argc, char** argv)
     }
 #endif
 
-    //for (int i = 0; i < 4; ++i) {
     problem.updateObstacles();
-    //}
     std::cout << "obstacle has moved\n";
 
-    problem.prepareDynamic();
+    std::ofstream fout("benchmark_results.txt");
 
-    std::cout << "prepared tree for removal\n";
+    fout << obstaclesFile << "\n";
 
-    //==============================================================================
-    problem.recordSolution(800);
-    problem.recordTreeState(800);
-    std::cout << "recorded 800\n";
+    fout << "from time cost reached\n";
 
-    problem.removeInvalidNodes();
+    const size_t benchmark_path_nodes = 10;
+    //for (size_t from = 0; from < problem.getPathNodesCount(); ++from) {
+    for (size_t from = 0; from < benchmark_path_nodes; ++from) {
+        problem.load(fileDump.c_str());
 
-    std::cout << "invalid branch removal: done\n";
-    problem.recordTreeState(801);
+        dart::common::Timer t1("benchmark");
+        t1.start();
 
-    //==============================================================================
+        double prerareTime = problem.prepareDynamic(from);
+        std::cout << "prepared tree for removal\n";
 
-    const int DYNAMIC_ITERATIONS = 1;
-    std::cout << std::endl;
-    for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1; i++) {
-        if (problem.replan(start, goal, 120.00, false)) {
+        //==============================================================================
+        problem.recordSolution(800);
+        problem.recordTreeState(800);
+        std::cout << "recorded 800\n";
 
-            //problem.cleanup();
-            problem.recordSolution(i);
-            problem.recordTreeState(i);
-            std::cout << "done\n";
+        double removalTime = problem.removeInvalidNodes();
+
+        std::cout << "invalid branch removal: done\n";
+        problem.recordTreeState(801);
+
+        //==============================================================================
+
+        const int DYNAMIC_ITERATIONS = 1;
+        std::cout << std::endl;
+        for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
+             i++) {
+            if (problem.replan(start, goal, 1200.00, false)) {
+                problem.setRecordDirectoryPrefix(std::string("path_node_") + std::to_string(from));
+                problem.recordSolution(i);
+                problem.recordTreeState(i);
+                std::cout << "done\n";
+            }
         }
+        t1.stop();
+        fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << std::endl;
     }
 
-    Window2D win;
-    win.setWorld(problem.getModel().getWorld());
-    glutInit(&argc, argv);
-    win.initWindow(1280, 800, "2D demo");
-    glutMainLoop();
+    fout << "rrt star\n";
+    for (size_t from = 0; from < benchmark_path_nodes; ++from) {
+        problem.load(fileDump.c_str());
+
+        dart::common::Timer t1("benchmark");
+        t1.start();
+
+        problem.prepareFromScratchRRTstar(from, goal);
+        std::cout << "prepared tree for removal\n";
+
+        //==============================================================================
+        problem.recordSolution(800);
+        problem.recordTreeState(800);
+        std::cout << "recorded 800\n";
+
+        problem.removeInvalidNodes();
+
+        std::cout << "invalid branch removal: done\n";
+        problem.recordTreeState(801);
+
+        //==============================================================================
+
+        const int DYNAMIC_ITERATIONS = 1;
+        std::cout << std::endl;
+        for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
+             i++) {
+            if (problem.plan(start, goal, 1200.00, false)) {
+                problem.setRecordDirectoryPrefix(std::string("rrts_path_node_") + std::to_string(from));
+                problem.recordSolution(i);
+                problem.recordTreeState(i);
+                std::cout << "done\n";
+            }
+        }
+        t1.stop();
+        fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << std::endl;
+    }
 
     return 0;
 }

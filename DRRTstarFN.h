@@ -209,7 +209,7 @@ namespace geometric {
         void removeOrphaned();
 
         /** \brief reconnect orphaned nodes to the tree */
-        void reconnect();
+        bool reconnect();
 
         /** \brief selects the branch */
         void selectBranch(ompl::base::State* s);
