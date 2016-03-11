@@ -3,6 +3,8 @@
 #include <ompl/base/PlannerDataStorage.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
+
+#include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/util/Exception.h>
 
 #include <sys/stat.h>
@@ -12,12 +14,8 @@
 #include <dart/common/common.h>
 #include "DRRTstarFN.h"
 
-#include <mutex>
-#include <thread>
-
 #include <iostream>
 #include <fstream>
-#include <tuple>
 
 #include <ompl/config.h>
 #include "config/config2D.h"
@@ -533,9 +531,35 @@ public:
             //t1.stop();
             //t1.print();
             localPlanner->setSampleRadius(200);
-            localPlanner->setOrphanedBias(0.550);
+            localPlanner->setOrphanedBias(0.250);
             localPlanner->setLocalPlanning(true);
             localPlanner->swapNN();
+        }
+        catch (ompl::Exception e) {
+            dtwarn << "No solution, man\n";
+        }
+    }
+
+    void prepareFromScratchRRTstar(const size_t from, Model::Point& final)
+    {
+        //dart::common::Timer t1("select branch");
+        try {
+            ob::SpaceInformationPtr si = ss_->getSpaceInformation();
+            og::PathGeometric& p = ss_->getSolutionPath();
+            pathNodeCount_ = p.getStateCount();
+
+            ompl::base::State* s = si->cloneState(p.getState(from));
+
+            ss_->setPlanner(
+                ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
+            ss_->getPlanner()->as<og::RRTstar>()->setRange(25.0);
+            ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
+
+            ob::ScopedState<> start(ss_->getStateSpace(), s);
+            ob::ScopedState<> goal(ss_->getStateSpace());
+            goal[0] = final.x();
+            goal[1] = final.y();
+            ss_->setStartAndGoalStates(start, goal);
         }
         catch (ompl::Exception e) {
             dtwarn << "No solution, man\n";
@@ -566,16 +590,16 @@ public:
     {
         reconnectTime = 0;
         ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.0125);
-        //dart::common::Timer t1("reconnect");
-        //t1.start();
+        dart::common::Timer t1("reconnect");
+        t1.start();
         bool is_reconnected = ss_->getPlanner()->as<og::DRRTstarFN>()->reconnect();
-        //t1.stop();
+        t1.stop();
         if (!is_reconnected) {
             ss_->solve(time);
         }
-        //        else {
-        //            reconnectTime = t1.getElapsedTime();
-        //        }
+        else {
+            reconnectTime = t1.getElapsedTime();
+        }
         ss_->getProblemDefinition()->clearSolutionPaths();
         // FIXME reevalute solution path without trying to solve it.
         ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
@@ -775,16 +799,9 @@ public:
     std::string statistics()
     {
         std::string output;
-
-        /*
-        if (reconnectTime > 0) {
-            output += std::to_string(reconnectTime);
-        }
-        else {
-            output += std::to_string(ss_->getLastPlanComputationTime());
-        }
+        output += std::to_string(ss_->getLastPlanComputationTime());
         output += ", ";
-        */
+
         try {
             og::PathGeometric& p = ss_->getSolutionPath();
             output += std::to_string(p.length());
@@ -908,13 +925,15 @@ int main(int argc, char** argv)
 
     fout << "from time cost reached\n";
 
-    for (size_t from = 0; from < problem.getPathNodesCount(); ++from) {
+    const size_t benchmark_path_nodes = 10;
+    //for (size_t from = 0; from < problem.getPathNodesCount(); ++from) {
+    for (size_t from = 0; from < benchmark_path_nodes; ++from) {
         problem.load(fileDump.c_str());
 
         dart::common::Timer t1("benchmark");
         t1.start();
 
-        problem.prepareDynamic(from);
+        double prerareTime = problem.prepareDynamic(from);
         std::cout << "prepared tree for removal\n";
 
         //==============================================================================
@@ -922,7 +941,7 @@ int main(int argc, char** argv)
         problem.recordTreeState(800);
         std::cout << "recorded 800\n";
 
-        problem.removeInvalidNodes();
+        double removalTime = problem.removeInvalidNodes();
 
         std::cout << "invalid branch removal: done\n";
         problem.recordTreeState(801);
@@ -943,5 +962,43 @@ int main(int argc, char** argv)
         t1.stop();
         fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << std::endl;
     }
+
+    fout << "rrt star\n";
+    for (size_t from = 0; from < benchmark_path_nodes; ++from) {
+        problem.load(fileDump.c_str());
+
+        dart::common::Timer t1("benchmark");
+        t1.start();
+
+        problem.prepareFromScratchRRTstar(from, goal);
+        std::cout << "prepared tree for removal\n";
+
+        //==============================================================================
+        problem.recordSolution(800);
+        problem.recordTreeState(800);
+        std::cout << "recorded 800\n";
+
+        problem.removeInvalidNodes();
+
+        std::cout << "invalid branch removal: done\n";
+        problem.recordTreeState(801);
+
+        //==============================================================================
+
+        const int DYNAMIC_ITERATIONS = 1;
+        std::cout << std::endl;
+        for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
+             i++) {
+            if (problem.plan(start, goal, 1200.00, false)) {
+                problem.setRecordDirectoryPrefix(std::string("rrts_path_node_") + std::to_string(from));
+                problem.recordSolution(i);
+                problem.recordTreeState(i);
+                std::cout << "done\n";
+            }
+        }
+        t1.stop();
+        fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << std::endl;
+    }
+
     return 0;
 }
