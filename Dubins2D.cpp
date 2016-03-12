@@ -551,8 +551,8 @@ public:
             ompl::base::State* s = si->cloneState(p.getState(from));
 
             ss_->setPlanner(
-                ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
-            ss_->getPlanner()->as<og::RRTstar>()->setRange(25.0);
+                ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(25.0);
             ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
 
             ob::ScopedState<> start(ss_->getStateSpace(), s);
@@ -562,6 +562,8 @@ public:
             ss_->setStartAndGoalStates(start, goal);
 
             ss_->setup();
+
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true);
         }
         catch (ompl::Exception e) {
             dtwarn << "No solution, man\n";
@@ -858,18 +860,16 @@ int main(int argc, char** argv)
 
     std::ifstream fin(setupFilename);
 
-    Model::Point start;
-    Model::Point goal;
-    double time;
-    size_t iter;
-
     assert(!fin.fail() && "Cannot open file");
 
+    Model::Point start;
+    Model::Point goal;
     fin >> start;
     fin >> goal;
 
-    fin >> time;
-    fin >> iter;
+    double time;
+    size_t iter;
+    fin >> time >> iter;
 
     double dt = time / iter;
     int ITERATIONS = iter;
@@ -955,7 +955,7 @@ int main(int argc, char** argv)
         std::cout << std::endl;
         for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
              i++) {
-            if (problem.replan(start, goal, 200.00, false)) {
+            if (problem.replan(start, goal, 6000.00, false)) {
                 problem.setRecordDirectoryPrefix(std::string("path_node_") + std::to_string(from));
                 problem.recordSolution(i);
                 problem.recordTreeState(i);
@@ -987,7 +987,7 @@ int main(int argc, char** argv)
         std::cout << std::endl;
         for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
              i++) {
-            if (problem.plan(start, goal, 200.00, false)) {
+            if (problem.plan(start, goal, 6000.00, false)) {
                 problem.setRecordDirectoryPrefix(std::string("rrts_path_node_") + std::to_string(from));
                 problem.recordSolution(i);
                 problem.recordTreeState(i);
@@ -997,6 +997,5 @@ int main(int argc, char** argv)
         t1.stop();
         fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << std::endl;
     }
-
     return 0;
 }
