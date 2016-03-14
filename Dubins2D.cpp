@@ -834,18 +834,18 @@ public:
     {
         std::string output;
         output += std::to_string(ss_->getLastPlanComputationTime());
-        output += ", ";
 
-        output += std::to_string(reconnectTime) + ", ";
+        output += ", " + std::to_string(reconnectTime);
 
         try {
             og::PathGeometric& p = ss_->getSolutionPath();
-            output += std::to_string(p.length());
+            output +=  ", " + std::to_string(p.length());
         }
         catch (ompl::Exception e) {
             ;
         }
 
+        output += ", " + ss_->haveExactSolutionPath();
         return output;
     }
 
@@ -986,7 +986,7 @@ int main(int argc, char** argv)
         std::cout << std::endl;
         for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
              i++) {
-            if (problem.replan(start, goal, 60.00, false)) {
+            if (problem.replan(start, goal, 600.00, false)) {
                 problem.setRecordDirectoryPrefix(std::string("path_node_") + std::to_string(from));
                 problem.recordSolution(i);
                 problem.recordTreeState(i);
