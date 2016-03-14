@@ -570,6 +570,37 @@ public:
         }
     }
 
+    void prepareFromScratchRRTstarFN(const size_t from, Model::Point& final)
+    {
+        //dart::common::Timer t1("select branch");
+        try {
+            ob::SpaceInformationPtr si = ss_->getSpaceInformation();
+            og::PathGeometric& p = ss_->getSolutionPath();
+            pathNodeCount_ = p.getStateCount();
+
+            ompl::base::State* s = si->cloneState(p.getState(from));
+
+            ss_->setPlanner(
+                ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(25.0);
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(4000);
+            ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.02);
+
+            ob::ScopedState<> start(ss_->getStateSpace(), s);
+            ob::ScopedState<> goal(ss_->getStateSpace());
+            goal[0] = final.x();
+            goal[1] = final.y();
+            ss_->setStartAndGoalStates(start, goal);
+
+            ss_->setup();
+
+            ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true);
+        }
+        catch (ompl::Exception e) {
+            dtwarn << "No solution, man\n";
+        }
+    }
+
     double removeInvalidNodes()
     {
         dart::common::Timer t1("node removal");
@@ -955,7 +986,7 @@ int main(int argc, char** argv)
         std::cout << std::endl;
         for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
              i++) {
-            if (problem.replan(start, goal, 6000.00, false)) {
+            if (problem.replan(start, goal, 60.00, false)) {
                 problem.setRecordDirectoryPrefix(std::string("path_node_") + std::to_string(from));
                 problem.recordSolution(i);
                 problem.recordTreeState(i);
@@ -987,7 +1018,39 @@ int main(int argc, char** argv)
         std::cout << std::endl;
         for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
              i++) {
-            if (problem.plan(start, goal, 6000.00, false)) {
+            if (problem.plan(start, goal, 600.00, false)) {
+                problem.setRecordDirectoryPrefix(std::string("rrts_path_node_") + std::to_string(from));
+                problem.recordSolution(i);
+                problem.recordTreeState(i);
+                std::cout << "done\n";
+            }
+        }
+        t1.stop();
+        fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << std::endl;
+    }
+    std::cout << ">>>>>>>>>>>>>>>>>>> RRT star FN initiated\n";
+    fout << "rrt star fn\n";
+    for (size_t from = 0; from < benchmark_path_nodes; ++from) {
+        problem.load(fileDump.c_str());
+
+        dart::common::Timer t1("benchmark");
+        t1.start();
+
+        problem.prepareFromScratchRRTstarFN(from, goal);
+        std::cout << "prepared tree for removal\n";
+
+        //==============================================================================
+        problem.recordSolution(800);
+        problem.recordTreeState(800);
+        std::cout << "recorded 800\n";
+        problem.recordTreeState(801);
+
+        //==============================================================================
+        const int DYNAMIC_ITERATIONS = 1;
+        std::cout << std::endl;
+        for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
+             i++) {
+            if (problem.plan(start, goal, 600.00, false)) {
                 problem.setRecordDirectoryPrefix(std::string("rrts_path_node_") + std::to_string(from));
                 problem.recordSolution(i);
                 problem.recordTreeState(i);
