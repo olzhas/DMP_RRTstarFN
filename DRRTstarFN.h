@@ -196,9 +196,10 @@ namespace geometric {
             sampleRadius_ = r;
         }
 
+        /** \brief Set sampling radius around the interim state */
+        void setTerminateFirstSolution(bool t) { terminateFirstSolution = t; }
+
         /** \brief Remove the states from the tree */
-        int removeInvalidNodes(
-                std::vector<std::tuple<ompl::base::State*, double>> obstacles);
 
         int removeInvalidNodes();
 
@@ -227,7 +228,7 @@ namespace geometric {
         enum NodeType : char { NORMAL = 0,
             ORPHANED = 1,
             INVALID = 2
-                             };
+        };
 
     protected:
         /** \brief Representation of a motion */
@@ -264,8 +265,8 @@ namespace geometric {
             /** \brief removed */
             NodeType nodeType;
 
-//            /** \brief root node*/
-//            Motion* root;
+            //            /** \brief root node*/
+            //            Motion* root;
         };
 
         /** \brief Free the memory allocated by this planner */
@@ -371,6 +372,8 @@ namespace geometric {
 
         base::State* interimState_;
         double sampleRadius_;
+
+        bool terminateFirstSolution;
     };
 }
 }
