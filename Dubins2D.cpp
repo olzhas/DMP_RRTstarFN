@@ -845,7 +845,7 @@ public:
             ;
         }
 
-        output += ", " + ss_->haveExactSolutionPath();
+        output += ", " + std::to_string(ss_->haveExactSolutionPath());
         return output;
     }
 
