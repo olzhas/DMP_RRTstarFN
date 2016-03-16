@@ -9,7 +9,10 @@ vert="dubins-vertices$i.dat"
 edge="dubins-edges$i.dat"
 fout="output$i.png"
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=1" tree.gnu
+cat ../obstacles.gnu > mytree.gnu
+cat tree.gnu >> mytree.gnu
+
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=1" mytree.gnu
 echo "Done: $i"
 
 

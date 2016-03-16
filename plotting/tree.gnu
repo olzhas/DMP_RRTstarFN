@@ -42,32 +42,6 @@ if (circle == 3) {
 	#set object 5 circle at 500,1450 size 100 fc rgb "#22FF4444" front
 }
 
-#set object  6 rect from 0,460 to 400,540 fc rgb "#FF4136" front 
-#set object  7 rect from 460,0 to 540,300 fc rgb "#39CCCC" front
-#set object  8 rect from 1360,0 to 1440,500 fc rgb "#3D9970" front
-#set object  9 rect from 1660,400 to 1740,700 fc rgb "#B10DC9" front
-#set object 10 rect from 1100,760 to 2500,840 fc rgb "#0074D9" front
-#set object 11 rect from 1050,800 to 1130,1300 fc rgb "#F012BE" front
-#set object 12 rect from 1300,1060 to 1800,1140 fc rgb "#3D9970" front
-#set object 13 rect from 1400,1660 to 1700,1740 fc rgb "#39CCCC" front
-#set object 14 rect from 1060,1500 to 1140,1750 fc rgb "#FF4136" front
-#set object 15 rect from 200,1560 to 700,1640 fc rgb "#0074D9" front
-
-set object 101 rect from 0,465 to 400,535 fc rgb "#F012BE" front
-set object 102 rect from 465,0 to 535,300 fc rgb "#FF4136" front
-set object 103 rect from 1365,0 to 1435,500 fc rgb "#39CCCC" front
-set object 104 rect from 1665,400 to 1735,700 fc rgb "#3D9970" front
-set object 105 rect from 1100,765 to 2500,835 fc rgb "#B10DC9" front
-set object 106 rect from 1055,800 to 1125,1300 fc rgb "#0074D9" front
-set object 107 rect from 1300,1065 to 1800,1135 fc rgb "#F012BE" front
-set object 108 rect from 1400,1665 to 1700,1735 fc rgb "#FF4136" front
-set object 109 rect from 1065,1500 to 1135,1750 fc rgb "#39CCCC" front
-set object 110 rect from 200,1565 to 700,1635 fc rgb "#3D9970" front
-set object 111 circle at 500,1450 size 100 fc rgb "#22FF4444" front
-set object 112 circle at 200,1000 size 150 fc rgb "#22FF4444" front
-set object 113 circle at 200,1000 size 150 fc rgb "#22FF4444" front
-
-
 set object 200 circle at 1600,950 size 50 fc rgb "#22FF4444" front
 set object 201 circle at 1600,950 size 45 fc rgb "#FFFFFF" front
 
@@ -77,26 +51,12 @@ set xrange [0:3840]
 if (!exists("dynamic")) {
 	plot filenameEdges using 1:2:($4-$1):($5-$2) notitle with vectors arrowstyle 1
 } else {
-	if(dynamic == 1){
+	if (dynamic == 1) {
 		plot filenameEdges using 1:2:($4-$1):($5-$2):($7) notitle with vectors lc rgbcolor variable lw 1 nohead
 	}
 }
 
 plot filenameVertices using 1:2 notitle fc rgb "#6666DD" pointtype 5 pointsize 0.5
-
-if (exists("filenameResults")){
-	if (exists("obstacle")) {
-		plot filenameResults using 1:2:($4) notitle lc rgbcolor variable lw 4
-	} else {
-		plot filenameResults using 1:2 notitle linestyle 1 pointtype 1	
-	}
-}
-
-if (exists("filenameResultsMilestones") && file_exists(filenameResultsMilestones)) {
-	plot filenameResultsMilestones using 1:2 notitle lc rgb "#FFAA11" pointtype 12 pointsize 5 lw 5
-}
-
-plot 'obstacles.dat' using 1:2:($3-$1):($4-$2):($5) notitle with vectors nohead lw 2 linecolor rgbcolor variable
 
 if (exists("highlight")) {
 	plot "highlight.dat" using 1:2:($4-$1):($5-$2) notitle with vectors arrowstyle 2
