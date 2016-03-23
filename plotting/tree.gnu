@@ -20,8 +20,6 @@ set style line 1 linecolor rgb "#11CC22" linewidth 4
 
 set multiplot
 
-set object 1 circle at 1.7,1.0 size .025 fc rgb "#336699" lw 5
-
 set style fill solid 1.0 border -1
 
 if (circle == 1) {
@@ -41,9 +39,6 @@ if (circle == 3) {
 	#set object 4 circle at 200,1000 size 150 fc rgb "#22FF4444" front
 	#set object 5 circle at 500,1450 size 100 fc rgb "#22FF4444" front
 }
-
-set object 200 circle at 1600,950 size 50 fc rgb "#22FF4444" front
-set object 201 circle at 1600,950 size 45 fc rgb "#FFFFFF" front
 
 set yrange [0:2160]
 set xrange [0:3840]
