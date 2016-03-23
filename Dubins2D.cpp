@@ -654,7 +654,7 @@ public:
         ss_->setStartAndGoalStates(start, goal);
         // generate a few solutions; all will be added to the goal;
 
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.075);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.05);
 
         if (ss_->getPlanner())
             if (clearPlanner)
@@ -898,6 +898,13 @@ int main(int argc, char** argv)
     fin >> start;
     fin >> goal;
 
+    std::ofstream goalStartfout("goal_start.txt");
+    goalStartfout << "set object 1001 circle at " << start.x() << "," << start.y() << " size 50 "
+                  << "fc rgb \"#ff00ff\" front\n";
+    goalStartfout << "set object 1002 circle at " << goal.x() << "," << goal.y() << " size 50 "
+                  << "fc rgb \"#ff00ff\" front\n";
+
+    goalStartfout.flush();
     double time;
     size_t iter;
     fin >> time >> iter;

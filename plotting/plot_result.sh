@@ -9,7 +9,11 @@ vert="dubins-vertices$i.dat"
 edge="dubins-edges$i.dat"
 fout="output$i.png"
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=1" tree.gnu
+cat ../obstacles.gnu > mytree.gnu
+cat ../goal_start.txt >> mytree.gnu
+cat tree.gnu >> mytree.gnu
+
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=1" mytree.gnu
 echo "Done: $i"
 
 
@@ -20,7 +24,7 @@ vert="dubins-vertices239.dat"
 edge="dubins-edges239.dat"
 fout="output1000.png"
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameOutput='$fout'; circle=3" tree.gnu
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameOutput='$fout'; circle=3" mytree.gnu
 
 ## previous position erased
 
@@ -30,7 +34,7 @@ vert="dubins-vertices239.dat"
 edge="dubins-edges239.dat"
 fout="output1001.png"
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=2" tree.gnu
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=2" mytree.gnu
 
 ##
 
@@ -40,7 +44,7 @@ vert="dubins-vertices800.dat"
 edge="dubins-edges800.dat"
 fout="output800.png"
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameOutput='$fout'; circle=2" tree.gnu
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameOutput='$fout'; circle=2" mytree.gnu
 
 ##
 
@@ -49,7 +53,7 @@ vert="dubins-vertices801.dat"
 edge="dubins-edges801.dat"
 fout="output801.png"
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameOutput='$fout'; circle=2" tree.gnu
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameOutput='$fout'; circle=2" mytree.gnu
 
 # ## tree clean-up
 #
@@ -68,7 +72,7 @@ do
 	vert="dubins-vertices$i.dat"
 	edge="dubins-edges$i.dat"
 	fout="output$i.png"
-	gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=2; dynamic=1" tree.gnu
+	gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=2; dynamic=1" mytree.gnu
 done
 
 # if [ ! -d "dynamic_reconnect" ]; then

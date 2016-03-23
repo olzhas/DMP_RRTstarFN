@@ -1,7 +1,7 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
-#include <ompl/geometric/planners/rrt/RRTstarFN.h>
+//#include <ompl/geometric/planners/rrt/RRTstarFN.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <dart/dart.h>
 

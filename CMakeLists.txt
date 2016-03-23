@@ -23,6 +23,7 @@ include_directories(${BULLET_INCLUDE_DIR})
 aux_source_directory(. SRC_LIST)
 list(REMOVE_ITEM SRC_LIST "./Point2DPlanning.cpp")
 list(REMOVE_ITEM SRC_LIST "./Dubins2D.cpp")
+list(REMOVE_ITEM SRC_LIST "./car_dart.cpp")
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 add_executable(2d_demo Point2DPlanning.cpp DRRTstarFN.cpp)
