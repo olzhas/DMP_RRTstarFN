@@ -1,0 +1,8 @@
+100 100
+1600 950 
+420
+240
+dubins_first_420.dump
+1
+data/obstacles/first.map
+2

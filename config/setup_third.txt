@@ -1,0 +1,8 @@
+100 350
+1780 1150 
+300
+240
+dubins420.dump
+1
+data/obstacles/third.map
+2
