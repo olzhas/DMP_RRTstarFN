@@ -313,7 +313,10 @@ public:
     void setDynamicObstaclesFile(std::string& filename)
     {
         std::ifstream fin(filename);
+        std::ofstream fout("dynamic_before.gnu");
+
         assert(!fin.fail() && "cannot open file");
+        assert(!fout.fail() && "cannot open file");
 
         double x, y, r;
         fin >> x >> y >> r;
@@ -321,10 +324,22 @@ public:
         dynamicCircle_[0] = new CircularObstacle;
         dynamicCircle_[0]->move(Eigen::Vector2d(x, y), r);
 
+        fout << "set object " << 8000 << " circle at "
+             << x << "," << y << " size " << r << " fc rgb \"#FF4444\" front\n";
+
+        fout.flush();
+        fout.close();
+
+        fout.open("dynamic_after.gnu");
+        assert(!fout.fail() && "cannot open file");
+
         fin >> x >> y >> r;
         futurePosition_.push_back(x);
         futurePosition_.push_back(y);
         futurePosition_.push_back(r);
+
+        fout << "set object " << 8000 << " circle at "
+             << x << "," << y << " size " << r << " fc rgb \"#FF4444\" front\n";
 
         for (auto& obs : dynamicCircle_) {
             obstacles_.add(obs);
