@@ -425,7 +425,7 @@ public:
                     obs = nullptr;
                     break;
                 }
-                if(obs != nullptr)
+                if (obs != nullptr)
                     collection.add(obs);
             }
         }
