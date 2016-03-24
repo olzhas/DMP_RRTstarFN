@@ -5,5 +5,5 @@
 dubins420.dump
 1
 data/obstacles/third.map
-2
+data/obstacles/dynamic_third.txt
 

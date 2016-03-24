@@ -5,4 +5,4 @@
 dubins420.dump
 1
 data/obstacles/fourth.map
-2
+data/obstacles/dynamic_fourth.txt

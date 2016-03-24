@@ -5,5 +5,5 @@
 dubins_first_420.dump
 1
 data/obstacles/first.map
-2
+data/obstacles/dynamic_first.txt
 
