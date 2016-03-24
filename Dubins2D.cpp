@@ -34,8 +34,6 @@ public:
         , prefix_("")
     {
         model_ = new Model(obstacleFilepath);
-
-        model_->setDynamicObstacles(dynamicObstaclesFile);
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
         ob::StateSpacePtr space(new ob::DubinsStateSpace(125, false)); // only forward
         //ob::StateSpacePtr space(new ob::ReedsSheppStateSpace(0.11)); // only forward
@@ -68,7 +66,7 @@ public:
 
     std::vector<ompl::base::State*> pathArray_;
 
-    double prepareDynamic(int from)
+    void prepareDynamic(int from)
     {
         //dart::common::Timer t1("select branch");
         try {
@@ -175,7 +173,7 @@ public:
         return t1.getLastElapsedTime();
     }
 
-    void cleanup(int from)
+    void cleanup(size_t from)
     {
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
@@ -537,7 +535,7 @@ int main(int argc, char** argv)
         dart::common::Timer t1("benchmark");
         t1.start();
 
-        double prerareTime = problem.prepareDynamic(from);
+        problem.prepareDynamic(from);
         std::cout << "prepared tree for removal\n";
 
         //==============================================================================

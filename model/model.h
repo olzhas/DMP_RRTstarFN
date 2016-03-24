@@ -331,7 +331,7 @@ public:
         for (auto& obs : dynamicCircle_) {
             obstacles_.add(obs);
         }
-        loadObstacles(mapFilename_);
+        loadObstacles(mapFilename_, obstacles_);
 
         simpleCar_.setWidth(80);
         simpleCar_.setHeight(50);
@@ -355,20 +355,17 @@ public:
 
     void updateObstacles()
     {
-
         dynamicCircle_[0]->move(Eigen::Vector2d(1070, 1400), 100);
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
 
-    void loadObstacles(const std::string& fname)
+    void loadObstacles(const std::string& fname, ObstacleCollection& collection)
     {
         Obstacle* obs;
-
         std::string str;
 
         std::ifstream fin(fname);
-
         std::ofstream fout("obstacles.gnu");
 
         const std::size_t nColors = 6;
@@ -376,11 +373,9 @@ public:
             "#B10DC9", "#0074D9", "#F012BE" };
 
         if (fin) {
-
             size_t i = 100;
 
             while (!fin.eof()) {
-
                 char type;
                 fin >> type;
                 std::getline(fin, str);
@@ -407,9 +402,10 @@ public:
 
                     break;
                 default:
+                    obs = nullptr;
                     break;
                 }
-                obstacles_.add(obs);
+                collection.add(obs);
             }
         }
         else {
@@ -446,19 +442,12 @@ public:
         return object;
     }
 
-    void setDynamicObstacles(std::string& filename)
-    {
-        std::ifstream fin(filename);
-        assert(!fin.fail() && "Cannot open file");
-
-    }
-
 private:
     ob::SpaceInformationPtr si_;
 
-    //std::mutex mutex_;
-
     ObstacleCollection obstacles_;
+    ObstacleCollection dynamicObstacles_;
+
     ObbObstacle simpleCar_;
     std::string mapFilename_;
 
