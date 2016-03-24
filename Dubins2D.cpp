@@ -28,12 +28,14 @@ class DubinsCarEnvironment {
 public:
     double reconnectTime;
 
-    DubinsCarEnvironment(std::string& obstacleFilepath)
+    DubinsCarEnvironment(std::string& obstacleFilepath, std::string& dynamicObstaclesFile)
         : maxWidth_(2440.0)
         , maxHeight_(2160.0)
         , prefix_("")
     {
         model_ = new Model(obstacleFilepath);
+
+        model_->setDynamicObstacles(dynamicObstaclesFile);
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
         ob::StateSpacePtr space(new ob::DubinsStateSpace(125, false)); // only forward
         //ob::StateSpacePtr space(new ob::ReedsSheppStateSpace(0.11)); // only forward
@@ -359,7 +361,7 @@ public:
     }
 
     //==============================================================================
-    void load(const char* filename)
+    void load(const char* filename, Model::Point& i, Model::Point& f)
     {
         if (ss_->getPlanner()) {
             ss_->getPlanner()->clear();
@@ -367,9 +369,8 @@ public:
 
         ss_->setup();
 
-        // FIXME
-        Model::Point initial(250, 250);
-        Model::Point final(1700, 1000);
+        Model::Point initial(i);
+        Model::Point final(f);
 
         ob::ScopedState<> start(ss_->getStateSpace());
         start[0] = initial.x();
@@ -434,6 +435,7 @@ std::istream& operator>>(std::istream& is, Model::Point& p)
     is >> x;
     is >> y;
     p = Model::Point(x, y);
+    return is;
 }
 
 int main(int argc, char** argv)
@@ -467,8 +469,8 @@ int main(int argc, char** argv)
     size_t iter;
     fin >> time >> iter;
 
-    double dt = time / iter;
-    int ITERATIONS = iter;
+    double dt = time / ((double) iter);
+    size_t ITERATIONS = iter;
 
     std::string fileDump;
     fin >> fileDump;
@@ -479,7 +481,10 @@ int main(int argc, char** argv)
     std::string obstaclesFile;
     fin >> obstaclesFile;
 
-    DubinsCarEnvironment problem(obstaclesFile);
+    std::string dynamicObstaclesFile;
+    fin >> dynamicObstaclesFile;
+
+    DubinsCarEnvironment problem(obstaclesFile, dynamicObstaclesFile);
 
 #define PLOTTING
 #ifdef PLOTTING
@@ -527,7 +532,7 @@ int main(int argc, char** argv)
     const size_t benchmark_path_nodes = 9;
     //for (size_t from = 0; from < problem.getPathNodesCount(); ++from) {
     for (size_t from = 0; from < benchmark_path_nodes; ++from) {
-        problem.load(fileDump.c_str());
+        problem.load(fileDump.c_str(), start, goal);
 
         dart::common::Timer t1("benchmark");
         t1.start();
@@ -564,7 +569,7 @@ int main(int argc, char** argv)
     std::cout << ">>>>>>>>>>>>>>>>>>> RRT star initiated\n";
     fout << "rrt star\n";
     for (size_t from = 0; from < benchmark_path_nodes; ++from) {
-        problem.load(fileDump.c_str());
+        problem.load(fileDump.c_str(), start, goal);
 
         dart::common::Timer t1("benchmark");
         t1.start();
@@ -596,7 +601,7 @@ int main(int argc, char** argv)
     std::cout << ">>>>>>>>>>>>>>>>>>> RRT star FN initiated\n";
     fout << "rrt star fn\n";
     for (size_t from = 0; from < benchmark_path_nodes; ++from) {
-        problem.load(fileDump.c_str());
+        problem.load(fileDump.c_str(), start, goal);
 
         dart::common::Timer t1("benchmark");
         t1.start();

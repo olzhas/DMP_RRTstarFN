@@ -5,7 +5,7 @@
 #include <dart/dart-core.h>
 #include <ompl/base/State.h>
 
-#if WIN32
+#ifdef WIN32
 #include <cstdlib> // To disable glut::exit() function
 #include <GL/glut.h>
 #elif defined(__linux__)

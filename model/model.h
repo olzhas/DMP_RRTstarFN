@@ -2,11 +2,13 @@
 #define MODEL_H
 
 #include <ompl/base/State.h>
+#include <ompl/base/SpaceInformation.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <Eigen/Eigen>
 #include <iostream>
+#include <fstream>
 
-namespace ob = ompl::base;
+namespace ob = ompl::base; 
 
 class Model {
 
@@ -85,12 +87,16 @@ public:
     };
 
     class Obstacle {
-
     public:
+        Obstacle() {;}
+        ~Obstacle() {;}
+
         virtual bool detectCollision(Obstacle* target)
         {
             return true;
         }
+
+
     };
 
     class CircularObstacle : public Obstacle {
@@ -271,7 +277,7 @@ public:
             Eigen::MatrixXd::Index max[2];
             Eigen::MatrixXd::Index min[2];
 
-            for (size_t i = 0; i < 2; ++i) {
+            for (long i = 0; i < 2; ++i) {
                 vertices.row(i).maxCoeff(&max[i]);
                 vertices.row(i).minCoeff(&min[i]);
             }
@@ -349,6 +355,7 @@ public:
 
     void updateObstacles()
     {
+
         dynamicCircle_[0]->move(Eigen::Vector2d(1070, 1400), 100);
     }
 
@@ -439,10 +446,17 @@ public:
         return object;
     }
 
+    void setDynamicObstacles(std::string& filename)
+    {
+        std::ifstream fin(filename);
+        assert(!fin.fail() && "Cannot open file");
+
+    }
+
 private:
     ob::SpaceInformationPtr si_;
 
-    std::mutex mutex_;
+    //std::mutex mutex_;
 
     ObstacleCollection obstacles_;
     ObbObstacle simpleCar_;
