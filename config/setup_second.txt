@@ -5,4 +5,4 @@
 dubins_second_420.dump
 1
 data/obstacles/second.map
-2
+data/obstacles/dynamic_second.txt

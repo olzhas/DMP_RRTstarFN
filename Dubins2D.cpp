@@ -34,6 +34,7 @@ public:
         , prefix_("")
     {
         model_ = new Model(obstacleFilepath);
+        model_->setDynamicObstaclesFile(dynamicObstaclesFile);
         // ob::StateSpacePtr space(new ob::DubinsStateSpace(0.05, true));
         ob::StateSpacePtr space(new ob::DubinsStateSpace(125, false)); // only forward
         //ob::StateSpacePtr space(new ob::ReedsSheppStateSpace(0.11)); // only forward
@@ -487,7 +488,7 @@ int main(int argc, char** argv)
 #define PLOTTING
 #ifdef PLOTTING
     if (plan) {
-        for (int i = 0; i < ITERATIONS; i++) {
+        for (size_t i = 0; i < ITERATIONS; i++) {
             bool clearPlanner = (i == 0);
             if (problem.plan(start, goal, dt, clearPlanner)) {
                 problem.recordSolution(i);

@@ -8,10 +8,9 @@
 #include <iostream>
 #include <fstream>
 
-namespace ob = ompl::base; 
+namespace ob = ompl::base;
 
 class Model {
-
 public:
     class Point {
         double x_;
@@ -88,15 +87,10 @@ public:
 
     class Obstacle {
     public:
-        Obstacle() {;}
-        ~Obstacle() {;}
+        Obstacle() { ; }
+        ~Obstacle() { ; }
 
-        virtual bool detectCollision(Obstacle* target)
-        {
-            return true;
-        }
-
-
+        virtual bool detectCollision(Obstacle* target) { return true; }
     };
 
     class CircularObstacle : public Obstacle {
@@ -106,10 +100,7 @@ public:
         double radiusSquare;
 
     public:
-        CircularObstacle()
-        {
-            ;
-        }
+        CircularObstacle() { ; }
 
         bool detectCollision(Obstacle* target)
         {
@@ -131,15 +122,9 @@ public:
             radiusSquare = r * r;
         }
 
-        Eigen::Vector2d getPos() const
-        {
-            return pos;
-        }
+        Eigen::Vector2d getPos() const { return pos; }
 
-        double getRadius() const
-        {
-            return radius;
-        }
+        double getRadius() const { return radius; }
     };
 
     class ObbObstacle : public Obstacle {
@@ -175,11 +160,10 @@ public:
         /** \brief */
         bool detectCollision(Obstacle* target)
         {
-            bool intersectX = false,
-                 intersectY = false;
+            bool intersectX = false, intersectY = false;
             ObbObstacle* obb = static_cast<ObbObstacle*>(target);
-            //Eigen::Vector2d diff = pos - obb->getPos();
-            //double squareDistance = diff.dot(diff);
+            // Eigen::Vector2d diff = pos - obb->getPos();
+            // double squareDistance = diff.dot(diff);
 
             ObbObstacle* left = pos[0] > obb->getPos()[0] ? obb : this;
             ObbObstacle* right = pos[0] > obb->getPos()[0] ? this : obb;
@@ -224,7 +208,7 @@ public:
         void setPos(const Eigen::Vector2d& position)
         {
             pos = position;
-            //update();
+            // update();
         }
 
         /** \brief */
@@ -258,16 +242,20 @@ public:
             Eigen::MatrixXd temp(2, 4);
 
             /*
-                3---0
-                |   |
-                2---1
-            */
-            temp << width / 2.0 * cos(yaw) - height / 2.0 * sin(yaw), width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw),
-                -width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw), -width / 2.0 * cos(yaw) - height / 2.0 * sin(yaw),
-                width / 2.0 * sin(yaw) + height / 2.0 * cos(yaw), width / 2.0 * sin(yaw) - height / 2.0 * cos(yaw),
-                -width / 2.0 * sin(yaw) - height / 2.0 * cos(yaw), -width / 2.0 * sin(yaw) + height / 2.0 * cos(yaw);
+3---0
+|   |
+2---1
+*/
+            temp << width / 2.0 * cos(yaw) - height / 2.0 * sin(yaw),
+                width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw),
+                -width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw),
+                -width / 2.0 * cos(yaw) - height / 2.0 * sin(yaw),
+                width / 2.0 * sin(yaw) + height / 2.0 * cos(yaw),
+                width / 2.0 * sin(yaw) - height / 2.0 * cos(yaw),
+                -width / 2.0 * sin(yaw) - height / 2.0 * cos(yaw),
+                -width / 2.0 * sin(yaw) + height / 2.0 * cos(yaw);
             vertices = temp;
-            //std::cout << vertices << std::endl;
+            // std::cout << vertices << std::endl;
 
             Eigen::MatrixXd offset(2, 4);
             offset << pos[0], pos[0], pos[0], pos[0], pos[1], pos[1], pos[1], pos[1];
@@ -322,15 +310,28 @@ public:
         loadSimpleWorld();
     }
 
-    void loadSimpleWorld()
+    void setDynamicObstaclesFile(std::string& filename)
     {
+        std::ifstream fin(filename);
+        assert(!fin.fail() && "cannot open file");
+
+        double x, y, r;
+        fin >> x >> y >> r;
         dynamicCircle_.resize(1);
         dynamicCircle_[0] = new CircularObstacle;
-        dynamicCircle_[0]->move(Eigen::Vector2d(900, 1050), 100);
+        dynamicCircle_[0]->move(Eigen::Vector2d(x, y), r);
+
+        fin >> x >> y >> r;
+        futurePosition_.push_back(x);
+        futurePosition_.push_back(y);
+        futurePosition_.push_back(r);
 
         for (auto& obs : dynamicCircle_) {
             obstacles_.add(obs);
         }
+    }
+    void loadSimpleWorld()
+    {
         loadObstacles(mapFilename_, obstacles_);
 
         simpleCar_.setWidth(80);
@@ -355,7 +356,8 @@ public:
 
     void updateObstacles()
     {
-        dynamicCircle_[0]->move(Eigen::Vector2d(1070, 1400), 100);
+        dynamicCircle_[0]->move(Eigen::Vector2d(futurePosition_[0], futurePosition_[1]),
+            futurePosition_[2]);
     }
 
     void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
@@ -385,20 +387,23 @@ public:
                 case 'C':
                     obs = createCircularObstacle(str);
                     fout << "set object " << ++i << " ";
-                    fout << "circle at " << static_cast<CircularObstacle*>(obs)->getPos()[0] << ","
-                         << static_cast<CircularObstacle*>(obs)->getPos()[1]
-                         << " size " << static_cast<CircularObstacle*>(obs)->getRadius()
-                         << " fc rgb \"#22FF4444\" front" << std::endl;
+                    fout << "circle at "
+                         << static_cast<CircularObstacle*>(obs)->getPos()[0] << ","
+                         << static_cast<CircularObstacle*>(obs)->getPos()[1] << " size "
+                         << static_cast<CircularObstacle*>(obs)->getRadius()
+                         << " fc rgb \"#FF4444\" front" << std::endl;
                     break;
                 case 'r':
                 case 'R':
                     obs = createObbObstacle(str);
                     fout << "set object " << ++i << " ";
-                    fout << "rect from " << static_cast<ObbObstacle*>(obs)->vertices(0, 2)
-                         << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 2)
-                         << " to " << static_cast<ObbObstacle*>(obs)->vertices(0, 0)
-                         << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 0)
-                         << " fc rgb \"" << colors[i % nColors] << "\" front" << std::endl;
+                    fout << "rect from "
+                         << static_cast<ObbObstacle*>(obs)->vertices(0, 2) << ","
+                         << static_cast<ObbObstacle*>(obs)->vertices(1, 2) << " to "
+                         << static_cast<ObbObstacle*>(obs)->vertices(0, 0) << ","
+                         << static_cast<ObbObstacle*>(obs)->vertices(1, 0)
+                         << " fc rgb \"" << colors[i % nColors] << "\" front"
+                         << std::endl;
 
                     break;
                 default:
@@ -452,6 +457,7 @@ private:
     std::string mapFilename_;
 
     std::vector<CircularObstacle*> dynamicCircle_;
+    std::vector<double> futurePosition_;
 };
 
 #endif // MODEL_H
