@@ -1,0 +1,9 @@
+100 350
+1980 1150 
+300
+240
+dubins420.dump
+1
+data/obstacles/third.map
+data/obstacles/dynamic_third.txt
+

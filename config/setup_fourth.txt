@@ -1,0 +1,8 @@
+100 100
+2000 600 
+420
+240
+dubins420.dump
+1
+data/obstacles/fourth.map
+data/obstacles/dynamic_fourth.txt

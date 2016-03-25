@@ -1,0 +1,9 @@
+1600 950 
+200 1200
+420
+240
+dubins_first_420.dump
+1
+data/obstacles/first.map
+data/obstacles/dynamic_first.txt
+

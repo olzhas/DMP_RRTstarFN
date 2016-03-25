@@ -106,7 +106,7 @@ bool Manipulator::isStateValid(const ob::State* state)
     double* jointSpace
         = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
 
-    std::vector<size_t> indices = {2, 3, 4, 5, 6, 7};
+    std::vector<size_t> indices = { 2, 3, 4, 5, 6, 7 };
     Eigen::Vector6d currentState;
     currentState << jointSpace[0], jointSpace[1], jointSpace[2],
         jointSpace[3], jointSpace[4], jointSpace[5];
@@ -224,7 +224,7 @@ bool Manipulator::newReplan()
     int from = 3;
 
     ompl::base::State* s = ss_->getSpaceInformation()
-            ->cloneState(p.getState(from));
+                               ->cloneState(p.getState(from));
     std::vector<ompl::base::State*> pathArray = p.getStates();
 
     ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray, from);

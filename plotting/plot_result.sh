@@ -11,6 +11,7 @@ fout="output$i.png"
 
 cat ../obstacles.gnu > mytree.gnu
 cat ../goal_start.txt >> mytree.gnu
+cat ../dynamic_before.gnu >> mytree.gnu
 cat tree.gnu >> mytree.gnu
 
 gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=1" mytree.gnu

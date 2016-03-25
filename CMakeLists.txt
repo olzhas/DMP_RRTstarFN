@@ -21,6 +21,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 include_directories(${BULLET_INCLUDE_DIR})
 
 aux_source_directory(. SRC_LIST)
+
 list(REMOVE_ITEM SRC_LIST "./Point2DPlanning.cpp")
 list(REMOVE_ITEM SRC_LIST "./Dubins2D.cpp")
 list(REMOVE_ITEM SRC_LIST "./car_dart.cpp")
