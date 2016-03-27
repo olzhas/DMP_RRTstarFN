@@ -620,7 +620,7 @@ int main(int argc, char** argv)
         for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
              i++) {
             if (problem.plan(start, goal, 600.00, false)) {
-                problem.setRecordDirectoryPrefix(std::string("rrts_path_node_") + std::to_string(from));
+                problem.setRecordDirectoryPrefix(std::string("rrtsfn_path_node_") + std::to_string(from));
                 problem.recordSolution(i);
                 problem.recordTreeState(i);
                 std::cout << "done\n";
