@@ -17,6 +17,7 @@ set style fill transparent solid 0.5 noborder
 
 set style arrow 3 nohead linewidth 5
 set style line 1 linecolor rgb "#11CC22" linewidth 4
+set style line 2 linecolor rgb "#C22C22" linewidth 4
 
 set multiplot
 
@@ -63,7 +64,7 @@ if (exists("filenameResults") && file_exists(filenameResults)) {
 }
 
 if (exists("filenameResultsMilestones") && file_exists(filenameResultsMilestones)) {
-	plot filenameResultsMilestones using 1:2 notitle linestyle 1 pointtype 1
+	plot filenameResultsMilestones using 1:2 notitle linestyle 2 pointtype 3
 }
 
 

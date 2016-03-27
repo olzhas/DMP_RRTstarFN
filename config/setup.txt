@@ -3,6 +3,6 @@
 420
 240
 dubins420.dump
-0
+1
 data/obstacles/test.map
-2
+data/obstacles/dynamic_test.txt

@@ -3,7 +3,7 @@
 300
 240
 dubins420.dump
-1
+0
 data/obstacles/third.map
 data/obstacles/dynamic_third.txt
 

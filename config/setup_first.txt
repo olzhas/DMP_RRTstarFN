@@ -3,7 +3,7 @@
 420
 240
 dubins_first_420.dump
-1
+0
 data/obstacles/first.map
 data/obstacles/dynamic_first.txt
 

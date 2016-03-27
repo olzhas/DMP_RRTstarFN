@@ -18,6 +18,18 @@ gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$r
 echo "Done: $i"
 
 
+fout="output$ia.png"
+
+cat ../obstacles.gnu > newtree.gnu
+cat ../goal_start.txt >> newtree.gnu
+cat ../dynamic_after.gnu >> newtree.gnu
+cat tree.gnu >> newtree.gnu
+
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=1" newtree.gnu
+echo "Done: $i"
+
+
+
 ## dynamic obstacles moves
 
 res="dubins-results-interp239.txt"
