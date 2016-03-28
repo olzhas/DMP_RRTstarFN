@@ -99,7 +99,7 @@ public:
         }
     }
 
-    void prepareFromScratchRRTstar(const size_t from, Model::Point& final)
+    ob::State* prepareFromScratchRRTstar(const size_t from, Model::Point& final)
     {
         //dart::common::Timer t1("select branch");
         try {
@@ -123,13 +123,15 @@ public:
             ss_->setup();
 
             ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true);
+
+            return s;
         }
         catch (ompl::Exception e) {
             dtwarn << "No solution, man\n";
         }
     }
 
-    void prepareFromScratchRRTstarFN(const size_t from, Model::Point& final)
+    ob::State* prepareFromScratchRRTstarFN(const size_t from, Model::Point& final)
     {
         //dart::common::Timer t1("select branch");
         try {
@@ -154,6 +156,7 @@ public:
             ss_->setup();
 
             ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true);
+            return s;
         }
         catch (ompl::Exception e) {
             dtwarn << "No solution, man\n";
@@ -207,6 +210,35 @@ public:
         ob::ScopedState<> start(ss_->getStateSpace());
         start[0] = initial.x();
         start[1] = initial.y();
+        ob::ScopedState<> goal(ss_->getStateSpace());
+        goal[0] = final.x();
+        goal[1] = final.y();
+        ss_->setStartAndGoalStates(start, goal);
+        // generate a few solutions; all will be added to the goal;
+
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.05);
+
+        if (ss_->getPlanner())
+            if (clearPlanner)
+                ss_->getPlanner()->clear();
+
+        ss_->solve(time);
+
+        const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
+        OMPL_INFORM("Found %d solutions", (int)ns);
+        if (ss_->haveSolutionPath()) {
+            return true;
+        }
+        else
+            return false;
+    }
+
+    bool plan(const ob::State* initial, const Model::Point& final, double time,
+        bool clearPlanner = true)
+    {
+        if (!ss_)
+            return false;
+        ob::ScopedState<> start(ss_->getStateSpace(), initial);
         ob::ScopedState<> goal(ss_->getStateSpace());
         goal[0] = final.x();
         goal[1] = final.y();
@@ -573,7 +605,8 @@ int main(int argc, char** argv)
         dart::common::Timer t1("benchmark");
         t1.start();
 
-        problem.prepareFromScratchRRTstar(from, goal);
+        ob::State *s = problem.prepareFromScratchRRTstar(from, goal);
+
         std::cout << "prepared tree for removal\n";
 
         //==============================================================================
@@ -587,7 +620,7 @@ int main(int argc, char** argv)
         std::cout << std::endl;
         for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
              i++) {
-            if (problem.plan(start, goal, 600.00, false)) {
+            if (problem.plan(s, goal, 600.00, false)) {
                 problem.setRecordDirectoryPrefix(std::string("rrts_path_node_") + std::to_string(from));
                 problem.recordSolution(i);
                 problem.recordTreeState(i);
@@ -605,7 +638,7 @@ int main(int argc, char** argv)
         dart::common::Timer t1("benchmark");
         t1.start();
 
-        problem.prepareFromScratchRRTstarFN(from, goal);
+        ob::State *s = problem.prepareFromScratchRRTstarFN(from, goal);
         std::cout << "prepared tree for removal\n";
 
         //==============================================================================
@@ -619,7 +652,7 @@ int main(int argc, char** argv)
         std::cout << std::endl;
         for (size_t i = ITERATIONS + 1; i < DYNAMIC_ITERATIONS + ITERATIONS + 1;
              i++) {
-            if (problem.plan(start, goal, 600.00, false)) {
+            if (problem.plan(s, goal, 600.00, false)) {
                 problem.setRecordDirectoryPrefix(std::string("rrtsfn_path_node_") + std::to_string(from));
                 problem.recordSolution(i);
                 problem.recordTreeState(i);
