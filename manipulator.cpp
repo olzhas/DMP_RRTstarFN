@@ -184,7 +184,7 @@ bool Manipulator::plan()
     try {
         og::PathGeometric& p = ss_->getSolutionPath();
 #ifdef INTERP
-        p.interpolate(2000);
+        p.interpolate(200);
 #endif
         sp->set(p, ss_->getSpaceInformation(), staubli_);
         pWindow->drawables.push_back(&sp->getDrawables());

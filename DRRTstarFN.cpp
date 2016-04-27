@@ -524,7 +524,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             if (goal->isSatisfied(motion->state, &distanceFromGoal)) {
                 goalMotions_.push_back(motion);
                 checkForSolution = true;
-                if(terminateFirstSolution)
+                if (terminateFirstSolution)
                     ptc.terminate();
             }
 
@@ -758,12 +758,12 @@ void ompl::geometric::DRRTstarFN::removeFromParent(Motion* m)
     if (m->parent == nullptr)
         return;
 
-    for (std::vector<Motion*>::iterator it = m->parent->children.begin();
-         it != m->parent->children.end(); ++it)
-        if (*it == m) {
-            m->parent->children.erase(it);
-            break;
-        }
+    auto it = std::find(std::begin(m->parent->children),
+        std::end(m->parent->children),
+        m);
+
+    if (it != std::end(m->parent->children))
+        m->parent->children.erase(it);
 }
 
 void ompl::geometric::DRRTstarFN::updateChildCosts(Motion* m)
@@ -1086,6 +1086,15 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
           }
     };
 
+    std::function<bool(Motion*)> isOnPath;
+    isOnPath = [&](Motion* m) -> bool {
+        for(auto& state : orphanedBiasNodes_){
+            if(si_->equalStates(state, m->state))
+                return true;
+        }
+        return false;
+    };
+
     // e+e/d.  K-nearest RRT*
     // double k_rrg = boost::math::constants::e<double>() +
     // (boost::math::constants::e<double>() /
@@ -1094,65 +1103,73 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     // unsigned int k = std::ceil(k_rrg * log((double)(bakNN_->size() + 1)));
     unsigned int k = std::ceil(nn_->size() * 0.5);
 
+    // this is a variable to control the removal procedure
+    Motion* rowdy = new Motion(si_);
+    rowdy->state = si_->allocState();
+
+    Motion* currentNode = nullptr;
+
     for (size_t watchdog = 0; node->parent != nullptr && watchdog < LIMIT_PATH;
          ++watchdog, node = node->parent) {
 
-        bool validMotion = si_->checkMotion(node->parent->state, node->state);
-        if (!validMotion || !si_->isValid(node->parent->state)) {
-            Motion* disconnected = node->parent;
-            if (si_->isValid(node->state)) {
-                removeFromParent(node);
-                node->parent = node;
-                node->nodeType = NodeType::ORPHANED;
-                // OMPL_WARN("%d", validMotion);
-            }
-            else {
-                // TODO think about this, interpolate back?
-                OMPL_WARN("TODO think about this");
-            }
+        currentNode = node;
 
-            for (auto& child : disconnected->children) {
-                if (child != node) {
-                    if (!si_->checkMotion(child->parent->state, child->state)) {
-                        removeBranch(child);
-                    }
-                }
-            }
+        Motion* parentNode = nullptr;
+        bool validParent = si_->isValid(currentNode->parent->state);
 
-            Motion* rowdy = new Motion(si_);
-            rowdy->state = si_->allocState();
-
-            si_->getStateSpace()->interpolate(disconnected->state, node->state, 0.5,
+        if (!validParent && si_->isValid(currentNode->state)) {
+            parentNode = node->parent;
+            si_->getStateSpace()->interpolate(currentNode->parent->state,
+                currentNode->state, 0.5,
                 rowdy->state);
 
-            nn_->nearestK(rowdy, k, nbh);
+            removeFromParent(currentNode);
+            currentNode->parent = currentNode;
+            currentNode->nodeType = ORPHANED;
+            //node = node->parent->parent;
 
+            nn_->remove(parentNode);
+        }
+
+        bool validMotion = true;
+        if (validParent) {
+            validMotion = si_->checkMotion(currentNode->parent->state,
+                                           currentNode->state);
+            if (!validMotion) {
+                parentNode = currentNode->parent;
+                si_->getStateSpace()->interpolate(currentNode->parent->state,
+                    currentNode->state, 0.5,
+                    rowdy->state);
+                removeFromParent(currentNode);
+                currentNode->parent = currentNode;
+                currentNode->nodeType = ORPHANED;
+            }
+        }
+
+        if (!validParent || !validMotion) {
+            nn_->nearestK(rowdy, k, nbh);
             for (auto& neighbor : nbh) {
                 if (!si_->isValid(neighbor->state)) {
-                    removeBranch(neighbor);
+                    removeFromParent(neighbor);
+                    if (!isOnPath(neighbor)) {
+                        removeBranch(neighbor);
+                    }
+                    nn_->remove(neighbor);
                 }
-                else {
-                    for (auto& child : neighbor->children) {
-                        if (!si_->isValid(child->parent->state) || !si_->checkMotion(child->parent->state, child->state)) {
-                            removeFromParent(child);
-                            removeBranch(child);
-                        }
+                else if (neighbor->parent != nullptr
+                         && (!si_->checkMotion(neighbor->parent->state,
+                             neighbor->state)
+                         || !si_->isValid(neighbor->parent->state))) {
+                    removeFromParent(neighbor->parent);
+                    if (!isOnPath(neighbor->parent)) {
+                        removeBranch(neighbor->parent);
                     }
-                    if (neighbor->parent != nullptr) {
-                        if (!si_->checkMotion(neighbor->parent->state, neighbor->state)) {
-                            removeFromParent(neighbor);
-                            removeBranch(neighbor);
-                        }
-
-                        if (!si_->isValid(neighbor->parent->state)) {
-                            removeFromParent(neighbor->parent);
-                            removeBranch(neighbor->parent);
-                        }
-                    }
+                    nn_->remove(neighbor->parent);
                 }
             }
         }
     }
+
     OMPL_WARN("failed to remove nodes from the nn_ %d points", error_removed);
     return removed;
 }

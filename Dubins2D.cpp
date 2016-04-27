@@ -89,8 +89,8 @@ public:
             localPlanner->selectBranch(s);
             //t1.stop();
             //t1.print();
-            localPlanner->setSampleRadius(200);
-            localPlanner->setOrphanedBias(0.250);
+            localPlanner->setSampleRadius(300);
+            localPlanner->setOrphanedBias(0.400);
             localPlanner->setLocalPlanning(true);
             localPlanner->swapNN();
         }
@@ -216,7 +216,7 @@ public:
         ss_->setStartAndGoalStates(start, goal);
         // generate a few solutions; all will be added to the goal;
 
-        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.05);
+        ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.075);
 
         if (ss_->getPlanner())
             if (clearPlanner)
@@ -533,7 +533,7 @@ int main(int argc, char** argv)
 #endif
 
     std::cout << time << "\n" << dt << std::endl;
-    if (!system("date")) {
+    if (system("date") < 0) {
         std::cout << "cannot run system()\n";
     }
 

@@ -1,1 +1,21 @@
-../../staubli_dart-build/config/config.yaml
+---
+path-nodes: 100
+planning-time: 300
+dynamic-planning-time: 15.0
+max-nodes: 15000
+goal-bias: 0.001
+range: 5.0
+start-pos: [102.5, 49.5, 92.8, 0.0, 0.0, 0.0]
+goal-pos: [-59.2, 70.8, 103.0, 0.0, 53.3, 0.0]
+dynamic-replanning: false
+scene-refresh-rate: 60
+obstacle-num: 2
+load-data: true
+#load-data: false
+#load-data-file: mydump-test-obstacle-on-path
+#load-data-file: mydump-test-test
+load-data-file: january21
+random-seed: 200319908
+motion-check-accuracy: 0.09
+orphaned-sample-radius-deg: 60
+orphaned-bias: 0.75

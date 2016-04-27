@@ -23,24 +23,6 @@ set multiplot
 
 set style fill solid 1.0 border -1
 
-if (circle == 1) {
-	#set object 2 circle at 900,1050 size 100 fc rgb "#FF4444" front
-	#set object 4 circle at 200,1000 size 150 fc rgb "#FF4444" front
-	#set object 5 circle at 500,1450 size 100 fc rgb "#FF4444" front
-}
-if (circle == 2) {
-	
-	#set object 3 circle at 1070,1400 size 100 fs solid fc rgb "#2244FF" front 
-	#set object 4 circle at 200,1000 size 150 fc rgb "#FF4444" front
-	#set object 5 circle at 500,1450 size 100 fc rgb "#FF4444" front
-}
-if (circle == 3) {
-	#set object 2 circle at 900,1050 size 100 fs solid fc rgb "#FF4444" front
-	#set object 3 circle at 1070,1400 size 100 fs solid fc rgb "#2244FF" front 
-	#set object 4 circle at 200,1000 size 150 fc rgb "#FF4444" front
-	#set object 5 circle at 500,1450 size 100 fc rgb "#FF4444" front
-}
-
 set yrange [0:2160]
 set xrange [0:3840]
 
