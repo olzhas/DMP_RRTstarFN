@@ -1,8 +1,8 @@
 100 100
 1600 950 
-420
-240
+600
+600
 dubins420.dump
-1
+0
 data/obstacles/test.map
-data/obstacles/dynamic_test.txt
+data/obstacles/dynamic_test_simple.txt

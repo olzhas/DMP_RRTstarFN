@@ -205,6 +205,9 @@ namespace geometric {
 
         void evaluateSolutionPath();
 
+        // TODO write an explanation
+        void populateDetachedPath();
+
         /** \brief remove orphaned nodes from the tree */
 
         void removeOrphaned();
@@ -358,6 +361,7 @@ namespace geometric {
         Motion* startMotion_;
 
         std::vector<ompl::base::State*> orphanedBiasNodes_;
+        std::vector<Motion*> detachedPathNodes_;
 
         //////////////////////////////
         // Planner progress properties

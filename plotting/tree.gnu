@@ -4,7 +4,7 @@ if (!exists("filenameEdges")) filenameEdges='dubins-edges.dat'
 if (!exists("filenameVertices")) filenameVertices='dubins-vertices.dat'
 if (!exists("filenameOutput")) filenameOutput='output.png'
 
-set term pngcairo size 1920,1080
+set term pngcairo size 1220,1080
 #set terminal postscript eps enhanced color font 'Helvetica,10' size 8,8
 set output filenameOutput
 
@@ -21,10 +21,21 @@ set style line 2 linecolor rgb "#C22C22" linewidth 4
 
 set multiplot
 
-set style fill solid 1.0 border -1
+# no border setting
+set border 0
+set style line 101 lc rgb '#808080' lt 1 lw 1
+unset xlabel
+unset ylabel
+set format x ''
+set format y ''
+set tics scale 0
+
+
+#set style fill solid 1.0 border -1
 
 set yrange [0:2160]
-set xrange [0:3840]
+#set xrange [0:3840]
+set xrange [0:2440]
 
 
 if (!exists("dynamic")) {
@@ -49,7 +60,8 @@ if (exists("filenameResultsMilestones") && file_exists(filenameResultsMilestones
 	plot filenameResultsMilestones using 1:2 notitle linestyle 2 pointtype 3
 }
 
-
-
+if (exists("car_pose_dat")) {
+	plot car_pose_dat using 1:2:($3-$1):($4-$2) notitle with vectors nohead lw 5 lc rgbcolor(0x104050)
+}
 
 

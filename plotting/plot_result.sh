@@ -2,30 +2,33 @@
 
 #gnuplot tree.gnu
 
-i=2
+i=239
 res="dubins-results-interp$i.txt"
 resOrig="dubins-results$i.txt"
 vert="dubins-vertices$i.dat"
 edge="dubins-edges$i.dat"
 fout="output$i.png"
 
-cat ../obstacles.gnu > mytree.gnu
+echo "set style fill transparent solid 0.5 noborder" > mytree.gnu
+cat ../obstacles.gnu >> mytree.gnu
+echo "set style fill transparent solid 0.1 noborder" >> mytree.gnu
 cat ../goal_start.txt >> mytree.gnu
 cat ../dynamic_before.gnu >> mytree.gnu
 cat tree.gnu >> mytree.gnu
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=1" mytree.gnu
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout';" mytree.gnu
 echo "Done: $i"
 
 
 fout="output$ia.png"
 
-cat ../obstacles.gnu > newtree.gnu
+echo "set style fill transparent solid 0.5 noborder" > newtree.gnu
+cat ../obstacles.gnu >> newtree.gnu
 cat ../goal_start.txt >> newtree.gnu
 cat ../dynamic_after.gnu >> newtree.gnu
 cat tree.gnu >> newtree.gnu
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=1" newtree.gnu
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; " newtree.gnu
 echo "Done: $i"
 
 
@@ -47,7 +50,7 @@ vert="dubins-vertices239.dat"
 edge="dubins-edges239.dat"
 fout="output1001.png"
 
-gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=2" mytree.gnu
+gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout';" mytree.gnu
 
 ##
 
@@ -85,7 +88,7 @@ do
 	vert="dubins-vertices$i.dat"
 	edge="dubins-edges$i.dat"
 	fout="output$i.png"
-	gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; circle=2; dynamic=1" mytree.gnu
+	gnuplot -e "filenameEdges='$edge'; filenameVertices='$vert'; filenameResults='$res'; filenameResultsMilestones='$resOrig'; filenameOutput='$fout'; dynamic=1" newtree.gnu
 done
 
 # if [ ! -d "dynamic_reconnect" ]; then
