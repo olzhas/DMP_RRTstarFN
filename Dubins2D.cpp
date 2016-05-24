@@ -204,7 +204,6 @@ public:
             ss_->solve(time);
         }
         ss_->getProblemDefinition()->clearSolutionPaths();
-        // FIXME reevalute solution path without trying to solve it.
         ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
         return reconnectTime + ss_->getLastPlanComputationTime();
     }

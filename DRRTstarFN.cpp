@@ -576,7 +576,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 #ifdef DEBUG
                 OMPL_INFORM("%d > %d", statesGenerated, maxNodes_);
 #endif
-                // FIXME bottleneck
+                // FIXME #39 this is a bottleneck
                 std::vector<Motion*> motions;
                 nn_->list(motions);
                 std::vector<int> childlessNodes;
