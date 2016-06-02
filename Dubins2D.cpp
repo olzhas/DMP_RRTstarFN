@@ -12,7 +12,7 @@
 
 #include <Eigen/Eigen>
 #include <dart/common/common.h>
-#include "DRRTstarFN.h"
+#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
 
 #include <iostream>
 #include <fstream>
@@ -51,7 +51,7 @@ public:
         ob::SpaceInformationPtr si = ss_->getSpaceInformation();
         model_->setSpaceInformation(si);
         ss_->setStateValidityChecker(
-            boost::bind(&Model::isStateValid, model_, _1));
+            std::bind(&Model::isStateValid, model_, std::placeholders::_1));
         space->setup();
         ss_->setPlanner(
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
@@ -123,7 +123,7 @@ public:
 
             ss_->setup();
 
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true);
+            //ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true); // OBSOLETE
 
             return s;
         }
@@ -157,7 +157,7 @@ public:
 
             ss_->setup();
 
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true);
+            // ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true); // OBSOLETE
             return s;
         }
         catch (ompl::Exception e) {
@@ -586,7 +586,7 @@ int main(int argc, char** argv)
         problem.recordTreeState(800);
         std::cout << "recorded 800\n";
 
-        double removalTime = problem.removeInvalidNodes();
+        //double removalTime = problem.removeInvalidNodes();
 
         std::cout << "invalid branch removal: done\n";
         problem.recordTreeState(801);

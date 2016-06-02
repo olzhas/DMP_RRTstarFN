@@ -231,7 +231,7 @@ public:
         ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
 
         // set state validity checking for this space
-        ss_->setStateValidityChecker(boost::bind(&Model::isStateValid, &model_, _1));
+        ss_->setStateValidityChecker(std::bind(&Model::isStateValid, &model_, std::placeholders::_1));
         space->setup();
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
         ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));

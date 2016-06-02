@@ -48,7 +48,7 @@ class SolutionPath {
 
     auto it = colorMap.find(colorName);
     if (it != colorMap.end()) {
-      color_ = *it;
+      color_ = it->second;
     }
   }
 

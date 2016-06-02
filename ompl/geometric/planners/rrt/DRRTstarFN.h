@@ -196,9 +196,6 @@ namespace geometric {
             sampleRadius_ = r;
         }
 
-        /** \brief Set sampling radius around the interim state */
-        void setTerminateFirstSolution(bool t) { terminateFirstSolution = t; }
-
         /** \brief Remove the states from the tree */
 
         int removeInvalidNodes();
@@ -221,7 +218,9 @@ namespace geometric {
         void swapNN();
 
         /** \brief Save the state of the tree */
+        void restoreTree(const std::string& filename);
 
+        /** \brief Save the state of the tree */
         void restoreTree(const char* filename);
 
         /** \brief Load the state of the tree */
@@ -376,8 +375,6 @@ namespace geometric {
 
         base::State* interimState_;
         double sampleRadius_;
-
-        bool terminateFirstSolution;
     };
 }
 }

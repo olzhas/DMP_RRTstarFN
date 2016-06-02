@@ -1,4 +1,4 @@
-/*********************************************************************f
+/*********************************************************************
  * Software License Agreement (BSD License)
  *
  *  Copyright (c) 2011, Rice University
@@ -35,12 +35,13 @@
 /* Authors: Alejandro Perez, Sertac Karaman, Ryan Luna, Luis G. Torres, Ioan
  * Sucan, Javier V Gomez */
 
-#include "DRRTstarFN.h"
 #include "ompl/base/goals/GoalSampleableRegion.h"
 #include "ompl/tools/config/SelfConfig.h"
 #include "ompl/base/objectives/PathLengthOptimizationObjective.h"
 #include "ompl/base/PlannerData.h"
 #include "ompl/base/PlannerDataStorage.h"
+#include "../DRRTstarFN.h"
+
 #include <algorithm>
 #include <limits>
 #include <iostream>
@@ -55,8 +56,6 @@
 
 #define DEFAULT_MAXNODES 30000
 
-#include <ompl/base/spaces/SE2StateSpace.h>
-
 ompl::geometric::DRRTstarFN::DRRTstarFN(const base::SpaceInformationPtr& si)
     : base::Planner(si, "DRRTstarFN")
     , goalBias_(0.05)
@@ -67,7 +66,6 @@ ompl::geometric::DRRTstarFN::DRRTstarFN(const base::SpaceInformationPtr& si)
     , bestCost_(std::numeric_limits<double>::quiet_NaN())
     , maxNodes_(DEFAULT_MAXNODES)
     , localPlanning_(0)
-    , terminateFirstSolution(0)
 {
     specs_.approximateSolutions = true;
     specs_.optimizingPaths = true;
@@ -85,9 +83,9 @@ ompl::geometric::DRRTstarFN::DRRTstarFN(const base::SpaceInformationPtr& si)
         &DRRTstarFN::getMaxNodes, "100:1:100000");
 
     addPlannerProgressProperty("iterations INTEGER",
-        boost::bind(&DRRTstarFN::getIterationCount, this));
+        std::bind(&DRRTstarFN::getIterationCount, this));
     addPlannerProgressProperty("best cost REAL",
-        boost::bind(&DRRTstarFN::getBestCost, this));
+        std::bind(&DRRTstarFN::getBestCost, this));
 }
 
 ompl::geometric::DRRTstarFN::~DRRTstarFN() { freeMemory(); }
@@ -109,7 +107,7 @@ void ompl::geometric::DRRTstarFN::setup()
         // nn_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(si_->getStateSpace()));
     }
     nn_->setDistanceFunction(
-        boost::bind(&DRRTstarFN::distanceFunction, this, _1, _2));
+        std::bind(&DRRTstarFN::distanceFunction, this, std::placeholders::_1, std::placeholders::_2));
 
     // Setup optimization objective
     //
@@ -247,7 +245,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
         return false;
     };
 
-    while (ptc == false) {
+    while (ptc() == false) {
         recoverFlag = false;
         iterations_++;
 
@@ -411,7 +409,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
                 // neighbors are valid. This is fine, because motion
                 // already has a connection to the tree through
                 // nmotion (with populated cost fields!).
-                for (std::vector<std::size_t>::const_iterator i = sortedCostIndices.begin();
+                for (auto i = sortedCostIndices.begin();
                      i != sortedCostIndices.begin() + nbh.size(); ++i) {
                     // skip orphaned nodes at this stage
                     if (nbh[*i]->nodeType == NodeType::ORPHANED || nbh[*i]->nodeType == NodeType::INVALID)
@@ -526,8 +524,6 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
             if (goal->isSatisfied(motion->state, &distanceFromGoal)) {
                 goalMotions_.push_back(motion);
                 checkForSolution = true;
-                if (terminateFirstSolution)
-                    ptc.terminate();
             }
 
             // Checking for solution or iterative improvement
@@ -852,6 +848,11 @@ ompl::geometric::DRRTstarFN::costToGo(const Motion* motion,
     return opt_->combineCosts(costToCome, costToGo); // h_s + h_g
 }
 //==============================================================================
+void ompl::geometric::DRRTstarFN::restoreTree(const std::string& filename)
+{
+    restoreTree(filename.c_str());
+}
+//==============================================================================
 void ompl::geometric::DRRTstarFN::restoreTree(const char* filename)
 {
     checkValidity();
@@ -976,7 +977,6 @@ bool ompl::geometric::DRRTstarFN::traverseTree(
             }
         }
 
-        ;
         nodeList.pop_front();
         queue.pop_front();
     }
@@ -1023,7 +1023,7 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s)
     // subTreeNN_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(si_->getStateSpace()));
 
     subTreeNN_->setDistanceFunction(
-        boost::bind(&DRRTstarFN::distanceFunction, this, _1, _2));
+        std::bind(&DRRTstarFN::distanceFunction, this, std::placeholders::_1, std::placeholders::_2));
 
     auto start = std::find_if(tree.begin(), tree.end(), [&](Motion* m) -> bool {
             return si_->equalStates(m->state, s);
@@ -1095,7 +1095,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     // (double)si_->getStateSpace()->getDimension());
     // Find nearby neighbors of the new motion - k-nearest RRT*
     // unsigned int k = std::ceil(k_rrg * log((double)(bakNN_->size() + 1)));
-    unsigned int k = std::ceil(nn_->size() * 0.2);
+    // unsigned int k = std::ceil(nn_->size() * 0.2);
 
     // this is a variable to control the removal procedure
 
@@ -1154,7 +1154,12 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
     nn_->list(motions);
     for (auto& m : faultyMotions) {
         nbh.clear();
-        for (auto& motion : motions) {
+
+        std::cout<<m->nodeType % 1; // placed here to ignore m is unused
+
+        // removeAssistanceCallback();
+        /*
+        for (auto& motion : motions) {  
             const ompl::base::SE2StateSpace::StateType* s1
                 = motion->state->as<ompl::base::SE2StateSpace::StateType>();
             const ompl::base::SE2StateSpace::StateType* s2
@@ -1167,6 +1172,7 @@ int ompl::geometric::DRRTstarFN::removeInvalidNodes()
             if (dx * dx + dy * dy < radius * radius)
                 nbh.push_back(motion);
         }
+        */
 
         for (auto& neighbor : nbh) {
             if (neighbor->parent != nullptr) {
