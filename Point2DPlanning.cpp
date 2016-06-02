@@ -5,17 +5,13 @@
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <dart/dart.h>
 
+#include <iostream>
+#include <fstream>
 #include <mutex>
 #include <thread>
 
-#include <fstream>
-
 #include <ompl/config.h>
 #include "config/config2D.h"
-
-#include <boost/filesystem.hpp>
-//#include <boost/bind.hpp>
-#include <iostream>
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;

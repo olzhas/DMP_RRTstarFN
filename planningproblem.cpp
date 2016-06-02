@@ -14,9 +14,9 @@ int PlanningProblem::solve(int argc, char* argv[])
     frontend.setManipulator(manipulator);
     frontend.init();
 
-    boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
-    boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
-    boost::thread dataUpdater(boost::bind(&PlanningProblem::treeUpdate, this));
+    std::thread planThread(std::bind(&PlanningProblem::plan, this, &argc, argv));
+    std::thread guiThread(std::bind(&Frontend::exec, frontend, &argc, argv));
+    std::thread dataUpdater(std::bind(&PlanningProblem::treeUpdate, this));
     guiThread.join();
     planThread.join();
 
@@ -42,8 +42,8 @@ void PlanningProblem::plan(int* argcp, char** argv)
     cfg->planningDone = true;
 
     while (!cfg->dynamicObstacle) {
-        auto keyWait = boost::chrono::system_clock::now() + boost::chrono::milliseconds(100);
-        boost::this_thread::sleep_until(keyWait);
+        auto keyWait = std::chrono::system_clock::now() + std::chrono::milliseconds(100);
+        std::this_thread::sleep_until(keyWait);
         //std::cout << "wait for dynamic replanning" << std::endl;
     }
 
@@ -55,14 +55,13 @@ void PlanningProblem::plan(int* argcp, char** argv)
 }
 //==============================================================================
 /* this method is designed to be executed every 40ms to update the draw tree */
-namespace bc = boost::chrono;
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 void PlanningProblem::treeUpdate()
 {
     // assume that eventually world will be initialized
-    auto pre_wait = bc::system_clock::now() + bc::seconds(2);
-    boost::this_thread::sleep_until(pre_wait);
+    auto pre_wait = std::chrono::system_clock::now() + std::chrono::seconds(2);
+    std::this_thread::sleep_until(pre_wait);
 
     DrawableCollection edges("edges");
     DrawableCollection* tree = new DrawableCollection("tree");

@@ -62,7 +62,7 @@ void Manipulator::init(ConfigurationPtr& config)
     setWorld(myWorld);
 
     ob::WeightedRealVectorStateSpace* jointSpace = new ob::WeightedRealVectorStateSpace();
-    //jointSpace->localCost = boost::bind(&Manipulator::cost, this, _1, _2);
+    //jointSpace->localCost = std::bind(&Manipulator::cost, this, std::placeholders::_1, std::placeholders::_2);
     //ob::RealVectorStateSpace* jointSpace = new ob::RealVectorStateSpace();
 
     // first two are connection to the world and table
@@ -76,7 +76,7 @@ void Manipulator::init(ConfigurationPtr& config)
     jointSpace->setup();
     ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(jointSpace)));
     // set state validity checking for this space
-    ss_->setStateValidityChecker(boost::bind(&Manipulator::isStateValid, this, _1));
+    ss_->setStateValidityChecker(std::bind(&Manipulator::isStateValid, this, std::placeholders::_1));
 
     //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / jointSpace->getMaximumExtent());
 
@@ -101,7 +101,7 @@ void Manipulator::init(ConfigurationPtr& config)
 // TODO implement caching for state validation
 bool Manipulator::isStateValid(const ob::State* state)
 {
-    boost::lock_guard<boost::mutex> guard(mutex_);
+    std::lock_guard<std::mutex> guard(mutex_);
 
     double* jointSpace
         = (double*)state->as<ob::RealVectorStateSpace::StateType>()->values;
@@ -118,7 +118,7 @@ bool Manipulator::isStateValid(const ob::State* state)
 /*
 double Manipulator::cost(const ob::State* st1, const ob::State* st2)
 {
-    boost::lock_guard<boost::mutex> guard(mutex_);
+    std::lock_guard<std::mutex> guard(mutex_);
 
     double* js1 = (double*)st1->as<ob::RealVectorStateSpace::StateType>()->values;
 
