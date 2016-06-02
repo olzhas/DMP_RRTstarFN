@@ -19,9 +19,6 @@
 #include <dart/dart.h>
 
 #include <boost/filesystem.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/chrono/thread_clock.hpp>
-#include <boost/thread.hpp>
 
 #include <vector>
 #include <iostream>
@@ -94,7 +91,7 @@ private:
     std::string& dumpFileNameGenerate();
     dart::simulation::WorldPtr world_;
 
-    boost::mutex mutex_;
+    std::mutex mutex_;
 
     void configurePlanner();
 
