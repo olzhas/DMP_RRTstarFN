@@ -71,7 +71,7 @@ private:
     unsigned int prevSize;
     bool dynamicObstacle;
 
-    boost::mutex treeMutex_;
+    //boost::mutex treeMutex_;
 };
 
 typedef std::shared_ptr<MyWindow> MyWindowPtr;

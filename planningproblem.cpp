@@ -78,7 +78,7 @@ void PlanningProblem::treeUpdate()
 
     //while(!cfg->dynamicReplanning);
     while (true) {
-        auto start = bc::system_clock::now() + bc::milliseconds(20);
+        auto start = std::chrono::system_clock::now() + std::chrono::milliseconds(20);
         ob::PlannerData pdat(ss_->getSpaceInformation());
 
         ss_->getPlannerData(pdat);
@@ -125,7 +125,7 @@ void PlanningProblem::treeUpdate()
                     if (cfg->dynamicReplanning) {
                         std::vector<unsigned int> edgeList;
                         if (pdat.getEdges(i, edgeList)) {
-                            for (int j = 0; j < edgeList.size(); ++j) {
+                            for (std::size_t j = 0; j != edgeList.size(); ++j) {
                                 DrawableEdge* e = new DrawableEdge;
                                 e->setStart(transform.translation());
                                 const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
@@ -141,7 +141,7 @@ void PlanningProblem::treeUpdate()
                             }
                         }
                         if (pdat.getIncomingEdges(i, edgeList)) {
-                            for (int j = 0; j < edgeList.size(); ++j) {
+                            for (std::size_t j = 0; j != edgeList.size(); ++j) {
                                 DrawableEdge* e = new DrawableEdge;
                                 e->setEnd(transform.translation());
                                 const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
@@ -160,7 +160,7 @@ void PlanningProblem::treeUpdate()
                 }
             }
             // let's assume that order does not change
-            for (int i = 0; i < pdatNumVertices; ++i) {
+            for (std::size_t i = 0; i != pdatNumVertices; ++i) {
                 if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
                     // ORPHANED == 1
                     if (pdat.getVertex(i).getTag() == 1) {
@@ -171,7 +171,7 @@ void PlanningProblem::treeUpdate()
                                 std::vector<double> reals;
                                 ss_->getStateSpace()->copyToReals(reals, s);
 
-                                for (size_t j(0); j < reals.size(); ++j) {
+                                for (std::size_t j=0; j < reals.size(); ++j) {
                                     robot->setPosition(j + 2, reals[j]);
                                 }
                                 robot->computeForwardKinematics(true, false, false);
@@ -191,6 +191,6 @@ void PlanningProblem::treeUpdate()
                 }
             }
         }
-        boost::this_thread::sleep_until(start);
+        std::this_thread::sleep_until(start);
     }
 }

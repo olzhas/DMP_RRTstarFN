@@ -28,8 +28,8 @@ public:
     void treeUpdate();
 
 private:
-    ManipulatorPtr manipulator; //
     ConfigurationPtr cfg;
+    ManipulatorPtr manipulator; //
 
     Frontend frontend;
 

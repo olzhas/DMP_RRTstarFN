@@ -1,4 +1,4 @@
-#include "weightedrealvectorstatespace.h"
+#include "../WeightedRealVectorStateSpace.h"
 
 namespace ompl {
 namespace base {
