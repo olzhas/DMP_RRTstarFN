@@ -95,7 +95,7 @@ void DrawableCollection::draw()
         return;
     size_t end = data_.size();
     for (size_t i = 0; i < end; ++i) {
-        // FIXME mutex or shit
+        // FIXME consider adding mutex
         Drawable* d;
         if (data_.size() > 0) {
             d = data_[i];

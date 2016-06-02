@@ -586,7 +586,7 @@ int main(int argc, char** argv)
         problem.recordTreeState(800);
         std::cout << "recorded 800\n";
 
-        double removalTime = problem.removeInvalidNodes();
+        //double removalTime = problem.removeInvalidNodes();
 
         std::cout << "invalid branch removal: done\n";
         problem.recordTreeState(801);

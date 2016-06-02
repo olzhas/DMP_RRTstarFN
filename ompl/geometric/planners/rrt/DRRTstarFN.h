@@ -205,7 +205,7 @@ namespace geometric {
 
         void evaluateSolutionPath();
 
-        // TODO write an explanation
+        /** \brief interpolates the detached solution path and adds nodes in between to the tree */
         void populateDetachedPath();
 
         /** \brief remove orphaned nodes from the tree */
@@ -311,7 +311,7 @@ namespace geometric {
 
         bool switchToDynamic();
 
-        // TODO write an explanation
+        /** \brief this function is used for reconstruction of the tree from the file */
         bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
 
         /** \brief Computes the Cost To Go heuristically as the cost to come from start to motion plus
