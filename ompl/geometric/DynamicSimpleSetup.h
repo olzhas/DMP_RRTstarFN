@@ -1,44 +1,66 @@
 #ifndef DYNAMICSIMPLESETUP_H
 #define DYNAMICSIMPLESETUP_H
 
+#include <chrono>
+
 #include <ompl/geometric/SimpleSetup.h>
 
+namespace ompl {
+namespace geometric {
 
-class DynamicSimpleSetup : public ompl::geometric::SimpleSetup
-{
-public:
-    explicit
-    DynamicSimpleSetup(ompl::base::SpaceInformationPtr &si);
+class DynamicSimpleSetup : public ompl::geometric::SimpleSetup {
+ public:
+  explicit DynamicSimpleSetup(ompl::base::SpaceInformationPtr &si);
 
-    explicit
-    DynamicSimpleSetup(ompl::base::StateSpacePtr &space);
+  explicit DynamicSimpleSetup(ompl::base::StateSpacePtr &space);
 
-private:
+  /** \brief */
+  void loadPrecomputed();
 
-    /** \brief time step between regular obstacle collision routine in milliseconds */
-    int timestep; // dt
+  /** \brief drive the robot */
+  bool drive();
 
-    /** \brief call back for obstacle collision routine */
-    bool (*collisionChecker)();
+  /** \brief user supplied prepeartion routine*/
+  void (*prepareUser)();
 
-    /** \brief reaction routine */
-    void react();
+  void (*reactUser)();
 
-    /** \brief reset to default value of the algorithm */
-    void setup();
+  void (*clearUser)();
 
-    void clear();
+ private:
+  /** \brief time step between regular obstacle collision routine in
+   * milliseconds */
 
-    /** \brief work on problem */
-    void plan();
+  std::chrono::milliseconds timestep;  // dt
 
-    /** \brief preparation step for the dynamic motion planning */
-    void prepare();
+  /** \brief call back for obstacle collision routine */
+  bool (*collisionChecker)();
 
-    /** \brief drive the robot */
-    void drive();
+  /** \brief reaction routine */
+  void react();
 
+  /** \brief reset to default value of the algorithm */
+  void setup();
+
+  void clear();
+
+  /** \brief work on problem */
+  void plan();
+
+  /** \brief preparation step for the dynamic motion planning */
+  void prepare();
+
+  void move();
+
+  bool validSolution();
+
+  void stop();
+
+  bool loadPrecomputedData_=false;
 };
 
+typedef std::shared_ptr<DynamicSimpleSetup> DynamicSimpleSetupPtr;
+}
+}
 
-#endif // DYNAMICMOTIONPLANNINGSETUP_H
+#endif  // DYNAMICMOTIONPLANNINGSETUP_H
