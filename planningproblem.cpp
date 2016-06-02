@@ -14,9 +14,9 @@ int PlanningProblem::solve(int argc, char* argv[])
     frontend.setManipulator(manipulator);
     frontend.init();
 
-    boost::thread planThread(boost::bind(&PlanningProblem::plan, this, &argc, argv));
-    boost::thread guiThread(boost::bind(&Frontend::exec, frontend, &argc, argv));
-    boost::thread dataUpdater(boost::bind(&PlanningProblem::treeUpdate, this));
+    std::thread planThread(std::bind(&PlanningProblem::plan, this, &argc, argv));
+    std::thread guiThread(std::bind(&Frontend::exec, frontend, &argc, argv));
+    std::thread dataUpdater(std::bind(&PlanningProblem::treeUpdate, this));
     guiThread.join();
     planThread.join();
 
@@ -42,8 +42,8 @@ void PlanningProblem::plan(int* argcp, char** argv)
     cfg->planningDone = true;
 
     while (!cfg->dynamicObstacle) {
-        auto keyWait = boost::chrono::system_clock::now() + boost::chrono::milliseconds(100);
-        boost::this_thread::sleep_until(keyWait);
+        auto keyWait = std::chrono::system_clock::now() + std::chrono::milliseconds(100);
+        std::this_thread::sleep_until(keyWait);
         //std::cout << "wait for dynamic replanning" << std::endl;
     }
 
@@ -55,14 +55,13 @@ void PlanningProblem::plan(int* argcp, char** argv)
 }
 //==============================================================================
 /* this method is designed to be executed every 40ms to update the draw tree */
-namespace bc = boost::chrono;
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 void PlanningProblem::treeUpdate()
 {
     // assume that eventually world will be initialized
-    auto pre_wait = bc::system_clock::now() + bc::seconds(2);
-    boost::this_thread::sleep_until(pre_wait);
+    auto pre_wait = std::chrono::system_clock::now() + std::chrono::seconds(2);
+    std::this_thread::sleep_until(pre_wait);
 
     DrawableCollection edges("edges");
     DrawableCollection* tree = new DrawableCollection("tree");
@@ -78,7 +77,7 @@ void PlanningProblem::treeUpdate()
 
     //while(!cfg->dynamicReplanning);
     while (true) {
-        auto start = bc::system_clock::now() + bc::milliseconds(20);
+        auto start = std::chrono::system_clock::now() + std::chrono::milliseconds(20);
         ob::PlannerData pdat(ss_->getSpaceInformation());
 
         ss_->getPlannerData(pdat);
@@ -125,7 +124,7 @@ void PlanningProblem::treeUpdate()
                     if (cfg->dynamicReplanning) {
                         std::vector<unsigned int> edgeList;
                         if (pdat.getEdges(i, edgeList)) {
-                            for (int j = 0; j < edgeList.size(); ++j) {
+                            for (std::size_t j = 0; j != edgeList.size(); ++j) {
                                 DrawableEdge* e = new DrawableEdge;
                                 e->setStart(transform.translation());
                                 const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
@@ -141,7 +140,7 @@ void PlanningProblem::treeUpdate()
                             }
                         }
                         if (pdat.getIncomingEdges(i, edgeList)) {
-                            for (int j = 0; j < edgeList.size(); ++j) {
+                            for (std::size_t j = 0; j != edgeList.size(); ++j) {
                                 DrawableEdge* e = new DrawableEdge;
                                 e->setEnd(transform.translation());
                                 const ob::State* s1 = pdat.getVertex(edgeList[j]).getState();
@@ -160,7 +159,7 @@ void PlanningProblem::treeUpdate()
                 }
             }
             // let's assume that order does not change
-            for (int i = 0; i < pdatNumVertices; ++i) {
+            for (std::size_t i = 0; i != pdatNumVertices; ++i) {
                 if (pdat.getVertex(i) != ob::PlannerData::NO_VERTEX) {
                     // ORPHANED == 1
                     if (pdat.getVertex(i).getTag() == 1) {
@@ -171,7 +170,7 @@ void PlanningProblem::treeUpdate()
                                 std::vector<double> reals;
                                 ss_->getStateSpace()->copyToReals(reals, s);
 
-                                for (size_t j(0); j < reals.size(); ++j) {
+                                for (std::size_t j=0; j < reals.size(); ++j) {
                                     robot->setPosition(j + 2, reals[j]);
                                 }
                                 robot->computeForwardKinematics(true, false, false);
@@ -190,36 +189,7 @@ void PlanningProblem::treeUpdate()
                     }
                 }
             }
-            /*
-             *
-             * FIXME the following lines cause memory leak
-            //if(!once){
-                for(size_t i=0; i<pdatNumVerticies; ++i){
-                    DrawableLiveTime* d = new DrawableLiveTime; // memleak
-                    std::vector<double> reals;
-                    if(pdat.getVertex(i) != ob::PlannerData::NO_VERTEX){
-                        if(pdat.getVertex(i).getTag() == 1) {
-                            once = true;
-                            const ob::State* s = pdat.getVertex(i).getState();
-                            ss_->getStateSpace()->copyToReals(reals, s);
-
-                            for (size_t j(0); j < reals.size(); ++j) {
-                                robot->setPosition(j + 2, reals[j]);
-                            }
-                            robot->computeForwardKinematics(true, false, false);
-                            Eigen::Isometry3d transform = robot->getBodyNode("toolflange_link")->getTransform();
-
-                            d->setPoint(transform.translation());
-                            d->setType(Drawable::BOX);
-                            d->setLiveTime(0.15);
-                            d->setColor(Eigen::Vector3d(0.5, 0.0, 0.25));
-                            tree.add(d);
-                        }
-                    }
-                }
-           // }
-           */
         }
-        boost::this_thread::sleep_until(start);
+        std::this_thread::sleep_until(start);
     }
 }

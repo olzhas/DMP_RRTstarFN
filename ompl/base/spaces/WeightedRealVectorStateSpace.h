@@ -22,7 +22,7 @@ namespace base {
         double distance(const State* state1, const State* state2) const;
         ompl::base::StateSamplerPtr allocDefaultStateSampler() const;
 
-        boost::function<double(const State* state1, const State* state2)> localCost;
+        std::function<double(const State* state1, const State* state2)> localCost;
     };
 }
 }
