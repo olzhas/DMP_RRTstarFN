@@ -25,10 +25,12 @@ aux_source_directory(. SRC_LIST)
 list(REMOVE_ITEM SRC_LIST "./Point2DPlanning.cpp")
 list(REMOVE_ITEM SRC_LIST "./Dubins2D.cpp")
 list(REMOVE_ITEM SRC_LIST "./car_dart.cpp")
+list(REMOVE_ITEM SRC_LIST "./simpledynamicsetuptest.cpp")
 
-add_executable(${PROJECT_NAME} ${SRC_LIST})
-add_executable(2d_demo Point2DPlanning.cpp DRRTstarFN.cpp)
-add_executable(2d_dubins Dubins2D.cpp DRRTstarFN.cpp)
+add_executable(${PROJECT_NAME} ${SRC_LIST} ompl/geometric/planners/rrt/src/DRRTstarFN.cpp ompl/base/spaces/src/WeightedRealVectorStateSpace.cpp)
+add_executable(2d_demo Point2DPlanning.cpp ompl/geometric/planners/rrt/src/DRRTstarFN.cpp)
+add_executable(2d_dubins Dubins2D.cpp ompl/geometric/planners/rrt/src/DRRTstarFN.cpp)
+add_executable(testdynamic examples/simpledynamicsetuptest.cpp ompl/geometric/planners/rrt/src/DRRTstarFN.cpp ompl/geometric/src/DynamicSimpleSetup.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     dart
@@ -50,6 +52,15 @@ target_link_libraries(2d_demo
     )
 
 target_link_libraries(2d_dubins
+    dart
+    ${Boost_LIBRARIES}
+    ${OMPL_LIBRARIES}
+    ${FLANN_LIBRARIES}
+    ${BULLET_LIBRARIES}
+    pthread
+    )
+
+target_link_libraries(testdynamic
     dart
     ${Boost_LIBRARIES}
     ${OMPL_LIBRARIES}

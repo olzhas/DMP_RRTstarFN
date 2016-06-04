@@ -304,7 +304,7 @@ public:
         void add(Obstacle* a) { data_.push_back(a); }
     };
 
-    Model(std::string& filename)
+    Model(const std::string& filename)
     {
         mapFilename_ = filename;
         loadSimpleWorld();
@@ -375,7 +375,7 @@ public:
             futurePosition_[2]);
     }
 
-    void setSpaceInformation(ob::SpaceInformationPtr& si) { si_ = si; }
+    void setSpaceInformation(const ob::SpaceInformationPtr& si) { si_ = si; }
 
     void loadObstacles(const std::string& fname, ObstacleCollection& collection)
     {
@@ -430,7 +430,7 @@ public:
             }
         }
         else {
-            std::cerr << "could not open file" << std::endl;
+            std::cerr << "could not open file " << fname << std::endl;
         }
     }
 

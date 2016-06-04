@@ -1,7 +1,7 @@
 #ifndef MYWINDOW_H_
 #define MYWINDOW_H_
 
-#include <boost/thread.hpp>
+#include <thread>
 #include <ompl/geometric/PathGeometric.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
@@ -70,8 +70,6 @@ private:
 
     unsigned int prevSize;
     bool dynamicObstacle;
-
-    boost::mutex treeMutex_;
 };
 
 typedef std::shared_ptr<MyWindow> MyWindowPtr;
