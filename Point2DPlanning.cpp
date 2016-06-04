@@ -5,17 +5,13 @@
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
 #include <dart/dart.h>
 
+#include <iostream>
+#include <fstream>
 #include <mutex>
 #include <thread>
 
-#include <fstream>
-
 #include <ompl/config.h>
 #include "config/config2D.h"
-
-#include <boost/filesystem.hpp>
-//#include <boost/bind.hpp>
-#include <iostream>
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -231,7 +227,7 @@ public:
         ss_.reset(new og::SimpleSetup(ob::StateSpacePtr(space)));
 
         // set state validity checking for this space
-        ss_->setStateValidityChecker(boost::bind(&Model::isStateValid, &model_, _1));
+        ss_->setStateValidityChecker(std::bind(&Model::isStateValid, &model_, std::placeholders::_1));
         space->setup();
         //ss_->getSpaceInformation()->setStateValidityCheckingResolution(1.0 / space->getMaximumExtent());
         ss_->setPlanner(ob::PlannerPtr(new og::RRTstar(ss_->getSpaceInformation())));
