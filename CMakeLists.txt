@@ -1,7 +1,7 @@
 project(staubli_dart)
 cmake_minimum_required(VERSION 2.8)
 
-message(STATUS ${CMAKE_MODULE_PATH})
+message(STATUS ${CMAKE_PREFIX_PATH})
 
 find_package(DART REQUIRED)
 find_package(Eigen3 REQUIRED)
