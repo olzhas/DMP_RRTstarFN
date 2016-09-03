@@ -11,7 +11,7 @@
 #include <thread>
 
 #include <ompl/config.h>
-#include "config/config2D.h"
+#include "../config/config2D.h"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;

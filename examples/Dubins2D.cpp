@@ -12,14 +12,14 @@
 
 #include <Eigen/Eigen>
 #include <dart/common/common.h>
-#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
 
 #include <iostream>
 #include <fstream>
 
 #include <ompl/config.h>
-#include "model/model.h"
 #include "config/config2D.h"
+#include "ompl/geometric/planners/rrt/RRTstarFND.h"
+#include "model.h"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -74,13 +74,13 @@ public:
             ob::SpaceInformationPtr si = ss_->getSpaceInformation();
             og::PathGeometric& p = ss_->getSolutionPath();
             pathNodeCount_ = p.getStateCount();
-            og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
+            og::DRRTstarFN* localPlanner=ss_->getPlanner()->as<og::DRRTstarFN>();
             localPlanner->as<og::DRRTstarFN>()->setRange(35.0);
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
             p.interpolate();
-            for (size_t i = from; i < p.getStates().size(); ++i) {
+            for (std::size_t i = from; i < p.getStates().size(); ++i) {
                 ompl::base::State* st = p.getState(i);
                 pathArray_.push_back(si->cloneState(st));
             }
@@ -181,11 +181,13 @@ public:
         return t1.getLastElapsedTime();
     }
 
+    /*
     void cleanup(size_t from)
     {
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
     }
+    */
 
     double replan(const Model::Point& initial, const Model::Point& final,
         double time, bool clearPlanner = true)
@@ -586,7 +588,7 @@ int main(int argc, char** argv)
         problem.recordTreeState(800);
         std::cout << "recorded 800\n";
 
-        //double removalTime = problem.removeInvalidNodes();
+        double removalTime = problem.removeInvalidNodes();
 
         std::cout << "invalid branch removal: done\n";
         problem.recordTreeState(801);
@@ -605,7 +607,7 @@ int main(int argc, char** argv)
             }
         }
         t1.stop();
-        fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << std::endl;
+        fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << removalTime << std::endl;
     }
     return 0;
     std::cout << ">>>>>>>>>>>>>>>>>>> RRT star initiated\n";

@@ -88,7 +88,7 @@ public:
     class Obstacle {
     public:
         Obstacle() { ; }
-        ~Obstacle() { ; }
+        virtual ~Obstacle() { ; }
 
         virtual bool detectCollision(Obstacle* target) { return true; }
     };
@@ -180,8 +180,8 @@ public:
             ObbObstacle* down = pos[1] > obb->getPos()[1] ? obb : this;
             ObbObstacle* up = pos[1] > obb->getPos()[1] ? this : obb;
 
-            double downY = down->vertices(1, down->maxY) - down->getPos()[1];
-            double upY = up->getPos()[1] - up->vertices(1, up->minY);
+            double downY = down->vertices(1, static_cast<long>(down->maxY)) - down->getPos()[1];
+            double upY = up->getPos()[1] - up->vertices(1,  static_cast<long>(up->minY));
 
             double y = up->getPos()[1] - down->getPos()[1];
 
@@ -270,11 +270,11 @@ public:
                 vertices.row(i).minCoeff(&min[i]);
             }
 
-            maxX = max[0];
-            maxY = max[1];
+            maxX = static_cast<size_t>(max[0]);
+            maxY = static_cast<size_t>(max[1]);
 
-            minX = min[0];
-            minY = min[1];
+            minX = static_cast<size_t>(min[0]);
+            minY = static_cast<size_t>(min[1]);
         }
 
     private:

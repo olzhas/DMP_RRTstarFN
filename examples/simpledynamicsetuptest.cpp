@@ -16,10 +16,9 @@
 #include <iostream>
 #include <memory>
 
-// TODO fix this ugly inclusion with cmake
-#include "../ompl/geometric/planners/rrt/DRRTstarFN.h"
-#include "../ompl/geometric/DynamicSimpleSetup.h"
-#include "../model/model.h"
+#include "ompl/geometric/planners/rrt/RRTstarFND.h"
+#include "ompl/geometric/DynamicSimpleSetup.h"
+#include "model.h"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -30,7 +29,7 @@ class DubinsCarEnvironment {
  public:
   DubinsCarEnvironment()
       : maxWidth_(1000), maxHeight_(1000), pModel_(new Model(placeholder)) {
-    ob::StateSpacePtr space(new ob::DubinsStateSpace);
+    ob::StateSpacePtr space(new ob::DubinsStateSpace(100));
     //   if(dss_.use_count() == 0)
     //    delete dss_.get();
     dss_.reset(new og::DynamicSimpleSetup(space));
@@ -53,22 +52,26 @@ class DubinsCarEnvironment {
     dss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
     dss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
 
-
     ob::ScopedState<> start(dss_->getStateSpace());
-    start[0] = 1;
-    start[1] = 1;
+    start[0] = 80;
+    start[1] = 80;
     ob::ScopedState<> goal(dss_->getStateSpace());
-    goal[0] = 100;
-    goal[1] = 100;
+    goal[0] = 700;
+    goal[1] = 700;
     dss_->setStartAndGoalStates(start, goal);
     // generate a few solutions; all will be added to the goal;
 
     dss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0015);
+    std::function<bool(void)> dummyLambda =  []() -> bool {return true;};
+    dss_->setSolutionValidityFunction(dummyLambda);
+
+    dss_->setIterationRoutine(dummyLambda);
 
   }
 
-  void execute() {
-    if (dss_->drive()) {
+  void loop() {
+    std::cout << "running problem" << std::endl;
+    if (dss_->runSolutionLoop()) {
       std::cout << "Success" << std::endl;
     }
   }
@@ -84,9 +87,9 @@ class DubinsCarEnvironment {
 };
 
 int main() {
+
   DubinsCarEnvironment env;
+  env.loop();
 
-  env.execute();
-
-  return 0;
+  return EXIT_SUCCESS;
 }
