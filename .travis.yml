@@ -4,6 +4,9 @@ language: cpp
 compiler:
   - clang
   - gcc
+before_install:
+# Install necessary packages from apt-get
+ - "./misc/travis_before_install.sh"
 # Build steps
 script:
   - mkdir build
