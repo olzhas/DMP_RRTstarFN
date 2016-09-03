@@ -16,6 +16,9 @@
 #
 ################################################################################
 
+sudo apt-get purge cmake -y
+sudo apt-get install cmake=2.8\* -y
+
 sudo apt-add-repository -y ppa:libccd-debs
 sudo apt-add-repository -y ppa:fcl-debs
 sudo apt-add-repository -y ppa:dartsim
