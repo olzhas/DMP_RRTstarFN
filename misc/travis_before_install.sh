@@ -20,4 +20,4 @@ sudo apt-add-repository -y ppa:libccd-debs
 sudo apt-add-repository -y ppa:fcl-debs
 sudo apt-add-repository -y ppa:dartsim
 sudo apt-get update -qq
-sudo apt-get install -qq libeigen3-dev libdart5-dev
+sudo apt-get install -qq libeigen3-dev libdart5-dev libyaml-cpp-dev
