@@ -1,14 +1,9 @@
 #include "obstacle.h"
 
-Obstacle::Obstacle(const dd::SkeletonPtr& skel, const std::string& name, bool dynamic)
-    : skeleton_(skel)
-    , name_(name)
-    , dynamic_(dynamic)
-{
-    ;
+Obstacle::Obstacle(const dd::SkeletonPtr& skel, const std::string& name,
+                   bool dynamic)
+    : name_(name), dynamic_(dynamic), skeleton_(skel) {
+  ;
 }
 
-void Obstacle::spawn()
-{
-    ;
-}
+void Obstacle::spawn() { ; }

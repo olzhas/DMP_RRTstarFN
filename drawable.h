@@ -116,10 +116,9 @@ public:
     void setLiveTime(double l) { liveTime_ = l; }
 
 private:
-    double liveTime_;
     double stepSize_;
     double sizeLimit_;
-
+    double liveTime_;
 
 };
 //==============================================================================

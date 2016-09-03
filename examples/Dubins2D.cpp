@@ -12,14 +12,14 @@
 
 #include <Eigen/Eigen>
 #include <dart/common/common.h>
-#include "DRRTstarFN.h"
 
 #include <iostream>
 #include <fstream>
 
 #include <ompl/config.h>
-#include "model/model.h"
 #include "config/config2D.h"
+#include "ompl/geometric/planners/rrt/RRTstarFND.h"
+#include "model.h"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -51,7 +51,7 @@ public:
         ob::SpaceInformationPtr si = ss_->getSpaceInformation();
         model_->setSpaceInformation(si);
         ss_->setStateValidityChecker(
-            boost::bind(&Model::isStateValid, model_, _1));
+            std::bind(&Model::isStateValid, model_, std::placeholders::_1));
         space->setup();
         ss_->setPlanner(
             ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
@@ -74,13 +74,13 @@ public:
             ob::SpaceInformationPtr si = ss_->getSpaceInformation();
             og::PathGeometric& p = ss_->getSolutionPath();
             pathNodeCount_ = p.getStateCount();
-            og::DRRTstarFN* localPlanner = ss_->getPlanner()->as<og::DRRTstarFN>();
+            og::DRRTstarFN* localPlanner=ss_->getPlanner()->as<og::DRRTstarFN>();
             localPlanner->as<og::DRRTstarFN>()->setRange(35.0);
 
             ompl::base::State* s = si->cloneState(p.getState(from));
 
             p.interpolate();
-            for (size_t i = from; i < p.getStates().size(); ++i) {
+            for (std::size_t i = from; i < p.getStates().size(); ++i) {
                 ompl::base::State* st = p.getState(i);
                 pathArray_.push_back(si->cloneState(st));
             }
@@ -123,7 +123,7 @@ public:
 
             ss_->setup();
 
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true);
+            //ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true); // OBSOLETE
 
             return s;
         }
@@ -157,7 +157,7 @@ public:
 
             ss_->setup();
 
-            ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true);
+            // ss_->getPlanner()->as<og::DRRTstarFN>()->setTerminateFirstSolution(true); // OBSOLETE
             return s;
         }
         catch (ompl::Exception e) {
@@ -181,11 +181,13 @@ public:
         return t1.getLastElapsedTime();
     }
 
+    /*
     void cleanup(size_t from)
     {
         ompl::base::State* s = pathArray_[from];
         ss_->getPlanner()->as<og::DRRTstarFN>()->nodeCleanUp(s);
     }
+    */
 
     double replan(const Model::Point& initial, const Model::Point& final,
         double time, bool clearPlanner = true)
@@ -204,7 +206,6 @@ public:
             ss_->solve(time);
         }
         ss_->getProblemDefinition()->clearSolutionPaths();
-        // FIXME reevalute solution path without trying to solve it.
         ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
         return reconnectTime + ss_->getLastPlanComputationTime();
     }
@@ -606,7 +607,7 @@ int main(int argc, char** argv)
             }
         }
         t1.stop();
-        fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << std::endl;
+        fout << from << ", " << t1.getLastElapsedTime() << ", " << problem.statistics() << removalTime << std::endl;
     }
     return 0;
     std::cout << ">>>>>>>>>>>>>>>>>>> RRT star initiated\n";

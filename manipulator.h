@@ -19,9 +19,6 @@
 #include <dart/dart.h>
 
 #include <boost/filesystem.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/chrono/thread_clock.hpp>
-#include <boost/thread.hpp>
 
 #include <vector>
 #include <iostream>
@@ -30,9 +27,9 @@
 
 #include "mywindow.h"
 #include "configuration.h"
-#include "weightedrealvectorstatespace.h"
+#include "ompl/base/spaces/WeightedRealVectorStateSpace.h"
 #include "obstaclemanager.h"
-#include "DRRTstarFN.h"
+#include "ompl/geometric/planners/rrt/RRTstarFND.h"
 
 #define NUM_OBSTACLE 5
 #define SAFESPACE_DATA "/home/olzhas/devel/staubli_dart/data/"
@@ -94,7 +91,7 @@ private:
     std::string& dumpFileNameGenerate();
     dart::simulation::WorldPtr world_;
 
-    boost::mutex mutex_;
+    std::mutex mutex_;
 
     void configurePlanner();
 

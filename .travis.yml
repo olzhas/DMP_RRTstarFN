@@ -1,0 +1,23 @@
+#
+dist: trusty
+sudo: required
+# Enable C++ support
+language: cpp
+# Compiler selection
+compiler:
+  - clang
+  - gcc
+#addons: 
+#    apt: 
+#      packages: 
+#        - cmake=2.8\*
+#        - libeigen3-dev
+install:
+# Install necessary packages from apt-get
+ - "./misc/travis_install_dependencies.sh"
+# Build steps
+script:
+  - mkdir build
+  - cd build
+  - cmake .. && make
+
