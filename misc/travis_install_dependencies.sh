@@ -17,7 +17,8 @@
 ################################################################################
 
 sudo apt-get purge cmake cmake-data -y
-sudo apt-get install cmake=2.8\* -y
+sudo apt-get autoremove
+sudo apt-get install cmake=2.8\* cmake-data=2.8\* -y
 
 sudo apt-add-repository -y ppa:libccd-debs
 sudo apt-add-repository -y ppa:fcl-debs
