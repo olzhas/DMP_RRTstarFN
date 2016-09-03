@@ -10,7 +10,7 @@ compiler:
 addons: 
     apt: 
       packages: 
-        - cmake
+        - cmake=2.8\*
         - libeigen3-dev
 install:
 # Install necessary packages from apt-get
