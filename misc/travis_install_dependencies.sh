@@ -16,6 +16,7 @@
 #
 ################################################################################
 
+cmake --version
 sudo apt-add-repository -y ppa:libccd-debs
 sudo apt-add-repository -y ppa:fcl-debs
 sudo apt-add-repository -y ppa:dartsim
