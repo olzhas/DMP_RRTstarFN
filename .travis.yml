@@ -9,7 +9,7 @@ compiler:
   - gcc
 install:
 # Install necessary packages from apt-get
- - "./misc/travis_before_install.sh"
+ - "./misc/travis_install_dependencies.sh"
 # Build steps
 script:
   - mkdir build
