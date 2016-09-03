@@ -14,5 +14,5 @@ install:
 script:
   - mkdir build
   - cd build
-  - cmake -DCMAKE_MODULE_PATH="\"/usr/share/cmake-2.8/Modules/\" ${CMAKE_MODULE_PATH}" .. && make
+  - cmake -DCMAKE_PREFIX_PATH="\"/usr/share/cmake-2.8/Modules/\"" .. && make
 
