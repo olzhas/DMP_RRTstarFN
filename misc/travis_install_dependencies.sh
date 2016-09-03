@@ -24,7 +24,8 @@ sudo apt-add-repository -y ppa:libccd-debs
 sudo apt-add-repository -y ppa:fcl-debs
 sudo apt-add-repository -y ppa:dartsim
 sudo apt-get update -qq
-sudo apt-get install -qq libeigen3-dev libdart5-dev libyaml-cpp-dev libbullet-dev libode-dev
+sudo apt-get install -qq libeigen3-dev libdart5-dev libyaml-cpp-dev libbullet-dev libode-dev liburdfdom-dev 
+
 wget -O - https://bitbucket.org/ompl/ompl/downloads/ompl-1.2.1-Source.tar.gz | tar zxf -
 cd ompl-1.2.1-Source
 mkdir -p build/Debug
