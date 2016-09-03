@@ -16,13 +16,13 @@
 #
 ################################################################################
 
-sudo apt-get purge cmake cmake-data -y
-sudo apt-get autoremove
-sudo apt-get install cmake=2.8\* cmake-data=2.8\* -y
-
 sudo apt-add-repository -y ppa:libccd-debs
 sudo apt-add-repository -y ppa:fcl-debs
 sudo apt-add-repository -y ppa:dartsim
 sudo apt-get update -qq
 sudo apt-get install -qq libeigen3-dev libdart5-dev libyaml-cpp-dev libbullet-dev
 wget http://ompl.kavrakilab.org/install-ompl-ubuntu.sh && chmod u+x ./install-ompl-ubuntu.sh && ./install-ompl-ubuntu.sh
+
+sudo apt-get purge cmake cmake-data -y
+sudo apt-get autoremove
+sudo apt-get install cmake=2.8\* cmake-data=2.8\* -y
