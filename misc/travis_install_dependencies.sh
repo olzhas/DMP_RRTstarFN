@@ -16,7 +16,7 @@
 #
 ################################################################################
 
-sudo apt-get install cmake
+sudo apt-get search cmake
 sudo apt-add-repository -y ppa:libccd-debs
 sudo apt-add-repository -y ppa:fcl-debs
 sudo apt-add-repository -y ppa:dartsim
