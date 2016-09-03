@@ -16,8 +16,8 @@
 #
 ################################################################################
 
-apt-add-repository -y ppa:libccd-debs
-apt-add-repository -y ppa:fcl-debs
-apt-add-repository -y ppa:dartsim
-apt-get update -qq
-apt-get install -qq libeigen3-dev libdart5-dev
+sudo apt-add-repository -y ppa:libccd-debs
+sudo apt-add-repository -y ppa:fcl-debs
+sudo apt-add-repository -y ppa:dartsim
+sudo apt-get update -qq
+sudo apt-get install -qq libeigen3-dev libdart5-dev
