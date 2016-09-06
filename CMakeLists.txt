@@ -1,12 +1,11 @@
 project(staubli_dart)
 cmake_minimum_required(VERSION 2.8)
 
-message(STATUS ${CMAKE_PREFIX_PATH})
-
 find_package(DART REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Bullet REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(urdfdom REQUIRED)
 
 pkg_search_module(YAMLCPP REQUIRED yaml-cpp)
 
