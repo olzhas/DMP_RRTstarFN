@@ -424,38 +424,43 @@ class Model {
 
     CircularObstacle* object = new CircularObstacle;
     object->move(Eigen::Vector2d(x, y), r);
+    object->setName(name);
     return object;
   }
 
   ObbObstacle* createObbObstacle(const std::string& to_parse) {
     double x, y;
     double width, height;
+    std::string name;
 
     std::istringstream iss(to_parse);
 
-    iss >> x >> y >> width >> height;
+    iss >> x >> y >> width >> height >> name;
 
     ObbObstacle* object = new ObbObstacle;
 
     object->setWidth(width);
     object->setHeight(height);
     object->move(Eigen::Vector2d(x, y), 0);
+    object->setName(name);
     return object;
   }
 
   ObbObstacle* createObbObstacle2(const std::string& to_parse) {
     double x, y;
     double width, height, yaw;
+    std::string name;
 
     std::istringstream iss(to_parse);
 
-    iss >> x >> y >> width >> height >> yaw;
+    iss >> x >> y >> width >> height >> yaw >> name;
 
     ObbObstacle* object = new ObbObstacle;
 
     object->setWidth(width);
     object->setHeight(height);
     object->move(Eigen::Vector2d(x, y), yaw);
+    object->setName(name);
     return object;
   }
 
