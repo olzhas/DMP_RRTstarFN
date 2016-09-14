@@ -336,7 +336,10 @@ class Model {
     double yaw = s->getYaw();
 
     simpleCar_.move(Eigen::Vector2d(x, y), yaw);
-    return !obstacles_.detectCollision(&simpleCar_);
+
+
+    //return !obstacles_.detectCollision(&simpleCar_);
+    return !dynamicObstacles_[dynamicObstaclesState_]->detectCollision(&simpleCar_);
   }
 
   void updateObstacles() {
@@ -464,11 +467,67 @@ class Model {
     return object;
   }
 
+  void loadTemporalData(const std::string& fname) {
+    Obstacle* obs;
+    std::string str;
+
+    std::ifstream fin(fname);
+
+    if (fin) {
+      while (!fin.eof()) {
+        int index;
+        fin >> index;
+        while(dynamicObstacles_.size() <= index){
+            dynamicObstacles_.push_back(nullptr);
+        }
+        int numCom;
+        fin >> numCom;
+        for (; numCom > 0; --numCom) {
+          char type;
+          fin >> type;
+          std::getline(fin, str);
+
+          switch (type) {
+            case 'c':
+            case 'C':
+              obs = createCircularObstacle(str);
+
+              break;
+            case 'r':
+            case 'R':
+              obs = createObbObstacle(str);
+
+              break;
+            case 'b':
+            case 'B':
+              obs = createObbObstacle2(str);
+
+              break;
+
+            default:
+              obs = nullptr;
+              break;
+          }
+
+          if (obs != nullptr) dynamicObstacles_[index]->add(obs);
+        }
+      }
+    } else {
+      std::cerr << "could not open file " << fname << std::endl;
+    }
+  }
+
+  void updateEnvironment() {
+    static std::size_t incrementalState=0;
+    ++incrementalState;
+  }
+
  private:
   ob::SpaceInformationPtr si_;
 
   ObstacleCollection obstacles_;
   std::vector<ObstacleCollection*> dynamicObstacles_;
+  std::size_t dynamicObstaclesState_;
 
   ObbObstacle simpleCar_;
   std::string mapFilename_;
