@@ -186,9 +186,7 @@ bool Model::isStateValid(const ob::State* state) {
 
   simpleCar_.move(Eigen::Vector2d(x, y), yaw);
 
-  // return !obstacles_.detectCollision(&simpleCar_);
-  return !dynamicObstacles_[dynamicObstaclesState_]->detectCollision(
-      &simpleCar_);
+  return !obstacles_.detectCollision(&simpleCar_);
 }
 
 void Model::loadSimpleWorld() {
