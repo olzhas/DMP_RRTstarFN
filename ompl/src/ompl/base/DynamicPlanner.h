@@ -5,7 +5,7 @@
 
 namespace ompl {
 namespace base {
-class DynamicPlanner : public Planner {
+class DynamicPlanner {
  public:
   // non-copyable
   DynamicPlanner(const DynamicPlanner &) = delete;
@@ -23,6 +23,8 @@ class DynamicPlanner : public Planner {
 
   void preMove();
   void postMove();
+
+  PlannerPtr planner_;
 };
 
 typedef std::shared_ptr<DynamicPlanner> DynamicPlannerPtr;

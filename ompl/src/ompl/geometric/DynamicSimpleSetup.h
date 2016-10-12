@@ -61,7 +61,7 @@ class DynamicSimpleSetup {
   /** \brief time step between regular obstacle collision routine in
    * milliseconds */
 
-  ompl::base::DynamicPlannerPtr planner_ = nullptr;
+  ompl::base::DynamicPlannerPtr dynamicPlanner_ = nullptr;
 
   std::chrono::milliseconds timestep;  // dt
 
