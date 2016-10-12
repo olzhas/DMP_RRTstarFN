@@ -33,6 +33,7 @@ class DynamicSimpleSetup : public ompl::geometric::SimpleSetup {
   std::function<void()> prepareUser;
   std::function<void()> reactUser;
   std::function<void()> clearUser;
+  std::function<void()> updateEnvironmentFn;
 
   void setSolutionValidityFunction(std::function<bool(void)>& fn);
   void setIterationRoutine(std::function<bool(void)>& fn);

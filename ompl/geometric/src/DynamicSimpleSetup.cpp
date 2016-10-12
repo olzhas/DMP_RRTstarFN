@@ -174,7 +174,8 @@ void DynamicSimpleSetup::loadPrecomputedPlannerData() {
 
 void DynamicSimpleSetup::updateEnvironment()
 {
-;
+    if(updateEnvironmentFn)
+updateEnvironmentFn();
 }
 
 void DynamicSimpleSetup::startLoggerThread() {
