@@ -1,22 +1,22 @@
 #ifndef DYNAMICSIMPLESETUP_H
 #define DYNAMICSIMPLESETUP_H
 
-#include <thread>
 #include <chrono>
 #include <fstream>
+#include <thread>
 
-#include "ompl/base/DynamicPlanner.h"
-#include <ompl/geometric/SimpleSetup.h>
 #include <ompl/base/PlannerDataStorage.h>
+#include <ompl/geometric/SimpleSetup.h>
+#include "ompl/base/DynamicPlanner.h"
 
 namespace ompl {
 namespace geometric {
 
-class DynamicSimpleSetup : public ompl::geometric::SimpleSetup {
+class DynamicSimpleSetup {
  public:
-  explicit DynamicSimpleSetup(ompl::base::SpaceInformationPtr &si);
+  explicit DynamicSimpleSetup(ompl::base::SpaceInformationPtr& si);
 
-  explicit DynamicSimpleSetup(ompl::base::StateSpacePtr &space);
+  explicit DynamicSimpleSetup(ompl::base::StateSpacePtr& space);
 
   ~DynamicSimpleSetup() { ; }
 
@@ -37,6 +37,25 @@ class DynamicSimpleSetup : public ompl::geometric::SimpleSetup {
 
   void setSolutionValidityFunction(std::function<bool(void)>& fn);
   void setIterationRoutine(std::function<bool(void)>& fn);
+
+  base::PlannerPtr getPlanner() const { return ss_->getPlanner(); }
+
+  base::SpaceInformationPtr getSpaceInformation() const {
+    return ss_->getSpaceInformation();
+  }
+
+  base::StateSpacePtr getStateSpace() const { return ss_->getStateSpace(); }
+
+  void setStartAndGoalStates(const base::ScopedState<>& start,
+                             const base::ScopedState<>& goal) {
+    ss_->setStartAndGoalStates(start, goal);
+  }
+
+  void setPlanner(const base::PlannerPtr& planner) { ss_->setPlanner(planner); }
+
+  void setStateValidityChecker(const base::StateValidityCheckerFn& svc) {
+    ss_->setStateValidityChecker(svc);
+  }
 
  private:
   /** \brief time step between regular obstacle collision routine in
@@ -113,6 +132,11 @@ class DynamicSimpleSetup : public ompl::geometric::SimpleSetup {
   std::function<bool(void)> validSolutionFn_;
 
   std::function<void(void)> iterationRoutine_;
+
+  ///
+  /// \brief ss_
+  ///
+  ompl::geometric::SimpleSetupPtr ss_;
 };
 
 typedef std::shared_ptr<DynamicSimpleSetup> DynamicSimpleSetupPtr;
