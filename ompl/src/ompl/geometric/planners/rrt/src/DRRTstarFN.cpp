@@ -60,16 +60,15 @@
 
 ompl::geometric::DRRTstarFN::DRRTstarFN(const base::SpaceInformationPtr& si)
     : DynamicPlanner(si, "DRRTstarFN") {
-  setStaticPlanner(std::make_shared<RRTstarFN>(si));
+  // setStaticPlanner(std::make_shared<RRTstarFN>(si));
 }
 
 ompl::geometric::DRRTstarFN::~DRRTstarFN() {
-
-//    freeMemory();
+  //    freeMemory();
 }
 
 void ompl::geometric::DRRTstarFN::setup() {
-    ;
+  ;
   /*
 getStaticPlanner()->setup();
 tools::SelfConfig sc(getSpaceInformation(), getName());
@@ -116,21 +115,24 @@ if (pdef_) {
 */
 }
 
-// void ompl::geometric::DRRTstarFN::clear() {
-//  Planner::clear();
-//  sampler_.reset();
-//  freeMemory();
-//  if (nn_) nn_->clear();
+void ompl::geometric::DRRTstarFN::clear() {
+  //  Planner::clear();
+  //  sampler_.reset();
+  //  freeMemory();
+  //  if (nn_) nn_->clear();
 
-//  lastGoalMotion_ = nullptr;
-//  goalMotions_.clear();
+  //  lastGoalMotion_ = nullptr;
+  //  goalMotions_.clear();
 
-//  iterations_ = 0;
-//  bestCost_ = base::Cost(std::numeric_limits<double>::quiet_NaN());
-//}
+  //  iterations_ = 0;
+  //  bestCost_ = base::Cost(std::numeric_limits<double>::quiet_NaN());
+}
 
-// ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
-//    const base::PlannerTerminationCondition& ptc) {
+ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
+    const base::PlannerTerminationCondition& ptc) {
+  ;
+}
+
 //  int removedNodes = 0;
 
 //  checkValidity();

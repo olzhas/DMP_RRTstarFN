@@ -23,12 +23,12 @@
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
-const std::string placeholder = "data/obstacles/test.map";
+const std::string kPlaceholder = "data/obstacles/test.map";
 
 class DubinsCarEnvironment {
  public:
   DubinsCarEnvironment()
-      : maxWidth_(1000), maxHeight_(1000), pModel_(new Model(placeholder)) {
+      : maxWidth_(1000), maxHeight_(1000), pModel_(new Model(kPlaceholder)) {
     ob::StateSpacePtr space(new ob::DubinsStateSpace(100));
     //   if(dss_.use_count() == 0)
     //    delete dss_.get();
@@ -47,7 +47,7 @@ class DubinsCarEnvironment {
     dss_->setStateValidityChecker(
         std::bind(&Model::isStateValid, pModel_, std::placeholders::_1));
     space->setup();
-    dss_->setPlanner(ob::DynamicPlannerPtr(new og::DRRTstarFN(si)));
+     dss_->setPlanner(ob::DynamicPlannerPtr(new og::DRRTstarFN(si)));
     // dss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(spaceInfo)));
     // dss_->getPlanner()->as<og::DRRTstarFN>()->setRange(35.0);
     // dss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
@@ -65,11 +65,9 @@ class DubinsCarEnvironment {
     // dss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0015);
     std::function<bool(void)> dummyLambda = []() -> bool { return true; };
     dss_->setSolutionValidityFunction(dummyLambda);
-
-    dss_->setIterationRoutine(dummyLambda);
   }
 
-  void loop() {
+  void launch() {
     std::cout << "running problem" << std::endl;
     if (dss_->runSolutionLoop()) {
       std::cout << "Success" << std::endl;
@@ -82,13 +80,14 @@ class DubinsCarEnvironment {
   const double maxHeight_;
 
   std::string prefix_;
-
   std::shared_ptr<Model> pModel_;
 };
 
 int main() {
   DubinsCarEnvironment env;
-  env.loop();
+  env.launch();
+
+  // this will be reached iff robot reached the goal state
 
   return EXIT_SUCCESS;
 }

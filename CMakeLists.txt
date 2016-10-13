@@ -34,7 +34,7 @@ list(REMOVE_ITEM SRC_LIST "./Dubins2D.cpp")
 list(REMOVE_ITEM SRC_LIST "./car_dart.cpp")
 list(REMOVE_ITEM SRC_LIST "./simpledynamicsetuptest.cpp")
 
-FILE(GLOB_RECURSE LibFiles "*.hpp", "*.h")
+FILE(GLOB_RECURSE LibFiles "*.hpp" "*.h")
 add_custom_target(headers SOURCES ${LibFiles})
 
 #add_executable(${PROJECT_NAME} ${SRC_LIST} ompl/geometric/planners/rrt/src/RRTstarFND.cpp ompl/base/spaces/src/WeightedRealVectorStateSpace.cpp)

@@ -1,13 +1,13 @@
 #ifndef OMPL_GEOMETRIC_PLANNERS_RRT_DRRTSTARFN_
 #define OMPL_GEOMETRIC_PLANNERS_RRT_DRRTSTARFN_
 
-#include <ompl/base/DynamicPlanner.h>
-#include <ompl/base/OptimizationObjective.h>
-#include <ompl/base/goals/GoalState.h>
-#include <ompl/datastructures/NearestNeighbors.h>
-#include <ompl/geometric/planners/PlannerIncludes.h>
+#include "ompl/base/DynamicPlanner.h"
+#include "ompl/base/OptimizationObjective.h"
+#include "ompl/base/goals/GoalState.h"
+#include "ompl/datastructures/NearestNeighbors.h"
+#include "ompl/geometric/planners/PlannerIncludes.h"
+#include "ompl/geometric/planners/rrt/RRTstarFN.h"
 
-#include <future>
 #include <limits>
 #include <list>
 #include <tuple>
@@ -15,7 +15,6 @@
 #include <vector>
 
 namespace ompl {
-
 namespace geometric {
 
 /** \brief Optimal Rapidly-exploring Random Trees */
@@ -35,64 +34,41 @@ class DRRTstarFN : public base::DynamicPlanner {
   void preMove() { ; }
   void postMove() { ; }
 
-  //  virtual base::PlannerStatus solve(
-  //      const base::PlannerTerminationCondition& ptc);
+  virtual base::PlannerStatus solve(
+      const base::PlannerTerminationCondition& ptc);
 
-  //  virtual void clear();
+  virtual void clear();
 
-  //  /** \brief Set the goal bias
+  /** \brief Set the goal bias
 
-  //      In the process of randomly selecting states in
-  //      the state space to attempt to go towards, the
-  //      algorithm may in fact choose the actual goal state, if
-  //      it knows it, with some probability. This probability
-  //      is a real number between 0.0 and 1.0; its value should
-  //      usually be around 0.05 and should not be too large. It
-  //      is probably a good idea to use the default value. */
+      In the process of randomly selecting states in
+      the state space to attempt to go towards, the
+      algorithm may in fact choose the actual goal state, if
+      it knows it, with some probability. This probability
+      is a real number between 0.0 and 1.0; its value should
+      usually be around 0.05 and should not be too large. It
+      is probably a good idea to use the default value. */
   void setGoalBias(double goalBias) { goalBias_ = goalBias; }
 
   /** \brief Get the goal bias the planner is using */
   double getGoalBias() const { return goalBias_; }
 
-  //  /** \brief fraction of the time in the dynamic part of
-  //   * the motion planning will be biased with the following variable */
-  //  void setOrphanedBias(double orphanedBias) { orphanedBias_ = orphanedBias;
-  //  }
-  //  /** \brief  get the biasing factor for orphaned nodes*/
-  //  double getOrphanedBias() { return orphanedBias_; }
+  /** \brief fraction of the time in the dynamic part of
+   * the motion planning will be biased with the following variable */
+  void setOrphanedBias(double orphanedBias) { orphanedBias_ = orphanedBias; }
 
-  //  /** \brief Set the range the planner is supposed to use.
+  /** \brief  get the biasing factor for orphaned nodes*/
+  double getOrphanedBias() { return orphanedBias_; }
 
-  //    This parameter greatly influences the runtime of the
-  //    algorithm. It represents the maximum length of a
-  //    motion to be added in the tree of motions. */
-  //  void setRange(double distance) { maxDistance_ = distance; }
+  /** \brief Set the range the planner is supposed to use.
 
-  //  /** \brief Get the range the planner is using */
-  //  double getRange() const { return maxDistance_; }
+    This parameter greatly influences the runtime of the
+    algorithm. It represents the maximum length of a
+    motion to be added in the tree of motions. */
+  void setRange(double distance) { maxDistance_ = distance; }
 
-  //  /** \brief Set a different nearest neighbors datastructure */
-  //  template <template <typename T> class NN>
-  //  void setNearestNeighbors() {
-  //    nn_.reset(new NN<Motion*>());
-  //  }
-  //  template <typename T>
-  //  void setNN(NearestNeighbors<T*> nearestNeighbors) {
-  //    nn_.reset(nearestNeighbors);
-  //  }
-
-  //  /** \brief Option that delays collision checking procedures.
-  //    When it is enabled, all neighbors are sorted by cost. The
-  //    planner then goes through this list, starting with the lowest
-  //    cost, checking for collisions in order to find a parent. The planner
-  //    stops iterating through the list when a collision free parent is found.
-  //    This prevents the planner from collsion checking each neighbor, reducing
-  //    computation time in scenarios where collision checking procedures are
-  //    expensive.*/
-  //  void setDelayCC(bool delayCC) { delayCC_ = delayCC; }
-
-  //  /** \brief Get the state of the delayed collision checking option */
-  //  bool getDelayCC() const { return delayCC_; }
+  /** \brief Get the range the planner is using */
+  double getRange() const { return maxDistance_; }
 
   //  void setPreviousPath(std::vector<ompl::base::State*> stateList,
   //                       int stateIndex);
@@ -109,13 +85,22 @@ class DRRTstarFN : public base::DynamicPlanner {
   //    return boost::lexical_cast<std::string>(bestCost_);
   //  }
 
-  //  void setMaxNodes(unsigned int nodesNum) { maxNodes_ = nodesNum; }
+  ///
+  /// \brief setMaxNodes
+  /// \param maxNodes
+  ///
+  void setMaxNodes(const std::size_t& maxNodes) { maxNodes_ = maxNodes; }
 
-  //  unsigned int getMaxNodes() const { return maxNodes_; }
+  ///
+  /// \brief getMaxNodes
+  /// \return
+  ///
+  std::size_t getMaxNodes() const { return maxNodes_; }
 
-  //  void setLocalPlanning(bool set) { localPlanning_ = set; }
-  //  /** \brief Set sampling radius around interim state */
-  //  bool isLocalPlanning() { return localPlanning_; }
+  void setLocalPlanning(bool set) { localPlanning_ = set; }
+
+  /** \brief Set sampling radius around interim state */
+  bool isLocalPlanning() { return localPlanning_; }
 
   //  /** \brief Set the interim state */
   //  void setInterimState(base::State* state) { interimState_ = state; }
@@ -125,10 +110,7 @@ class DRRTstarFN : public base::DynamicPlanner {
 
   //  /** \brief Remove the states from the tree */
 
-  //  std::size_t removeInvalidNodes();
-
-  //  bool getDynamic() const { return dynamicMode_; }
-  //  void setDynamic(bool d) { dynamicMode_ = d; }
+  std::size_t removeInvalidNodes();
 
   //  void prepareDynamic(std::size_t from);
 
@@ -161,48 +143,48 @@ class DRRTstarFN : public base::DynamicPlanner {
 
   //  // void loadTree(const char *filename);
 
-  //  enum NodeType : char { NORMAL = 0, ORPHANED = 1, INVALID = 2 };
+  enum NodeType : char { NORMAL = 0, ORPHANED = 1, INVALID = 2 };
 
-  // protected:
-  //  /** \brief Representation of a motion */
-  //  class Motion {
-  //   public:
-  //    /** \brief Constructor that allocates memory for the state. This
-  //    constructor
-  //     * automatically allocates memory for \e state, \e cost, and \e incCost
-  //     */
-  //    Motion(const base::SpaceInformationPtr& si)
-  //        : state(si->allocState()),
-  //          parent(nullptr),
-  //          nodeType(NodeType::NORMAL) {}
+ protected:
+  /** \brief Representation of a motion */
+  class Motion {
+   public:
+    /** \brief Constructor that allocates memory for the state. This
+    constructor
+     * automatically allocates memory for \e state, \e cost, and \e incCost
+     */
+    Motion(const base::SpaceInformationPtr& si)
+        : state(si->allocState()),
+          parent(nullptr),
+          nodeType(NodeType::NORMAL) {}
 
-  //    ~Motion() { ; }
+    ~Motion() { ; }
 
-  //    /** \brief The state contained by the motion */
-  //    base::State* state;
+    /** \brief The state contained by the motion */
+    base::State* state;
 
-  //    /** \brief The parent motion in the exploration tree */
-  //    Motion* parent;
+    /** \brief The parent motion in the exploration tree */
+    Motion* parent;
 
-  //    /** \brief The cost up to this motion */
-  //    base::Cost cost;
+    /** \brief The cost up to this motion */
+    base::Cost cost;
 
-  //    /** \brief The incremental cost of this motion's parent to this motion
-  //    (this
-  //     * is stored to save distance computations in the updateChildCosts()
-  //     method)
-  //     */
-  //    base::Cost incCost;
+    /** \brief The incremental cost of this motion's parent to this motion
+    (this
+     * is stored to save distance computations in the updateChildCosts()
+     method)
+     */
+    base::Cost incCost;
 
-  //    /** \brief The set of motions descending from the current motion */
-  //    std::vector<Motion*> children;
+    /** \brief The set of motions descending from the current motion */
+    std::vector<Motion*> children;
 
-  //    /** \brief removed */
-  //    NodeType nodeType;
-  //  };
+    /** \brief removed */
+    NodeType nodeType;
+  };
 
-  //  /** \brief Free the memory allocated by this planner */
-  //  void freeMemory();
+  /** \brief Free the memory allocated by this planner */
+  void freeMemory();
 
   //  // For sorting a list of costs and getting only their sorted indices
   //  struct CostIndexCompare {
@@ -275,57 +257,60 @@ class DRRTstarFN : public base::DynamicPlanner {
    * towards (if such a state is available) */
   double goalBias_;
 
-  //  /** \brief The fraction of time the goal is picked as the state to expand
-  //   * towards (if such a state is available) */
-  //  double orphanedBias_;
+  /** \brief The fraction of time the goal is picked as the state to expand
+   * towards (if such a state is available) */
+  double orphanedBias_;
 
-  //  /** \brief The maximum length of a motion to be added to a tree */
-  //  double maxDistance_;
+  /** \brief The maximum length of a motion to be added to a tree */
+  double maxDistance_;
 
-  //  /** \brief The random number generator */
-  //  RNG rng_;
+  /** \brief The random number generator */
+  RNG rng_;
 
-  //  /** \brief Option to delay and reduce collision checking within iterations
-  //  */
-  //  bool delayCC_;
+  /** \brief Option to delay and reduce collision checking within iterations
+  */
+  bool delayCC_;
 
-  //  bool dynamicMode_;
+  bool dynamicMode_;
 
-  //  /** \brief Objective we're optimizing */
-  //  base::OptimizationObjectivePtr opt_;
+  /** \brief Objective we're optimizing */
+  base::OptimizationObjectivePtr opt_;
 
-  //  /** \brief The most recent goal motion.  Used for PlannerData computation
-  //  */
-  //  Motion* lastGoalMotion_;
+  /** \brief The most recent goal motion.  Used for PlannerData computation
+  */
+  Motion* lastGoalMotion_;
 
-  //  /** \brief A list of states in the tree that satisfy the goal condition */
-  //  std::vector<Motion*> goalMotions_;
+  /** \brief A list of states in the tree that satisfy the goal condition */
+  std::vector<Motion*> goalMotions_;
 
-  //  /** \brief If this value is set to true, tree pruning will be enabled. */
-  //  // bool                                           prune_;
+  /** \brief If this value is set to true, tree pruning will be enabled. */
+  // bool                                           prune_;
 
-  //  /** \brief Stores the Motion containing the last added initial start
-  //  state. */
-  //  Motion* startMotion_;
+  /** \brief Stores the Motion containing the last added initial start
+  state. */
+  Motion* startMotion_;
 
-  //  std::vector<ompl::base::State*> orphanedBiasNodes_;
-  //  std::vector<Motion*> detachedPathNodes_;
+  std::vector<ompl::base::State*> orphanedBiasNodes_;
+  std::vector<Motion*> detachedPathNodes_;
 
-  //  //////////////////////////////
-  //  // Planner progress properties
-  //  /** \brief Number of iterations the algorithm performed */
-  //  unsigned int iterations_;
-  //  /** \brief Best cost found so far by algorithm */
-  //  base::Cost bestCost_;
+  //////////////////////////////
+  // Planner progress properties
+  /** \brief Number of iterations the algorithm performed */
+  unsigned int iterations_;
+  /** \brief Best cost found so far by algorithm */
+  base::Cost bestCost_;
 
-  //  unsigned int maxNodes_;
+  std::size_t maxNodes_;
 
-  //  bool localPlanning_;
+  ///
+  /// \brief localPlanning_
+  ///
+  bool localPlanning_;
 
-  //  base::State* interimState_;
-  //  double sampleRadius_;
+  base::State* interimState_;
+  double sampleRadius_;
 };
-}
-}
+}  // geometric
+}  // ompl
 
 #endif

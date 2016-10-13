@@ -12,7 +12,7 @@
 namespace ompl {
 namespace geometric {
 
-class DynamicSimpleSetup {
+class DynamicSimpleSetup : public SimpleSetup {
  public:
   explicit DynamicSimpleSetup(ompl::base::SpaceInformationPtr& si);
 
@@ -20,7 +20,9 @@ class DynamicSimpleSetup {
 
   ~DynamicSimpleSetup() { ; }
 
-  /** \brief */
+  ///
+  /// \brief saveSolution
+  ///
   void saveSolution(const std::string&);
 
   /** \brief */
@@ -38,25 +40,8 @@ class DynamicSimpleSetup {
   void setSolutionValidityFunction(std::function<bool(void)>& fn);
   void setIterationRoutine(std::function<bool(void)>& fn);
 
-  base::PlannerPtr getPlanner() const { return ss_->getPlanner(); }
-
-  base::SpaceInformationPtr getSpaceInformation() const {
-    return ss_->getSpaceInformation();
-  }
-
-  base::StateSpacePtr getStateSpace() const { return ss_->getStateSpace(); }
-
-  void setStartAndGoalStates(const base::ScopedState<>& start,
-                             const base::ScopedState<>& goal) {
-    ss_->setStartAndGoalStates(start, goal);
-  }
-
   void setPlanner(const base::DynamicPlannerPtr& dynamicPlanner) {
-    ss_->setPlanner(dynamicPlanner_->getStaticPlanner());
-  }
-
-  void setStateValidityChecker(const base::StateValidityCheckerFn& svc) {
-    ss_->setStateValidityChecker(svc);
+    // ss_->setPlanner(dynamicPlanner_->getStaticPlanner());
   }
 
  private:
@@ -65,7 +50,7 @@ class DynamicSimpleSetup {
 
   ompl::base::DynamicPlannerPtr dynamicPlanner_ = nullptr;
 
-  std::chrono::milliseconds timestep;  // dt
+  std::chrono::milliseconds timestep_;  // dt
 
   /** \brief call back for obstacle collision routine */
   bool (*collisionChecker)();
@@ -134,11 +119,6 @@ class DynamicSimpleSetup {
   std::function<bool(void)> validSolutionFn_;
 
   std::function<void(void)> iterationRoutine_;
-
-  ///
-  /// \brief ss_
-  ///
-  ompl::geometric::SimpleSetupPtr ss_;
 };
 
 typedef std::shared_ptr<DynamicSimpleSetup> DynamicSimpleSetupPtr;

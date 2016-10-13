@@ -45,7 +45,7 @@
 #include <iostream>
 #include <limits>
 
-#define DEFAULT_MAXNODES 30000
+constexpr std::size_t kDefaultMaxNodes = 30000;
 
 ompl::geometric::RRTstarFN::RRTstarFN(const base::SpaceInformationPtr &si)
     : base::Planner(si, "RRTstarFN"),
@@ -55,7 +55,7 @@ ompl::geometric::RRTstarFN::RRTstarFN(const base::SpaceInformationPtr &si)
       lastGoalMotion_(NULL),
       iterations_(0),
       bestCost_(std::numeric_limits<double>::quiet_NaN()),
-      maxNodes_(DEFAULT_MAXNODES) {
+      maxNodes_(kDefaultMaxNodes) {
   specs_.approximateSolutions = true;
   specs_.optimizingPaths = true;
   specs_.canReportIntermediateSolutions = true;
@@ -92,8 +92,9 @@ void ompl::geometric::RRTstarFN::setup() {
 
   if (!nn_)
     nn_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion *>(this));
-  nn_->setDistanceFunction(
-      std::bind(&RRTstarFN::distanceFunction, this, std::placeholders::_1, std::placeholders::_2));
+  nn_->setDistanceFunction(std::bind(&RRTstarFN::distanceFunction, this,
+                                     std::placeholders::_1,
+                                     std::placeholders::_2));
 
   // Setup optimization objective
   //
@@ -101,20 +102,20 @@ void ompl::geometric::RRTstarFN::setup() {
   // optimizing path length as computed by the distance() function
   // in the state space.
   if (pdef_) {
-      if (pdef_->hasOptimizationObjective())
-        opt_ = pdef_->getOptimizationObjective();
-      else {
-        OMPL_INFORM(
-            "%s: No optimization objective specified. Defaulting to optimizing "
-            "path length for the allowed planning time.",
-            getName().c_str());
-        opt_.reset(new base::PathLengthOptimizationObjective(si_));
-      }
-  } else {
+    if (pdef_->hasOptimizationObjective())
+      opt_ = pdef_->getOptimizationObjective();
+    else {
       OMPL_INFORM(
-          "%s: problem definition is not set, deferring setup completion...",
+          "%s: No optimization objective specified. Defaulting to optimizing "
+          "path length for the allowed planning time.",
           getName().c_str());
-      setup_ = false;
+      opt_.reset(new base::PathLengthOptimizationObjective(si_));
+    }
+  } else {
+    OMPL_INFORM(
+        "%s: problem definition is not set, deferring setup completion...",
+        getName().c_str());
+    setup_ = false;
   }
 
   rng_.setLocalSeed(32);

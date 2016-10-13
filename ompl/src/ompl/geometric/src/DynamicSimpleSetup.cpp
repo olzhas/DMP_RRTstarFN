@@ -5,22 +5,24 @@
 namespace ompl {
 namespace geometric {
 
-DynamicSimpleSetup::DynamicSimpleSetup(ompl::base::SpaceInformationPtr &si) {
-  ss_.reset(new ompl::geometric::SimpleSetup(si));
+DynamicSimpleSetup::DynamicSimpleSetup(ompl::base::SpaceInformationPtr &si)
+    : SimpleSetup(si) {
+  // ss_.reset(new ompl::geometric::SimpleSetup(si));
 }
 
-DynamicSimpleSetup::DynamicSimpleSetup(ompl::base::StateSpacePtr &space) {
-  ss_.reset(new ompl::geometric::SimpleSetup(space));
+DynamicSimpleSetup::DynamicSimpleSetup(ompl::base::StateSpacePtr &space)
+    : SimpleSetup(space) {
+  // ss_.reset(new ompl::geometric::SimpleSetup(space));
 }
 
 void DynamicSimpleSetup::setup() {
-  ss_->setup();
-  timestep = std::chrono::milliseconds(30);
+  SimpleSetup::setup();
+  timestep_ = std::chrono::milliseconds(30);
 }
 
 void DynamicSimpleSetup::clear() {
   // TODO extend clear()
-  ss_->clear();
+  SimpleSetup::clear();
   OMPL_WARN("void DynamicSimpleSetup::clear()");
 }
 
@@ -50,7 +52,7 @@ bool DynamicSimpleSetup::runSolutionLoop() {
 
     if (iterationRoutine_) iterationRoutine_();
 
-    std::this_thread::sleep_until(tNow + timestep);
+    std::this_thread::sleep_until(tNow + timestep_);
 #ifdef DEBUG
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(
                   std::chrono::high_resolution_clock::now() - tNow)
@@ -68,21 +70,22 @@ void DynamicSimpleSetup::prepare() {
   if (!loadPrecomputedData_) {
     ompl::base::PlannerTerminationCondition ptc(
         ompl::base::exactSolnPlannerTerminationCondition(
-            ss_->getProblemDefinition()));
+            getProblemDefinition()));
 
-    ss_->solve(ptc);
+    // TODO ?
+    solve(ptc);
 
     // this should be provide by user ?
     auto prepareFn = [&]() {
-      double totalTime = ss_->getLastPlanComputationTime();
+      double totalTime = getLastPlanComputationTime();
       const double waitPercent = 0.20;
-      ss_->solve(waitPercent * totalTime);
+      solve(waitPercent * totalTime);
     };
 
     prepareFn();
 
     try {
-      PathGeometric &p = ss_->getSolutionPath();
+      PathGeometric &p = getSolutionPath();
       p.interpolate();
       pathLength_ = p.getStateCount();
     } catch (ompl::Exception e) {
@@ -100,7 +103,7 @@ void DynamicSimpleSetup::prepare() {
     loadPrecomputedPlannerData();
   }
 
-  pSolutionPath = std::make_shared<PathGeometric>(ss_->getSolutionPath());
+  pSolutionPath = std::make_shared<PathGeometric>(getSolutionPath());
 }
 
 bool DynamicSimpleSetup::validSolution() {
@@ -116,7 +119,7 @@ if (planner_ == nullptr) {
     return false;
   }
   if (validSolutionFn_ && !validSolutionFn_()) return false;
-  return ss_->getProblemDefinition()->hasSolution();
+  return getProblemDefinition()->hasSolution();
 }
 
 bool DynamicSimpleSetup::move() {
@@ -139,33 +142,34 @@ void DynamicSimpleSetup::pause() {
 }
 
 void DynamicSimpleSetup::react() {
-  if (!ss_->getPlanner()) {
+  if (!getPlanner()) {
     OMPL_ERROR("motion planner is not assigned");
     return;
   }
   OMPL_INFORM("initiating a reaction routine...");
-  if (ss_->getPlanner() && !ss_->getPlanner()->params().hasParam("dynamic")) {
+  if (getPlanner() && !getPlanner()->params().hasParam("dynamic")) {
     OMPL_ERROR("Planner does not contain dynamic parameter");
   }
 
-  ss_->getPlanner()->params().getParam("dynamic")->setValue("true");
+  getPlanner()->params().getParam("dynamic")->setValue("true");
 
-//  // TODO rewrite in more generic way
-//  ss_->getPlanner()->as<DRRTstarFN>()->prepareDynamic(step_);
-//  std::size_t nodesRemoved =
-//      ss_->getPlanner()->as<DRRTstarFN>()->removeInvalidNodes();
-//  OMPL_INFORM("Nodes removed during clean-up phase: %d", nodesRemoved);
-//  // ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
-//  bool is_reconnected = ss_->getPlanner()->as<DRRTstarFN>()->reconnect();
-//  ss_->getProblemDefinition()->clearSolutionPaths();
-//  ss_->getPlanner()->as<DRRTstarFN>()->evaluateSolutionPath();
+  //  // TODO rewrite in more generic way
+  //  ss_->getPlanner()->as<DRRTstarFN>()->prepareDynamic(step_);
+  //  std::size_t nodesRemoved =
+  //      ss_->getPlanner()->as<DRRTstarFN>()->removeInvalidNodes();
+  //  OMPL_INFORM("Nodes removed during clean-up phase: %d", nodesRemoved);
+  //  //
+  //  ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
+  //  bool is_reconnected = ss_->getPlanner()->as<DRRTstarFN>()->reconnect();
+  //  ss_->getProblemDefinition()->clearSolutionPaths();
+  //  ss_->getPlanner()->as<DRRTstarFN>()->evaluateSolutionPath();
 
-//  if (!is_reconnected) {
-//    ompl::base::PlannerTerminationCondition ptc(
-//        ompl::base::exactSolnPlannerTerminationCondition(
-//            ss_->getProblemDefinition()));
-//    ss_->solve(ptc);
-//  }
+  //  if (!is_reconnected) {
+  //    ompl::base::PlannerTerminationCondition ptc(
+  //        ompl::base::exactSolnPlannerTerminationCondition(
+  //            ss_->getProblemDefinition()));
+  //    ss_->solve(ptc);
+  //  }
 
   OMPL_WARN("completed a reaction routine.");
 }
@@ -192,8 +196,8 @@ void DynamicSimpleSetup::stopLoggerThread() {
 
 void DynamicSimpleSetup::saveSolution(const std::string &fname) {
   // Get the planner data to visualize the vertices and the edges
-  ompl::base::PlannerData pdat(ss_->getSpaceInformation());
-  ss_->getPlannerData(pdat);
+  ompl::base::PlannerData pdat(getSpaceInformation());
+  getPlannerData(pdat);
 
   ompl::base::PlannerDataStorage pdstorage;
 
@@ -202,7 +206,7 @@ void DynamicSimpleSetup::saveSolution(const std::string &fname) {
   // FIX code duplicate ???
   OMPL_WARN("saving solution information...");
 
-  if (!ss_->haveSolutionPath()) {
+  if (!haveSolutionPath()) {
     OMPL_ERROR("No solution, there is nothing to record");
     return;
   }
@@ -218,10 +222,10 @@ void DynamicSimpleSetup::saveSolution(const std::string &fname) {
   foutInterp.open(filename + "-interp.dat");
   foutSolution.open(filenameSolution + ".dat");
 
-  foutSolution << ss_->haveExactSolutionPath() << std::endl;
+  foutSolution << haveExactSolutionPath() << std::endl;
   foutSolution.close();
 
-  PathGeometric &p = ss_->getSolutionPath();
+  PathGeometric &p = getSolutionPath();
   p.printAsMatrix(fout);
   fout.close();
 
@@ -231,7 +235,7 @@ void DynamicSimpleSetup::saveSolution(const std::string &fname) {
 }
 
 void DynamicSimpleSetup::recordSolution() {
-  if (!ss_->haveSolutionPath()) {
+  if (!haveSolutionPath()) {
     OMPL_ERROR("No solution, there is nothing to record");
     return;
   }
@@ -250,10 +254,10 @@ void DynamicSimpleSetup::recordSolution() {
     foutInterp.open(filename + std::to_string(dumpNumber) + "-interp.dat");
     foutSolution.open(filenameSolution + std::to_string(dumpNumber) + ".dat");
 
-    foutSolution << ss_->haveExactSolutionPath() << std::endl;
+    foutSolution << haveExactSolutionPath() << std::endl;
     foutSolution.close();
 
-    PathGeometric &p = ss_->getSolutionPath();
+    PathGeometric &p = getSolutionPath();
     p.printAsMatrix(fout);
     fout.close();
 

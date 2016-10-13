@@ -109,18 +109,18 @@ class RRTstarFN : public base::Planner {
   /** \brief Get the state of the delayed collision checking option */
   bool getDelayCC() const { return delayCC_; }
 
-  /** \brief Controls whether the tree is pruned during the search. */
-  /*void setPrune(const bool prune)
-  {
-    prune_ = prune;
-  }*/
+  //  /** \brief Controls whether the tree is pruned during the search. */
+  //  void setPrune(const bool prune)
+  //  {
+  //    prune_ = prune;
+  //  }
 
-  /** \brief Get the state of the pruning option. */
-  /*bool getPrune() const
-  {
-    return prune_;
-  }
-*/
+  //  /** \brief Get the state of the pruning option. */
+  //  bool getPrune() const
+  //  {
+  //    return prune_;
+  //  }
+
   /** \brief Set the percentage threshold (between 0 and 1) for pruning the
     tree. If the new tree has removed
     at least this percentage of states, the tree will be finally pruned. */
@@ -144,9 +144,19 @@ class RRTstarFN : public base::Planner {
     return boost::lexical_cast<std::string>(bestCost_);
   }
 
-  void setMaxNodes(unsigned int nodesNum) { maxNodes_ = nodesNum; }
+  ///
+  /// \brief setMaxNodes
+  /// setting the limit for the number of nodes in the tree
+  /// \param nodesNum
+  ///
+  void setMaxNodes(const std::size_t &nodesNum) { maxNodes_ = nodesNum; }
 
-  unsigned int getMaxNodes() const { return maxNodes_; }
+  ///
+  /// \brief getMaxNodes
+  /// getting the limit for the number of nodes in the tree
+  /// \return
+  ///
+  std::size_t getMaxNodes() const { return maxNodes_; }
 
  protected:
   /** \brief Representation of a motion */
@@ -271,9 +281,13 @@ class RRTstarFN : public base::Planner {
   /** \brief Best cost found so far by algorithm */
   base::Cost bestCost_;
 
-  unsigned int maxNodes_;
+  ///
+  /// \brief maxNodes_
+  ///
+  std::size_t maxNodes_;
 };
-}
-}
+
+}  // namespace geometric
+}  // namespace ompl
 
 #endif
