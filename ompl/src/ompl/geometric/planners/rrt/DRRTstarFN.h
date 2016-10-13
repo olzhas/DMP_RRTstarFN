@@ -37,6 +37,8 @@ class DRRTstarFN : public base::DynamicPlanner {
   virtual base::PlannerStatus solve(
       const base::PlannerTerminationCondition& ptc);
 
+  virtual void getPlannerData(base::PlannerData& data) const;
+
   virtual void clear();
 
   /** \brief Set the goal bias

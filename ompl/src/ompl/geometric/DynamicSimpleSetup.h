@@ -13,7 +13,6 @@
 #include "ompl/util/Exception.h"
 
 #include <chrono>
-#include <fstream>
 #include <thread>
 
 namespace ompl {
@@ -159,14 +158,6 @@ class DynamicSimpleSetup {
   /** \brief Return the status of the last planning attempt */
   base::PlannerStatus getLastPlannerStatus() const { return lastStatus_; }
 
-  /** \brief Get the amount of time (in seconds) spent during the last planning
-   * step */
-  double getLastPlanComputationTime() const { return planTime_; }
-
-  /** \brief Get the amount of time (in seconds) spend during the last path
-   * simplification step */
-  double getLastSimplificationTime() const { return simplifyTime_; }
-
   /** \brief Attempt to simplify the current solution path. Spent at most \e
      duration seconds in the simplification process.
       If \e duration is 0 (the default), a default simplification procedure is
@@ -301,12 +292,6 @@ class DynamicSimpleSetup {
 
   /// Flag indicating whether the classes needed for planning are set up
   bool configured_;
-
-  /// The amount of time the last planning step took
-  double planTime_;
-
-  /// The amount of time the last path simplification step took
-  double simplifyTime_;
 
   /// The status of the last planning request
   base::PlannerStatus lastStatus_;

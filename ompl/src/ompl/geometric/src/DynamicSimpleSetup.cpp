@@ -5,6 +5,45 @@
 namespace ompl {
 namespace geometric {
 
+base::PlannerPtr getDefaultPlanner(const base::GoalPtr &goal) {
+  return tools::SelfConfig::getDefaultPlanner(goal);
+}
+
+DynamicSimpleSetup::DynamicSimpleSetup(const base::SpaceInformationPtr &si)
+    : configured_(false), lastStatus_(base::PlannerStatus::UNKNOWN) {
+  si_ = si;
+  pdef_.reset(new base::ProblemDefinition(si_));
+}
+
+DynamicSimpleSetup::DynamicSimpleSetup(const base::StateSpacePtr &space)
+    : configured_(false), lastStatus_(base::PlannerStatus::UNKNOWN) {
+  si_.reset(new base::SpaceInformation(space));
+  pdef_.reset(new base::ProblemDefinition(si_));
+}
+
+void ompl::geometric::DynamicSimpleSetup::setup() {
+  if (!configured_ || !si_->isSetup() || !planner_->isSetup()) {
+    if (!si_->isSetup()) si_->setup();
+    if (!planner_) {
+      // FIXME
+      // if (pa_) planner_ = pa_(si_);
+      if (!planner_) {
+        OMPL_INFORM("No planner specified. Using default.");
+        // TODO
+        // planner_ = tools::SelfConfig::getDefaultPlanner(getGoal());
+      }
+    }
+    planner_->setProblemDefinition(pdef_);
+    if (!planner_->isSetup()) planner_->setup();
+    configured_ = true;
+  }
+}
+
+void DynamicSimpleSetup::clear() {
+  if (planner_) planner_->clear();
+  if (pdef_) pdef_->clearSolutionPaths();
+}
+
 void DynamicSimpleSetup::plan() {
   // TODO implement plan()
 
@@ -57,7 +96,6 @@ void DynamicSimpleSetup::prepare() {
 
     // this should be provide by user ?
     auto prepareFn = [&]() {
-      double totalTime = getLastPlanComputationTime();
       const double waitPercent = 0.20;
       // solve(waitPercent * totalTime);
     };
@@ -261,51 +299,6 @@ void DynamicSimpleSetup::setIterationRoutine(std::function<bool(void)> &fn) {
   iterationRoutine_ = fn;
 }
 
-base::PlannerPtr getDefaultPlanner(const base::GoalPtr &goal) {
-  return tools::SelfConfig::getDefaultPlanner(goal);
-}
-
-DynamicSimpleSetup::DynamicSimpleSetup(const base::SpaceInformationPtr &si)
-    : configured_(false),
-      planTime_(0.0),
-      simplifyTime_(0.0),
-      lastStatus_(base::PlannerStatus::UNKNOWN) {
-  si_ = si;
-  pdef_.reset(new base::ProblemDefinition(si_));
-}
-
-DynamicSimpleSetup::DynamicSimpleSetup(const base::StateSpacePtr &space)
-    : configured_(false),
-      planTime_(0.0),
-      simplifyTime_(0.0),
-      lastStatus_(base::PlannerStatus::UNKNOWN) {
-  si_.reset(new base::SpaceInformation(space));
-  pdef_.reset(new base::ProblemDefinition(si_));
-}
-
-void ompl::geometric::DynamicSimpleSetup::setup() {
-  if (!configured_ || !si_->isSetup() || !planner_->isSetup()) {
-    if (!si_->isSetup()) si_->setup();
-    if (!planner_) {
-      // FIXME
-      // if (pa_) planner_ = pa_(si_);
-      if (!planner_) {
-        OMPL_INFORM("No planner specified. Using default.");
-        // TODO
-        // planner_ = tools::SelfConfig::getDefaultPlanner(getGoal());
-      }
-    }
-    planner_->setProblemDefinition(pdef_);
-    if (!planner_->isSetup()) planner_->setup();
-    configured_ = true;
-  }
-}
-
-void DynamicSimpleSetup::clear() {
-  if (planner_) planner_->clear();
-  if (pdef_) pdef_->clearSolutionPaths();
-}
-
 void DynamicSimpleSetup::setStartAndGoalStates(const base::ScopedState<> &start,
                                                const base::ScopedState<> &goal,
                                                const double threshold) {
@@ -364,48 +357,6 @@ void DynamicSimpleSetup::setGoal(const base::GoalPtr &goal) {
 //    OMPL_INFORM("No solution found after %f seconds", planTime_);
 //  return lastStatus_;
 //}
-
-void DynamicSimpleSetup::simplifySolution(
-    const base::PlannerTerminationCondition &ptc) {
-  if (pdef_) {
-    const base::PathPtr &p = pdef_->getSolutionPath();
-    if (p) {
-      time::point start = time::now();
-      PathGeometric &path = static_cast<PathGeometric &>(*p);
-      std::size_t numStates = path.getStateCount();
-      psk_->simplify(path, ptc);
-      simplifyTime_ = time::seconds(time::now() - start);
-      OMPL_INFORM(
-          "SimpleSetup: Path simplification took %f seconds and changed from "
-          "%d to %d states",
-          simplifyTime_, numStates, path.getStateCount());
-      return;
-    }
-  }
-  OMPL_WARN("No solution to simplify");
-}
-
-void DynamicSimpleSetup::simplifySolution(double duration) {
-  if (pdef_) {
-    const base::PathPtr &p = pdef_->getSolutionPath();
-    if (p) {
-      time::point start = time::now();
-      PathGeometric &path = static_cast<PathGeometric &>(*p);
-      std::size_t numStates = path.getStateCount();
-      if (duration < std::numeric_limits<double>::epsilon())
-        psk_->simplifyMax(static_cast<PathGeometric &>(*p));
-      else
-        psk_->simplify(static_cast<PathGeometric &>(*p), duration);
-      simplifyTime_ = time::seconds(time::now() - start);
-      OMPL_INFORM(
-          "SimpleSetup: Path simplification took %f seconds and changed from "
-          "%d to %d states",
-          simplifyTime_, numStates, path.getStateCount());
-      return;
-    }
-  }
-  OMPL_WARN("No solution to simplify");
-}
 
 const std::string DynamicSimpleSetup::getSolutionPlannerName(void) const {
   if (pdef_) {
