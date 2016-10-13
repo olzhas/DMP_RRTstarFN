@@ -1,33 +1,13 @@
 #include "ompl/geometric/DynamicSimpleSetup.h"
-#include <ompl/util/Exception.h>
-#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
+#include "ompl/tools/config/SelfConfig.h"
+#include "ompl/util/Exception.h"
 
 namespace ompl {
 namespace geometric {
 
-DynamicSimpleSetup::DynamicSimpleSetup(ompl::base::SpaceInformationPtr &si)
-    : SimpleSetup(si) {
-  // ss_.reset(new ompl::geometric::SimpleSetup(si));
-}
-
-DynamicSimpleSetup::DynamicSimpleSetup(ompl::base::StateSpacePtr &space)
-    : SimpleSetup(space) {
-  // ss_.reset(new ompl::geometric::SimpleSetup(space));
-}
-
-void DynamicSimpleSetup::setup() {
-  SimpleSetup::setup();
-  timestep_ = std::chrono::milliseconds(30);
-}
-
-void DynamicSimpleSetup::clear() {
-  // TODO extend clear()
-  SimpleSetup::clear();
-  OMPL_WARN("void DynamicSimpleSetup::clear()");
-}
-
 void DynamicSimpleSetup::plan() {
   // TODO implement plan()
+
   OMPL_WARN("void DynamicSimpleSetup::plan()");
 }
 
@@ -73,13 +53,13 @@ void DynamicSimpleSetup::prepare() {
             getProblemDefinition()));
 
     // TODO ?
-    solve(ptc);
+    // solve(ptc);
 
     // this should be provide by user ?
     auto prepareFn = [&]() {
       double totalTime = getLastPlanComputationTime();
       const double waitPercent = 0.20;
-      solve(waitPercent * totalTime);
+      // solve(waitPercent * totalTime);
     };
 
     prepareFn();
@@ -142,16 +122,17 @@ void DynamicSimpleSetup::pause() {
 }
 
 void DynamicSimpleSetup::react() {
-  if (!getPlanner()) {
+  if (!getDynamicPlanner()) {
     OMPL_ERROR("motion planner is not assigned");
     return;
   }
   OMPL_INFORM("initiating a reaction routine...");
-  if (getPlanner() && !getPlanner()->params().hasParam("dynamic")) {
+  if (getDynamicPlanner() &&
+      !getDynamicPlanner()->params().hasParam("dynamic")) {
     OMPL_ERROR("Planner does not contain dynamic parameter");
   }
 
-  getPlanner()->params().getParam("dynamic")->setValue("true");
+  getDynamicPlanner()->params().getParam("dynamic")->setValue("true");
 
   //  // TODO rewrite in more generic way
   //  ss_->getPlanner()->as<DRRTstarFN>()->prepareDynamic(step_);
@@ -278,6 +259,195 @@ void DynamicSimpleSetup::setSolutionValidityFunction(
 
 void DynamicSimpleSetup::setIterationRoutine(std::function<bool(void)> &fn) {
   iterationRoutine_ = fn;
+}
+
+base::PlannerPtr getDefaultPlanner(const base::GoalPtr &goal) {
+  return tools::SelfConfig::getDefaultPlanner(goal);
+}
+
+DynamicSimpleSetup::DynamicSimpleSetup(const base::SpaceInformationPtr &si)
+    : configured_(false),
+      planTime_(0.0),
+      simplifyTime_(0.0),
+      lastStatus_(base::PlannerStatus::UNKNOWN) {
+  si_ = si;
+  pdef_.reset(new base::ProblemDefinition(si_));
+}
+
+DynamicSimpleSetup::DynamicSimpleSetup(const base::StateSpacePtr &space)
+    : configured_(false),
+      planTime_(0.0),
+      simplifyTime_(0.0),
+      lastStatus_(base::PlannerStatus::UNKNOWN) {
+  si_.reset(new base::SpaceInformation(space));
+  pdef_.reset(new base::ProblemDefinition(si_));
+}
+
+void ompl::geometric::DynamicSimpleSetup::setup() {
+  if (!configured_ || !si_->isSetup() || !planner_->isSetup()) {
+    if (!si_->isSetup()) si_->setup();
+    if (!planner_) {
+      // FIXME
+      // if (pa_) planner_ = pa_(si_);
+      if (!planner_) {
+        OMPL_INFORM("No planner specified. Using default.");
+        // TODO
+        // planner_ = tools::SelfConfig::getDefaultPlanner(getGoal());
+      }
+    }
+    planner_->setProblemDefinition(pdef_);
+    if (!planner_->isSetup()) planner_->setup();
+    configured_ = true;
+  }
+}
+
+void DynamicSimpleSetup::clear() {
+  if (planner_) planner_->clear();
+  if (pdef_) pdef_->clearSolutionPaths();
+}
+
+void DynamicSimpleSetup::setStartAndGoalStates(const base::ScopedState<> &start,
+                                               const base::ScopedState<> &goal,
+                                               const double threshold) {
+  pdef_->setStartAndGoalStates(start, goal, threshold);
+
+  // Clear any past solutions since they no longer correspond to our start and
+  // goal states
+  pdef_->clearSolutionPaths();
+
+  psk_.reset(new PathSimplifier(si_, pdef_->getGoal()));
+}
+
+void DynamicSimpleSetup::setGoalState(const base::ScopedState<> &goal,
+                                      const double threshold) {
+  pdef_->setGoalState(goal, threshold);
+  psk_.reset(new PathSimplifier(si_, pdef_->getGoal()));
+}
+
+/** \brief Set the goal for planning. This call is not
+    needed if setStartAndGoalStates() has been called. */
+void DynamicSimpleSetup::setGoal(const base::GoalPtr &goal) {
+  pdef_->setGoal(goal);
+
+  if (goal && goal->hasType(base::GOAL_SAMPLEABLE_REGION))
+    psk_.reset(new PathSimplifier(si_, pdef_->getGoal()));
+  else
+    psk_.reset(new PathSimplifier(si_));
+}
+
+//// we provide a duplicate implementation here to allow the planner to choose
+/// how
+//// the time is turned into a planner termination condition
+// base::PlannerStatus DynamicSimpleSetup::solve(double time) {
+//  setup();
+//  lastStatus_ = base::PlannerStatus::UNKNOWN;
+//  time::point start = time::now();
+//  lastStatus_ = planner_->solve(time);
+//  planTime_ = time::seconds(time::now() - start);
+//  if (lastStatus_)
+//    OMPL_INFORM("Solution found in %f seconds", planTime_);
+//  else
+//    OMPL_INFORM("No solution found after %f seconds", planTime_);
+//  return lastStatus_;
+//}
+
+// ompl::base::PlannerStatus DynamicSimpleSetup::solve(
+//    const base::PlannerTerminationCondition &ptc) {
+//  setup();
+//  lastStatus_ = base::PlannerStatus::UNKNOWN;
+//  time::point start = time::now();
+//  lastStatus_ = planner_->solve(ptc);
+//  planTime_ = time::seconds(time::now() - start);
+//  if (lastStatus_)
+//    OMPL_INFORM("Solution found in %f seconds", planTime_);
+//  else
+//    OMPL_INFORM("No solution found after %f seconds", planTime_);
+//  return lastStatus_;
+//}
+
+void DynamicSimpleSetup::simplifySolution(
+    const base::PlannerTerminationCondition &ptc) {
+  if (pdef_) {
+    const base::PathPtr &p = pdef_->getSolutionPath();
+    if (p) {
+      time::point start = time::now();
+      PathGeometric &path = static_cast<PathGeometric &>(*p);
+      std::size_t numStates = path.getStateCount();
+      psk_->simplify(path, ptc);
+      simplifyTime_ = time::seconds(time::now() - start);
+      OMPL_INFORM(
+          "SimpleSetup: Path simplification took %f seconds and changed from "
+          "%d to %d states",
+          simplifyTime_, numStates, path.getStateCount());
+      return;
+    }
+  }
+  OMPL_WARN("No solution to simplify");
+}
+
+void DynamicSimpleSetup::simplifySolution(double duration) {
+  if (pdef_) {
+    const base::PathPtr &p = pdef_->getSolutionPath();
+    if (p) {
+      time::point start = time::now();
+      PathGeometric &path = static_cast<PathGeometric &>(*p);
+      std::size_t numStates = path.getStateCount();
+      if (duration < std::numeric_limits<double>::epsilon())
+        psk_->simplifyMax(static_cast<PathGeometric &>(*p));
+      else
+        psk_->simplify(static_cast<PathGeometric &>(*p), duration);
+      simplifyTime_ = time::seconds(time::now() - start);
+      OMPL_INFORM(
+          "SimpleSetup: Path simplification took %f seconds and changed from "
+          "%d to %d states",
+          simplifyTime_, numStates, path.getStateCount());
+      return;
+    }
+  }
+  OMPL_WARN("No solution to simplify");
+}
+
+const std::string DynamicSimpleSetup::getSolutionPlannerName(void) const {
+  if (pdef_) {
+    const ompl::base::PathPtr path;  // convert to a generic path ptr
+    ompl::base::PlannerSolution solution(path);  // a dummy solution
+
+    // Get our desired solution
+    pdef_->getSolution(solution);
+    return solution.plannerName_;
+  }
+  throw Exception("No problem definition found");
+}
+
+ompl::geometric::PathGeometric &DynamicSimpleSetup::getSolutionPath() const {
+  if (pdef_) {
+    const base::PathPtr &p = pdef_->getSolutionPath();
+    if (p) return static_cast<PathGeometric &>(*p);
+  }
+  throw Exception("No solution path");
+}
+
+bool DynamicSimpleSetup::haveExactSolutionPath() const {
+  return haveSolutionPath() && (!pdef_->hasApproximateSolution() ||
+                                pdef_->getSolutionDifference() <
+                                    std::numeric_limits<double>::epsilon());
+}
+
+void DynamicSimpleSetup::getPlannerData(base::PlannerData &pd) const {
+  pd.clear();
+  if (planner_) planner_->getPlannerData(pd);
+}
+
+void DynamicSimpleSetup::print(std::ostream &out) const {
+  if (si_) {
+    si_->printProperties(out);
+    si_->printSettings(out);
+  }
+  if (planner_) {
+    planner_->printProperties(out);
+    planner_->printSettings(out);
+  }
+  if (pdef_) pdef_->print(out);
 }
 }
 }

@@ -1,47 +1,9 @@
-/*********************************************************************
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2011, Rice University
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of the Rice University nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
-
-/* Authors: Alejandro Perez, Sertac Karaman, Ryan Luna, Luis G. Torres, Ioan
- * Sucan, Javier V Gomez */
-
 #include "ompl/geometric/planners/rrt/DRRTstarFN.h"
 #include "ompl/base/DelayedTerminationCondition.h"
 #include "ompl/base/PlannerData.h"
 #include "ompl/base/PlannerDataStorage.h"
 #include "ompl/base/goals/GoalSampleableRegion.h"
 #include "ompl/base/objectives/PathLengthOptimizationObjective.h"
-#include "ompl/geometric/planners/rrt/RRTstarFN.h"
 #include "ompl/tools/config/SelfConfig.h"
 
 #include <algorithm>
@@ -56,76 +18,69 @@
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/vector.hpp>
 
-#define DEFAULT_MAXNODES 30000
+constexpr std::size_t kDefaultMaxNodes{30000};
 
 ompl::geometric::DRRTstarFN::DRRTstarFN(const base::SpaceInformationPtr& si)
-    : DynamicPlanner(si, "DRRTstarFN") {
-  // setStaticPlanner(std::make_shared<RRTstarFN>(si));
-}
+    : DynamicPlanner(si, "DRRTstarFN") {}
 
-ompl::geometric::DRRTstarFN::~DRRTstarFN() {
-  //    freeMemory();
-}
+ompl::geometric::DRRTstarFN::~DRRTstarFN() { freeMemory(); }
 
 void ompl::geometric::DRRTstarFN::setup() {
-  ;
-  /*
-getStaticPlanner()->setup();
-tools::SelfConfig sc(getSpaceInformation(), getName());
-sc.configurePlannerRange(maxDistance_);
-if (!si_->getStateSpace()->hasSymmetricDistance() ||
-    !si_->getStateSpace()->hasSymmetricInterpolate()) {
-  OMPL_WARN(
-      "%s requires a state space with symmetric distance and symmetric "
-      "interpolation.",
-      getName().c_str());
-}
-
-if (!nn_) {
-  // TODO implement equal sized grid to map the state space
-  nn_.reset(new NearestNeighborsLinear<Motion*>());
-  //
-nn_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(si_->getStateSpace()));
-}
-nn_->setDistanceFunction(std::bind(&DRRTstarFN::distanceFunction, this,
-                                   std::placeholders::_1,
-                                   std::placeholders::_2));
-
-// Setup optimization objective
-//
-// If no optimization objective was specified, then default to
-// optimizing path length as computed by the distance() function
-// in the state space.
-if (pdef_) {
-  if (pdef_->hasOptimizationObjective())
-    opt_ = pdef_->getOptimizationObjective();
-  else {
-    OMPL_INFORM(
-        "%s: No optimization objective specified. Defaulting to optimizing "
-        "path length for the allowed planning time.",
+  DynamicPlanner::setup();
+  tools::SelfConfig sc(getSpaceInformation(), getName());
+  sc.configurePlannerRange(maxDistance_);
+  if (!si_->getStateSpace()->hasSymmetricDistance() ||
+      !si_->getStateSpace()->hasSymmetricInterpolate()) {
+    OMPL_WARN(
+        "%s requires a state space with symmetric distance and symmetric "
+        "interpolation.",
         getName().c_str());
-    opt_.reset(new base::PathLengthOptimizationObjective(si_));
   }
-} else {
-  OMPL_INFORM(
-      "%s: problem definition is not set, deferring setup completion...",
-      getName().c_str());
-  setup_ = false;
-}
-*/
+
+  if (!nn_) {
+    // TODO implement equal sized grid to map the state space
+    nn_.reset(new NearestNeighborsLinear<Motion*>());
+    //
+    nn_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(this));
+  }
+  nn_->setDistanceFunction(std::bind(&DRRTstarFN::distanceFunction, this,
+                                     std::placeholders::_1,
+                                     std::placeholders::_2));
+
+  // Setup optimization objective
+  //
+  // If no optimization objective was specified, then default to
+  // optimizing path length as computed by the distance() function
+  // in the state space.
+  if (pdef_) {
+    if (pdef_->hasOptimizationObjective())
+      opt_ = pdef_->getOptimizationObjective();
+    else {
+      OMPL_INFORM(
+          "%s: No optimization objective specified. Defaulting to optimizing "
+          "path length for the allowed planning time.",
+          getName().c_str());
+      opt_.reset(new base::PathLengthOptimizationObjective(si_));
+    }
+  } else {
+    OMPL_INFORM(
+        "%s: problem definition is not set, deferring setup completion...",
+        getName().c_str());
+    setup_ = false;
+  }
 }
 
 void ompl::geometric::DRRTstarFN::clear() {
-  //  Planner::clear();
-  //  sampler_.reset();
-  //  freeMemory();
-  //  if (nn_) nn_->clear();
+  Planner::clear();
+  sampler_.reset();
+  freeMemory();
+  if (nn_) nn_->clear();
 
-  //  lastGoalMotion_ = nullptr;
-  //  goalMotions_.clear();
+  lastGoalMotion_ = nullptr;
+  goalMotions_.clear();
 
-  //  iterations_ = 0;
-  //  bestCost_ = base::Cost(std::numeric_limits<double>::quiet_NaN());
+  iterations_ = 0;
+  bestCost_ = base::Cost(std::numeric_limits<double>::quiet_NaN());
 }
 
 ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
@@ -754,16 +709,16 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 //  }
 //}
 
-// void ompl::geometric::DRRTstarFN::freeMemory() {
-//  if (nn_) {
-//    std::vector<Motion*> motions;
-//    nn_->list(motions);
-//    for (std::size_t i = 0; i < motions.size(); ++i) {
-//      if (motions[i]->state) si_->freeState(motions[i]->state);
-//      delete motions[i];
-//    }
-//  }
-//}
+void ompl::geometric::DRRTstarFN::freeMemory() {
+  if (nn_) {
+    std::vector<Motion*> motions;
+    nn_->list(motions);
+    for (std::size_t i = 0; i < motions.size(); ++i) {
+      if (motions[i]->state) si_->freeState(motions[i]->state);
+      delete motions[i];
+    }
+  }
+}
 
 // void ompl::geometric::DRRTstarFN::getPlannerData(
 //    base::PlannerData& data) const {

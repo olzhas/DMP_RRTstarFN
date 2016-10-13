@@ -70,20 +70,20 @@ class DRRTstarFN : public base::DynamicPlanner {
   /** \brief Get the range the planner is using */
   double getRange() const { return maxDistance_; }
 
-  //  void setPreviousPath(std::vector<ompl::base::State*> stateList,
-  //                       int stateIndex);
-  //  void nodeCleanUp(ompl::base::State* s);
+  void setPreviousPath(std::vector<ompl::base::State*> stateList,
+                       int stateIndex);
+  void nodeCleanUp(ompl::base::State* s);
 
   virtual void setup();
 
-  //  ///////////////////////////////////////
-  //  // Planner progress property functions
-  //  std::string getIterationCount() const {
-  //    return boost::lexical_cast<std::string>(iterations_);
-  //  }
-  //  std::string getBestCost() const {
-  //    return boost::lexical_cast<std::string>(bestCost_);
-  //  }
+  ///////////////////////////////////////
+  // Planner progress property functions
+  std::string getIterationCount() const {
+    return boost::lexical_cast<std::string>(iterations_);
+  }
+  std::string getBestCost() const {
+    return boost::lexical_cast<std::string>(bestCost_);
+  }
 
   ///
   /// \brief setMaxNodes
@@ -102,46 +102,45 @@ class DRRTstarFN : public base::DynamicPlanner {
   /** \brief Set sampling radius around interim state */
   bool isLocalPlanning() { return localPlanning_; }
 
-  //  /** \brief Set the interim state */
-  //  void setInterimState(base::State* state) { interimState_ = state; }
+  /** \brief Set the interim state */
+  void setInterimState(base::State* state) { interimState_ = state; }
 
-  //  /** \brief Set sampling radius around the interim state */
-  //  void setSampleRadius(double r) { sampleRadius_ = r; }
+  /** \brief Set sampling radius around the interim state */
+  void setSampleRadius(double r) { sampleRadius_ = r; }
 
-  //  /** \brief Remove the states from the tree */
+  /** \brief Remove the states from the tree */
 
   std::size_t removeInvalidNodes();
 
-  //  void prepareDynamic(std::size_t from);
+  void prepareDynamic(std::size_t from);
 
-  //  void evaluateSolutionPath();
+  void evaluateSolutionPath();
 
-  //  /** \brief interpolates the detached solution path and adds nodes in
-  //  between
-  //   * to the tree */
-  //  void populateDetachedPath();
+  /** \brief interpolates the detached solution path and adds nodes in between
+   * to the tree */
+  void populateDetachedPath();
 
-  //  /** \brief remove orphaned nodes from the tree */
+  /** \brief remove orphaned nodes from the tree */
 
-  //  void removeOrphaned();
+  void removeOrphaned();
 
-  //  /** \brief reconnect orphaned nodes to the tree */
-  //  bool reconnect();
+  /** \brief reconnect orphaned nodes to the tree */
+  bool reconnect();
 
-  //  /** \brief selects the branch */
-  //  void selectBranch(ompl::base::State* s);
+  /** \brief selects the branch */
+  void selectBranch(ompl::base::State* s);
 
-  //  void swapNN();
+  void swapNN();
 
-  //  /** \brief Save the state of the tree */
-  //  void restoreTree(const std::string& filename);
+  /** \brief Save the state of the tree */
+  void restoreTree(const std::string& filename);
 
-  //  /** \brief Save the state of the tree */
-  //  void restoreTree(const char* filename);
+  /** \brief Save the state of the tree */
+  void restoreTree(const char* filename);
 
-  //  /** \brief Load the state of the tree */
+  /** \brief Load the state of the tree */
 
-  //  // void loadTree(const char *filename);
+  // void loadTree(const char *filename);
 
   enum NodeType : char { NORMAL = 0, ORPHANED = 1, INVALID = 2 };
 
@@ -186,72 +185,70 @@ class DRRTstarFN : public base::DynamicPlanner {
   /** \brief Free the memory allocated by this planner */
   void freeMemory();
 
-  //  // For sorting a list of costs and getting only their sorted indices
-  //  struct CostIndexCompare {
-  //    CostIndexCompare(const std::vector<base::Cost>& costs,
-  //                     const base::OptimizationObjective& opt)
-  //        : costs_(costs), opt_(opt) {}
-  //    bool operator()(unsigned i, unsigned j) {
-  //      return opt_.isCostBetterThan(costs_[i], costs_[j]);
-  //    }
-  //    const std::vector<base::Cost>& costs_;
-  //    const base::OptimizationObjective& opt_;
-  //  };
+  // For sorting a list of costs and getting only their sorted indices
+  struct CostIndexCompare {
+    CostIndexCompare(const std::vector<base::Cost>& costs,
+                     const base::OptimizationObjective& opt)
+        : costs_(costs), opt_(opt) {}
+    bool operator()(unsigned i, unsigned j) {
+      return opt_.isCostBetterThan(costs_[i], costs_[j]);
+    }
+    const std::vector<base::Cost>& costs_;
+    const base::OptimizationObjective& opt_;
+  };
 
-  //  /** \brief Compute distance between motions (actually distance between
-  //   * contained states) */
-  //  double distanceFunction(const Motion* a, const Motion* b) const {
-  //    return si_->distance(a->state, b->state);
-  //  }
+  /** \brief Compute distance between motions (actually distance between
+   * contained states) */
+  double distanceFunction(const Motion* a, const Motion* b) const {
+    return si_->distance(a->state, b->state);
+  }
 
-  //  /** \brief Removes the given motion from the parent's child list */
-  //  void removeFromParent(Motion* m);
+  /** \brief Removes the given motion from the parent's child list */
+  void removeFromParent(Motion* m);
 
-  //  /** \brief Updates the cost of the children of this node if the cost up to
-  //   * this node has changed */
-  //  void updateChildCosts(Motion* m);
+  /** \brief Updates the cost of the children of this node if the cost up to
+   * this node has changed */
+  void updateChildCosts(Motion* m);
 
-  //  /** \brief Prunes all those states which estimated total cost is higher
-  //  than
-  //    pruneTreeCost.
-  //    Returns the number of motions pruned. Depends on the parameter set by
-  //    setPruneStatesImprovementThreshold() */
-  //  // int pruneTree(const base::Cost pruneTreeCost);
+  /** \brief Prunes all those states which estimated total cost is higher
+  than
+    pruneTreeCost.
+    Returns the number of motions pruned. Depends on the parameter set by
+    setPruneStatesImprovementThreshold() */
+  // int pruneTree(const base::Cost pruneTreeCost);
 
-  //  void verifyTree();
+  void verifyTree();
 
-  //  bool switchToDynamic();
+  bool switchToDynamic();
 
-  //  /** \brief this function is used for reconstruction of the tree from the
-  //  file
-  //   */
-  //  bool traverseTree(const unsigned int n, const ompl::base::PlannerData&
-  //  pdat);
+  /** \brief this function is used for reconstruction of the tree from the
+  file
+   */
+  bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
 
-  //  /** \brief Computes the Cost To Go heuristically as the cost to come from
-  //    start to motion plus
-  //    the cost to go from motion to goal. If \e shortest is true, the
-  //    estimated
-  //    cost to come
-  //    start-motion is given. Otherwise, this cost to come is the current
-  //    motion
-  //    cost. */
-  //  base::Cost costToGo(const Motion* motion, const bool shortest = true)
-  //  const;
+  /** \brief Computes the Cost To Go heuristically as the cost to come from
+    start to motion plus
+    the cost to go from motion to goal. If \e shortest is true, the
+    estimated
+    cost to come
+    start-motion is given. Otherwise, this cost to come is the current
+    motion
+    cost. */
+  base::Cost costToGo(const Motion* motion, const bool shortest = true) const;
 
-  //  /** \brief State sampler */
-  //  base::StateSamplerPtr sampler_;
+  /** \brief State sampler */
+  base::StateSamplerPtr sampler_;
 
-  //  /** \brief A nearest-neighbors datastructure containing the tree of
-  //  motions */
-  //  std::shared_ptr<NearestNeighbors<Motion*> > nn_;
+  /** \brief A nearest-neighbors datastructure containing the tree of
+  motions */
+  std::shared_ptr<NearestNeighbors<Motion*> > nn_;
 
-  //  /** \brief A nearest-neighbors datastructure containing the subtree of
-  //  motions
-  //   */
+  /** \brief A nearest-neighbors datastructure containing the subtree of
+  motions
+   */
 
-  //  std::shared_ptr<NearestNeighbors<Motion*> > subTreeNN_;
-  //  std::shared_ptr<NearestNeighbors<Motion*> > bakNN_;
+  std::shared_ptr<NearestNeighbors<Motion*> > subTreeNN_;
+  std::shared_ptr<NearestNeighbors<Motion*> > bakNN_;
 
   /** \brief The fraction of time the goal is picked as the state to expand
    * towards (if such a state is available) */
