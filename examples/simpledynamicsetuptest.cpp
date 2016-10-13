@@ -1,9 +1,9 @@
-#include <Eigen/Eigen>
 #include <dart/common/common.h>
+#include <Eigen/Eigen>
 
-#include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/PlannerDataStorage.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
+#include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
 #include <ompl/config.h>
 #include <ompl/util/Exception.h>
@@ -16,9 +16,9 @@
 #include <iostream>
 #include <memory>
 
-#include "ompl/geometric/planners/rrt/RRTstarFND.h"
-#include "ompl/geometric/DynamicSimpleSetup.h"
 #include "model.h"
+#include "ompl/geometric/DynamicSimpleSetup.h"
+#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -47,10 +47,10 @@ class DubinsCarEnvironment {
     dss_->setStateValidityChecker(
         std::bind(&Model::isStateValid, pModel_, std::placeholders::_1));
     space->setup();
-    dss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(spaceInfo)));
-    dss_->getPlanner()->as<og::DRRTstarFN>()->setRange(35.0);
-    dss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
-    dss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
+    //dss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(spaceInfo)));
+    //dss_->getPlanner()->as<og::DRRTstarFN>()->setRange(35.0);
+    //dss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
+    //dss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
 
     ob::ScopedState<> start(dss_->getStateSpace());
     start[0] = 80;
@@ -61,12 +61,11 @@ class DubinsCarEnvironment {
     dss_->setStartAndGoalStates(start, goal);
     // generate a few solutions; all will be added to the goal;
 
-    dss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0015);
-    std::function<bool(void)> dummyLambda =  []() -> bool {return true;};
+    //dss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0015);
+    std::function<bool(void)> dummyLambda = []() -> bool { return true; };
     dss_->setSolutionValidityFunction(dummyLambda);
 
     dss_->setIterationRoutine(dummyLambda);
-
   }
 
   void loop() {
@@ -87,7 +86,6 @@ class DubinsCarEnvironment {
 };
 
 int main() {
-
   DubinsCarEnvironment env;
   env.loop();
 

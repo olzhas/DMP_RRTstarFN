@@ -51,7 +51,9 @@ class DynamicSimpleSetup {
     ss_->setStartAndGoalStates(start, goal);
   }
 
-  void setPlanner(const base::PlannerPtr& planner) { ss_->setPlanner(planner); }
+  void setPlanner(const base::DynamicPlannerPtr& dynamicPlanner) {
+    ss_->setPlanner(dynamicPlanner_->getStaticPlanner());
+  }
 
   void setStateValidityChecker(const base::StateValidityCheckerFn& svc) {
     ss_->setStateValidityChecker(svc);

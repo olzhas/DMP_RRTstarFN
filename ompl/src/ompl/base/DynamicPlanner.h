@@ -14,17 +14,42 @@ class DynamicPlanner {
 
   virtual ~DynamicPlanner() { ; }
 
-  void prepare();
+  virtual void prepare();
+  virtual void prePause();
+  virtual void postPause();
+  virtual void preReact();
+  virtual void postReact();
+  virtual void preMove();
+  virtual void postMove();
 
-  void prePause();
-  void postPause();
-  void preReact();
-  void postReact();
+  ///
+  /// \brief getName
+  /// \return
+  ///
+  std::string getName() const { return name_; }
 
-  void preMove();
-  void postMove();
+  ///
+  /// \brief setName
+  /// \param name
+  ///
+  void setName(const std::string &name) { name_ = name; }
 
+  ///
+  /// \brief getStaticPlanner
+  /// \return
+  ///
+  base::PlannerPtr getStaticPlanner() const { return planner_; }
+
+  ///
+  /// \brief setStaticPlanner
+  /// \param planner
+  ///
+  void setStaticPlanner(const PlannerPtr &planner) { planner_ = planner; }
+
+ private:
+  std::string name_;
   PlannerPtr planner_;
+  SpaceInformationPtr si_;
 };
 
 typedef std::shared_ptr<DynamicPlanner> DynamicPlannerPtr;

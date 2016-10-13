@@ -1,6 +1,6 @@
 #include "ompl/geometric/DynamicSimpleSetup.h"
 #include <ompl/util/Exception.h>
-#include "ompl/geometric/planners/rrt/RRTstarFND.h"
+#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
 
 namespace ompl {
 namespace geometric {
@@ -139,33 +139,33 @@ void DynamicSimpleSetup::pause() {
 }
 
 void DynamicSimpleSetup::react() {
-  if (!planner_) {
+  if (!ss_->getPlanner()) {
     OMPL_ERROR("motion planner is not assigned");
     return;
   }
   OMPL_INFORM("initiating a reaction routine...");
-  if (planner_ && !planner_->params().hasParam("dynamic")) {
+  if (ss_->getPlanner() && !ss_->getPlanner()->params().hasParam("dynamic")) {
     OMPL_ERROR("Planner does not contain dynamic parameter");
   }
 
-  planner_->params().getParam("dynamic")->setValue("true");
+  ss_->getPlanner()->params().getParam("dynamic")->setValue("true");
 
-  // TODO rewrite in more generic way
-  ss_->getPlanner()->as<DRRTstarFN>()->prepareDynamic(step_);
-  std::size_t nodesRemoved =
-      ss_->getPlanner()->as<DRRTstarFN>()->removeInvalidNodes();
-  OMPL_INFORM("Nodes removed during clean-up phase: %d", nodesRemoved);
-  // ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
-  bool is_reconnected = ss_->getPlanner()->as<DRRTstarFN>()->reconnect();
-  ss_->getProblemDefinition()->clearSolutionPaths();
-  ss_->getPlanner()->as<DRRTstarFN>()->evaluateSolutionPath();
+//  // TODO rewrite in more generic way
+//  ss_->getPlanner()->as<DRRTstarFN>()->prepareDynamic(step_);
+//  std::size_t nodesRemoved =
+//      ss_->getPlanner()->as<DRRTstarFN>()->removeInvalidNodes();
+//  OMPL_INFORM("Nodes removed during clean-up phase: %d", nodesRemoved);
+//  // ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
+//  bool is_reconnected = ss_->getPlanner()->as<DRRTstarFN>()->reconnect();
+//  ss_->getProblemDefinition()->clearSolutionPaths();
+//  ss_->getPlanner()->as<DRRTstarFN>()->evaluateSolutionPath();
 
-  if (!is_reconnected) {
-    ompl::base::PlannerTerminationCondition ptc(
-        ompl::base::exactSolnPlannerTerminationCondition(
-            ss_->getProblemDefinition()));
-    ss_->solve(ptc);
-  }
+//  if (!is_reconnected) {
+//    ompl::base::PlannerTerminationCondition ptc(
+//        ompl::base::exactSolnPlannerTerminationCondition(
+//            ss_->getProblemDefinition()));
+//    ss_->solve(ptc);
+//  }
 
   OMPL_WARN("completed a reaction routine.");
 }
