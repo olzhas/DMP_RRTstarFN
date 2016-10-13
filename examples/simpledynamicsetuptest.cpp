@@ -42,15 +42,16 @@ class DubinsCarEnvironment {
     space->as<ob::SE2StateSpace>()->setBounds(bounds);
 
     // set state validity checking for this space
-    ob::SpaceInformationPtr spaceInfo = dss_->getSpaceInformation();
+    ob::SpaceInformationPtr si = dss_->getSpaceInformation();
     pModel_->setSpaceInformation(dss_->getSpaceInformation());
     dss_->setStateValidityChecker(
         std::bind(&Model::isStateValid, pModel_, std::placeholders::_1));
     space->setup();
-    //dss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(spaceInfo)));
-    //dss_->getPlanner()->as<og::DRRTstarFN>()->setRange(35.0);
-    //dss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
-    //dss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
+    dss_->setPlanner(ob::DynamicPlannerPtr(new og::DRRTstarFN(si)));
+    // dss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(spaceInfo)));
+    // dss_->getPlanner()->as<og::DRRTstarFN>()->setRange(35.0);
+    // dss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
+    // dss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
 
     ob::ScopedState<> start(dss_->getStateSpace());
     start[0] = 80;
@@ -61,7 +62,7 @@ class DubinsCarEnvironment {
     dss_->setStartAndGoalStates(start, goal);
     // generate a few solutions; all will be added to the goal;
 
-    //dss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0015);
+    // dss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0015);
     std::function<bool(void)> dummyLambda = []() -> bool { return true; };
     dss_->setSolutionValidityFunction(dummyLambda);
 

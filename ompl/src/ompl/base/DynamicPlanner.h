@@ -6,6 +6,7 @@
 namespace ompl {
 namespace base {
 class DynamicPlanner {
+
  public:
   // non-copyable
   DynamicPlanner(const DynamicPlanner &) = delete;
@@ -13,6 +14,7 @@ class DynamicPlanner {
   DynamicPlanner(const SpaceInformationPtr &si, const std::string &name);
 
   virtual ~DynamicPlanner() { ; }
+
 
   virtual void prepare();
   virtual void prePause();

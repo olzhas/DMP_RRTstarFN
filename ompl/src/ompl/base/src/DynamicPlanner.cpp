@@ -9,5 +9,13 @@ DynamicPlanner::DynamicPlanner(const SpaceInformationPtr &si,
   if (!si_)
     throw Exception(name_, "Invalid space information instance for planner");
 }
+
+void DynamicPlanner::prepare() { ; }
+void DynamicPlanner::prePause() { ; }
+void DynamicPlanner::postPause() { ; }
+void DynamicPlanner::preReact() { ; }
+void DynamicPlanner::postReact() { ; }
+void DynamicPlanner::preMove() { ; }
+void DynamicPlanner::postMove() { ; }
 }
 }
