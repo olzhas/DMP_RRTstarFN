@@ -23,15 +23,19 @@
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
+constexpr double kMaxHeight = 1000;
+constexpr double kMaxWidth = 1000;
+constexpr char kPrecomputedDataFilename[] = "sss";
 const std::string kPlaceholder = "data/obstacles/test.map";
 
 class DubinsCarEnvironment {
  public:
   DubinsCarEnvironment()
-      : maxWidth_(1000), maxHeight_(1000), pModel_(new Model(kPlaceholder)) {
-    ob::StateSpacePtr space(new ob::DubinsStateSpace(100));
-    //   if(dss_.use_count() == 0)
-    //    delete dss_.get();
+      : maxWidth_(kMaxWidth),
+        maxHeight_(kMaxHeight),
+        pModel_(new Model(kPlaceholder)) {
+    ob::StateSpacePtr space(new ob::DubinsStateSpace(5));
+
     dss_.reset(new og::DynamicSimpleSetup(space));
 
     ob::RealVectorBounds bounds(2);
@@ -42,16 +46,17 @@ class DubinsCarEnvironment {
     space->as<ob::SE2StateSpace>()->setBounds(bounds);
 
     // set state validity checking for this space
-    ob::SpaceInformationPtr si = dss_->getSpaceInformation();
-    pModel_->setSpaceInformation(dss_->getSpaceInformation());
+    const ob::SpaceInformationPtr& si = dss_->getSpaceInformation();
+    pModel_->setSpaceInformation(si);
     dss_->setStateValidityChecker(
         std::bind(&Model::isStateValid, pModel_, std::placeholders::_1));
     space->setup();
-     dss_->setPlanner(ob::DynamicPlannerPtr(new og::DRRTstarFN(si)));
-    // dss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(spaceInfo)));
-    // dss_->getPlanner()->as<og::DRRTstarFN>()->setRange(35.0);
-    // dss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(15000);
-    // dss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
+
+    auto planner = std::make_shared<og::DRRTstarFN>(si);
+    planner->setRange(35.0);
+    planner->setMaxNodes(15000);
+    si->setStateValidityCheckingResolution(0.01125);
+    dss_->setDynamicPlanner(ob::DynamicPlannerPtr(planner));
 
     ob::ScopedState<> start(dss_->getStateSpace());
     start[0] = 80;
@@ -60,11 +65,14 @@ class DubinsCarEnvironment {
     goal[0] = 700;
     goal[1] = 700;
     dss_->setStartAndGoalStates(start, goal);
-    // generate a few solutions; all will be added to the goal;
 
-    // dss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(0.0015);
+    planner->setGoalBias(0.0015);
+
     std::function<bool(void)> dummyLambda = []() -> bool { return true; };
     dss_->setSolutionValidityFunction(dummyLambda);
+
+    std::ifstream precompDataFileStream(kPrecomputedDataFilename);
+    dss_->loadPrecomputedData(precompDataFileStream);
   }
 
   void launch() {

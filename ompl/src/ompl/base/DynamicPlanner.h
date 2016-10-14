@@ -18,6 +18,7 @@ class DynamicPlanner : public base::Planner {
   virtual ~DynamicPlanner() { ; }
 
   virtual void prepare();
+  virtual void react();
   virtual void prePause();
   virtual void postPause();
   virtual void preReact();
@@ -25,6 +26,8 @@ class DynamicPlanner : public base::Planner {
   virtual void preMove();
   virtual void postMove();
 };
+
+typedef std::function<base::DynamicPlannerPtr(const base::SpaceInformationPtr&)> DynamicPlannerAllocator;
 }
 }
 

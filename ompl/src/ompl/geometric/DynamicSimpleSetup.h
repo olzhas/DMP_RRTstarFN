@@ -55,7 +55,9 @@ class DynamicSimpleSetup {
   const base::DynamicPlannerPtr &getDynamicPlanner() const { return planner_; }
 
   /** \brief Get the planner allocator */
-  const base::PlannerAllocator &getPlannerAllocator() const { return pa_; }
+  const base::DynamicPlannerAllocator &getPlannerAllocator() const {
+    return pa_;
+  }
 
   /** \brief Get the path simplifier */
   const PathSimplifierPtr &getPathSimplifier() const { return psk_; }
@@ -139,7 +141,7 @@ class DynamicSimpleSetup {
       set, an attempt is made to use the planner
       allocator. If no planner allocator is available
       either, a default planner is set. */
-  void setPlanner(const base::DynamicPlannerPtr &planner) {
+  void setDynamicPlanner(const base::DynamicPlannerPtr &planner) {
     if (planner && planner->getSpaceInformation().get() != si_.get())
       throw Exception("Planner instance does not match space information");
     planner_ = planner;
@@ -149,7 +151,7 @@ class DynamicSimpleSetup {
   /** \brief Set the planner allocator to use. This is only
       used if no planner has been set. This is optional -- a default
       planner will be used if no planner is otherwise specified. */
-  void setPlannerAllocator(const base::PlannerAllocator &pa) {
+  void setPlannerAllocator(const base::DynamicPlannerAllocator &pa) {
     pa_ = pa;
     planner_.reset();
     configured_ = false;
@@ -187,7 +189,7 @@ class DynamicSimpleSetup {
   void saveSolution(const std::string &);
 
   /** \brief */
-  void loadPrecomputedPlannerData();
+  void loadPrecomputedData();
 
   /** \brief drive the robot */
   bool runSolutionLoop();
@@ -201,6 +203,21 @@ class DynamicSimpleSetup {
   void setSolutionValidityFunction(std::function<bool(void)> &fn);
   void setIterationRoutine(std::function<bool(void)> &fn);
 
+  void loadPrecomputedData(std::istream &is) {
+    ompl::base::PlannerData pdat(si_);
+    ompl::base::PlannerDataStorage pdstorage;
+    pdstorage.load(is, pdat);
+    hasPrecomputedData_ = true;
+  }
+
+  //==============================================================================
+  void store(const std::string &filename) {
+    // Get the planner data to visualize the vertices and the edges
+    ompl::base::PlannerData pdat(si_);
+    ompl::base::PlannerDataStorage pdstorage;
+    pdstorage.store(pdat, filename.c_str());
+  }
+
  private:
   /** \brief time step between regular obstacle collision routine in
    * milliseconds */
@@ -209,17 +226,14 @@ class DynamicSimpleSetup {
 
   std::chrono::milliseconds timestep_;  // dt
 
-  /** \brief call back for obstacle collision routine */
-  bool (*collisionChecker)();
-
   /** \brief reaction routine */
   void react();
 
   /** \brief work on problem */
-  void plan();
+  base::PlannerStatus plan(double t = 1.0);
 
-  /** \brief preparation step for the dynamic motion planning */
-  void prepare();
+  /** \brief work on problem */
+  base::PlannerStatus plan(const base::PlannerTerminationCondition &ptc);
 
   /** \brief increment motion */
   bool move();
@@ -246,7 +260,15 @@ class DynamicSimpleSetup {
   void stopLoggerThread();
 
   /** \brief load precomputed data from file ?*/
-  bool loadPrecomputedData_ = false;
+  bool hasPrecomputedData_ = false;
+
+  /** \brief file name with precomputed data for planner */
+  std::string precomputedDataFilename;
+
+  /**
+   * \brief keepPrecomputedData_
+   */
+  bool keepPrecomputedData_ = false;
 
   /** \brief motion termination flag */
   bool completedMotion_ = false;
@@ -285,7 +307,7 @@ class DynamicSimpleSetup {
   base::DynamicPlannerPtr planner_;
 
   /// The optional planner allocator
-  base::PlannerAllocator pa_;
+  base::DynamicPlannerAllocator pa_;
 
   /// The instance of the path simplifier
   PathSimplifierPtr psk_;

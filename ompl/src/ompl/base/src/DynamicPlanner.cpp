@@ -17,5 +17,7 @@ void DynamicPlanner::preReact() { ; }
 void DynamicPlanner::postReact() { ; }
 void DynamicPlanner::preMove() { ; }
 void DynamicPlanner::postMove() { ; }
-}
-}
+void DynamicPlanner::react() { ; }
+
+}  // base
+}  // ompl

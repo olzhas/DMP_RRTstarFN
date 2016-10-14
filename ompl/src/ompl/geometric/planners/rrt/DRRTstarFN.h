@@ -26,20 +26,21 @@ class DRRTstarFN : public base::DynamicPlanner {
 
   virtual ~DRRTstarFN();
 
-  void prepare() { ; }
-  void prePause() { ; }
-  void postPause() { ; }
-  void preReact() { ; }
-  void postReact() {}
-  void preMove() { ; }
-  void postMove() { ; }
-
-  virtual base::PlannerStatus solve(
-      const base::PlannerTerminationCondition& ptc);
+  virtual void prepare() { ; }
+  virtual void react() { OMPL_WARN("reacting...\nstub call"); }
+  virtual void prePause() { ; }
+  virtual void postPause() { ; }
+  virtual void preReact() { ; }
+  virtual void postReact() {}
+  virtual void preMove() { ; }
+  virtual void postMove() { ; }
 
   virtual void getPlannerData(base::PlannerData& data) const;
 
   virtual void clear();
+
+  virtual base::PlannerStatus solve(
+      const base::PlannerTerminationCondition& ptc);
 
   /** \brief Set the goal bias
 

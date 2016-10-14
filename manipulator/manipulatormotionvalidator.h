@@ -4,7 +4,7 @@
 #include <ompl/base/spaces/RealVectorStateSpace.h>
 
 #include "configuration.h"
-#include "ompl/geometric/planners/rrt/RRTstarFND.h"
+#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
 
 namespace ob = ompl::base;
 
