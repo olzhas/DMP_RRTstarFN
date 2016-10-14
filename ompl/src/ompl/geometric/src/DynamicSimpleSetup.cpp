@@ -36,10 +36,16 @@ void ompl::geometric::DynamicSimpleSetup::setup() {
       }
     }
     planner_->setProblemDefinition(pdef_);
-    if (!planner_->isSetup()) planner_->setup();
+    if (!planner_->isSetup()) {
+      planner_->setup();
+      if (hasPrecomputedData_) {
+        OMPL_WARN("    s");  //
+      }
+    }
     configured_ = true;
   }
 
+  /*
   if (!hasPrecomputedData_) {
     OMPL_INFORM(
         "No precomputed data, preparing the dynamic planner for navigation");
@@ -65,6 +71,17 @@ void ompl::geometric::DynamicSimpleSetup::setup() {
       saveSolution(solutionFilename);
     }
   }
+  */
+}
+
+
+void DynamicSimpleSetup::readPrecomputedData(std::istream &is){
+    ompl::base::PlannerData pd(si_);
+    ompl::base::PlannerDataStorage pdstorage;
+
+    pdstorage.load(is, pd);
+
+    planner_->setPlannerData(pd);
 }
 
 void DynamicSimpleSetup::clear() {
@@ -74,7 +91,6 @@ void DynamicSimpleSetup::clear() {
 
 bool DynamicSimpleSetup::runSolutionLoop() {
   startLoggerThread();
-
   setup();
 
   bool terminate = false;
@@ -178,8 +194,6 @@ void DynamicSimpleSetup::react() {
       !getDynamicPlanner()->params().hasParam("dynamic")) {
     OMPL_ERROR("Planner does not contain dynamic parameter");
   }
-
-  getDynamicPlanner()->params().getParam("dynamic")->setValue("true");
 
   // TODO rewrite in more generic way
   getDynamicPlanner()->preReact();

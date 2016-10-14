@@ -757,6 +757,53 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
     }
   }
 }
+
+void ompl::geometric::DRRTstarFN::setPlannerData(
+    const ompl::base::PlannerData& data) {
+  DynamicPlanner::setPlannerData(data);
+  std::function<bool(Motion*)> isMajorTree;
+  isMajorTree = [&](Motion* m) -> bool {
+
+    if (m == nullptr) return true;
+
+    if (m->parent == nullptr && m->nodeType == NORMAL)
+      return true;
+    else if (m->nodeType == ORPHANED)
+      return false;
+    else
+      return isMajorTree(m->parent);
+  };
+
+  std::vector<Motion*> motions;
+
+  data.getStartVertex(0);
+
+  for (std::size_t i = 0; i != data.numVertices(); ++i) {
+    ompl::base::PlannerDataVertex v = data.getVertex(i);
+    Motion* m = new Motion(si_);
+    si_->copyState(m->state, v.getState());
+    m->parent = nullptr;
+    motions.push_back(m);
+
+    if (data.isStartVertex(i)) {
+      pdef_->setStartAndGoalStates(v.getState(), v.getState());
+    }
+
+    if (data.isGoalVertex(i)) {
+      pdef_->setGoalState(v.getState());
+    }
+  }
+
+  for (std::size_t i = 0; i != data.numEdges(); ++i) {
+    std::vector<unsigned int> edgeList;
+    data.getEdges(i, edgeList);
+
+    for (const auto& num : edgeList) {
+      motions[i]->children.push_back(motions[num]);
+      motions[num]->parent = motions[i];
+    }
+  }
+}
 //==============================================================================
 ompl::base::Cost ompl::geometric::DRRTstarFN::costToGo(
     const Motion* motion, const bool shortest) const {

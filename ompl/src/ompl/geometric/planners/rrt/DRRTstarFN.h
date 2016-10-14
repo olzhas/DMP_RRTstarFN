@@ -37,6 +37,12 @@ class DRRTstarFN : public base::DynamicPlanner {
 
   virtual void getPlannerData(base::PlannerData& data) const;
 
+  /**
+   * @brief setPlannerData
+   * @param data
+   */
+  virtual void setPlannerData(const base::PlannerData& data);
+
   virtual void clear();
 
   virtual base::PlannerStatus solve(

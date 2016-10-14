@@ -72,7 +72,7 @@ class DubinsCarEnvironment {
     dss_->setSolutionValidityFunction(dummyLambda);
 
     std::ifstream precompDataFileStream(kPrecomputedDataFilename);
-    dss_->loadPrecomputedData(precompDataFileStream);
+    dss_->readPrecomputedData(precompDataFileStream);
   }
 
   void launch() {

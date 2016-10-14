@@ -191,6 +191,10 @@ class DynamicSimpleSetup {
   /** \brief */
   void loadPrecomputedData();
 
+  /** \brief */
+
+  void readPrecomputedData(std::istream &is);
+
   /** \brief drive the robot */
   bool runSolutionLoop();
 
@@ -261,9 +265,6 @@ class DynamicSimpleSetup {
 
   /** \brief load precomputed data from file ?*/
   bool hasPrecomputedData_ = false;
-
-  /** \brief file name with precomputed data for planner */
-  std::string precomputedDataFilename;
 
   /**
    * \brief keepPrecomputedData_

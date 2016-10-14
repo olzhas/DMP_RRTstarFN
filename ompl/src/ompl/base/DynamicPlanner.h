@@ -25,9 +25,13 @@ class DynamicPlanner : public base::Planner {
   virtual void postReact();
   virtual void preMove();
   virtual void postMove();
+
+  virtual void setPlannerData(const ompl::base::PlannerData &data);
 };
 
-typedef std::function<base::DynamicPlannerPtr(const base::SpaceInformationPtr&)> DynamicPlannerAllocator;
+typedef std::function<base::DynamicPlannerPtr(
+    const base::SpaceInformationPtr &)>
+    DynamicPlannerAllocator;
 }
 }
 
