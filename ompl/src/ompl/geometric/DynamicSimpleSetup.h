@@ -90,6 +90,10 @@ class DynamicSimpleSetup {
    * planner used. */
   void getPlannerData(base::PlannerData &pd) const;
 
+  /** \brief Set information about the exploration data structure the motion
+   * planner used. */
+  void setPlannerData(base::PlannerData &pd);
+
   /** \brief Set the state validity checker to use */
   void setStateValidityChecker(const base::StateValidityCheckerPtr &svc) {
     si_->setStateValidityChecker(svc);
@@ -188,14 +192,18 @@ class DynamicSimpleSetup {
   ///
   void saveSolution(const std::string &);
 
-  /** \brief */
-  void loadPrecomputedData();
-
-  /** \brief */
+  /** \brief this method reads data from the stream */
 
   void readPrecomputedData(std::istream &is);
 
-  /** \brief drive the robot */
+  /** \brief this method makes */
+
+  void enableKeepComputedData() { keepComputedData_ = true; }
+
+  /** \brief this method makes */
+  void disableKeepComputedData() { keepComputedData_ = false; }
+
+  /** \brief this method implements the solution loop with reactive planning */
   bool runSolutionLoop();
 
   /** \brief user supplied prepeartion routine*/
@@ -208,27 +216,38 @@ class DynamicSimpleSetup {
   void setIterationRoutine(std::function<bool(void)> &fn);
 
   void loadPrecomputedData(std::istream &is) {
-    ompl::base::PlannerData pdat(si_);
+    ompl::base::PlannerData pd(si_);
     ompl::base::PlannerDataStorage pdstorage;
-    pdstorage.load(is, pdat);
+    pdstorage.load(is, pd);
     hasPrecomputedData_ = true;
+    setPlannerData(pd);
   }
 
   //==============================================================================
-  void store(const std::string &filename) {
+  void saveComputedData(std::ostream &os) {
     // Get the planner data to visualize the vertices and the edges
-    ompl::base::PlannerData pdat(si_);
+    ompl::base::PlannerData pd(si_);
+    getPlannerData(pd);
     ompl::base::PlannerDataStorage pdstorage;
-    pdstorage.store(pdat, filename.c_str());
+    pdstorage.store(pd, os);
   }
 
- private:
+  /**
+   * \brief this method does preparation for the dynamic motion planning this
+   * can include heavily computational tasks
+   */
+  void preplan();
+
+  std::chrono::milliseconds getTimestep() const;
+  void setTimestep(const std::chrono::milliseconds &timestep);
+
+private:
   /** \brief time step between regular obstacle collision routine in
    * milliseconds */
 
   ompl::base::DynamicPlannerPtr dynamicPlanner_ = nullptr;
 
-  std::chrono::milliseconds timestep_;  // dt
+  std::chrono::milliseconds timestep_ = std::chrono::milliseconds(30);  // dt
 
   /** \brief reaction routine */
   void react();
@@ -269,7 +288,7 @@ class DynamicSimpleSetup {
   /**
    * \brief keepPrecomputedData_
    */
-  bool keepPrecomputedData_ = false;
+  bool keepComputedData_ = false;
 
   /** \brief motion termination flag */
   bool completedMotion_ = false;

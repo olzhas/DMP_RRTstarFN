@@ -109,17 +109,11 @@ class RRTstarFN : public base::Planner {
   /** \brief Get the state of the delayed collision checking option */
   bool getDelayCC() const { return delayCC_; }
 
-  //  /** \brief Controls whether the tree is pruned during the search. */
-  //  void setPrune(const bool prune)
-  //  {
-  //    prune_ = prune;
-  //  }
+  /** \brief Controls whether the tree is pruned during the search. */
+  void setPrune(const bool prune) { prune_ = prune; }
 
-  //  /** \brief Get the state of the pruning option. */
-  //  bool getPrune() const
-  //  {
-  //    return prune_;
-  //  }
+  /** \brief Get the state of the pruning option. */
+  bool getPrune() const { return prune_; }
 
   /** \brief Set the percentage threshold (between 0 and 1) for pruning the
     tree. If the new tree has removed
@@ -261,7 +255,7 @@ class RRTstarFN : public base::Planner {
   std::vector<Motion *> goalMotions_;
 
   /** \brief If this value is set to true, tree pruning will be enabled. */
-  // bool                                           prune_;
+  bool prune_;
 
   /** \brief The tree is only pruned is the percentage of states to prune is
    * above this threshold (between 0 and 1). */

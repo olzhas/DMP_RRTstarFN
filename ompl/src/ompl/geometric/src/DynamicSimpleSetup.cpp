@@ -38,50 +38,18 @@ void ompl::geometric::DynamicSimpleSetup::setup() {
     planner_->setProblemDefinition(pdef_);
     if (!planner_->isSetup()) {
       planner_->setup();
-      if (hasPrecomputedData_) {
-        OMPL_WARN("    s");  //
-      }
     }
     configured_ = true;
   }
-
-  /*
-  if (!hasPrecomputedData_) {
-    OMPL_INFORM(
-        "No precomputed data, preparing the dynamic planner for navigation");
-
-    // here we look for the solution.
-    ompl::base::PlannerTerminationCondition ptc(
-        ompl::base::exactSolnPlannerTerminationCondition(
-            getProblemDefinition()));
-
-    plan(ptc);
-
-    try {
-      PathGeometric &p = getSolutionPath();
-      p.interpolate();
-      pathLength_ = p.getStateCount();
-    } catch (ompl::Exception e) {
-      OMPL_ERROR("No solution, man\n");
-    }
-
-    bool saveSolutionFlag = true;
-    if (saveSolutionFlag) {
-      const std::string solutionFilename("dynamicsimplesetup.dump");
-      saveSolution(solutionFilename);
-    }
-  }
-  */
 }
 
-
-void DynamicSimpleSetup::readPrecomputedData(std::istream &is){
-    ompl::base::PlannerData pd(si_);
-    ompl::base::PlannerDataStorage pdstorage;
-
-    pdstorage.load(is, pd);
-
-    planner_->setPlannerData(pd);
+void DynamicSimpleSetup::readPrecomputedData(std::istream &is) {
+  setup();
+  clear();
+  ompl::base::PlannerData pd(si_);
+  ompl::base::PlannerDataStorage pdstorage;
+  pdstorage.load(is, pd);
+  planner_->setPlannerData(pd);
 }
 
 void DynamicSimpleSetup::clear() {
@@ -91,12 +59,16 @@ void DynamicSimpleSetup::clear() {
 
 bool DynamicSimpleSetup::runSolutionLoop() {
   startLoggerThread();
+
   setup();
 
+  preplan();
+
   bool terminate = false;
+  auto tNow = std::chrono::high_resolution_clock::now();
+  std::size_t i = 0;
 
   while (!terminate) {
-    auto tNow = std::chrono::high_resolution_clock::now();
     updateEnvironment();
     if (!validSolution()) {
       pause();
@@ -108,7 +80,7 @@ bool DynamicSimpleSetup::runSolutionLoop() {
 
     if (iterationRoutine_) iterationRoutine_();
 
-    std::this_thread::sleep_until(tNow + timestep_);
+    std::this_thread::sleep_until(tNow + timestep_ * (++i));
 #ifdef DEBUG
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(
                   std::chrono::high_resolution_clock::now() - tNow)
@@ -140,13 +112,17 @@ bool DynamicSimpleSetup::validSolution() {
 bool DynamicSimpleSetup::move() {
   if (pauseMotion_) return true;
 
-  pathLength_ = pSolutionPath->getStateCount();
+  if (pSolutionPath) {
+    pathLength_ = pSolutionPath->getStateCount();
 
-  if (step_ < pathLength_ && !completedMotion_) {
-    OMPL_INFORM("moving... %d", step_);
-    step_++;
-    return true;
+    if (step_ < pathLength_ && !completedMotion_) {
+      OMPL_INFORM("moving... %d", step_);
+      step_++;
+      return true;
+    }
   }
+
+  OMPL_ERROR("No solution, can't move...");
 
   return false;
 }
@@ -235,17 +211,6 @@ void DynamicSimpleSetup::stopLoggerThread() {
 }
 
 void DynamicSimpleSetup::saveSolution(const std::string &fname) {
-  // Get the planner data to visualize the vertices and the edges
-  ompl::base::PlannerData pdat(getSpaceInformation());
-  getPlannerData(pdat);
-
-  ompl::base::PlannerDataStorage pdstorage;
-
-  pdstorage.store(pdat, fname.c_str());
-
-  // FIX code duplicate ???
-  OMPL_WARN("saving solution information...");
-
   if (!haveSolutionPath()) {
     OMPL_ERROR("No solution, there is nothing to record");
     return;
@@ -393,6 +358,10 @@ void DynamicSimpleSetup::getPlannerData(base::PlannerData &pd) const {
   if (planner_) planner_->getPlannerData(pd);
 }
 
+void DynamicSimpleSetup::setPlannerData(base::PlannerData &pd) {
+  if (planner_) planner_->setPlannerData(pd);
+}
+
 void DynamicSimpleSetup::print(std::ostream &out) const {
   if (si_) {
     si_->printProperties(out);
@@ -403,6 +372,44 @@ void DynamicSimpleSetup::print(std::ostream &out) const {
     planner_->printSettings(out);
   }
   if (pdef_) pdef_->print(out);
+}
+
+void DynamicSimpleSetup::preplan() {
+  if (!hasPrecomputedData_) {
+    OMPL_INFORM(
+        "No precomputed data, preparing the dynamic planner for navigation");
+
+    // here we look for the solution.
+    ompl::base::PlannerTerminationCondition ptc(
+        ompl::base::exactSolnPlannerTerminationCondition(
+            getProblemDefinition()));
+
+    plan(ptc);
+
+    try {
+      PathGeometric &p = getSolutionPath();
+      p.interpolate();
+      pathLength_ = p.getStateCount();
+    } catch (ompl::Exception e) {
+      OMPL_ERROR("No solution, man!");
+      OMPL_ERROR(e.what());
+    }
+
+    if (keepComputedData_) {
+      std::ofstream solution_file("dynamicsimplesetup.dump");
+      saveComputedData(solution_file);
+    }
+  }
+}
+
+std::chrono::milliseconds DynamicSimpleSetup::getTimestep() const
+{
+    return timestep_;
+}
+
+void DynamicSimpleSetup::setTimestep(const std::chrono::milliseconds &timestep)
+{
+    timestep_ = timestep;
 }
 
 }  // geometric

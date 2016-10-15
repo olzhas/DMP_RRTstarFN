@@ -761,24 +761,9 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
 void ompl::geometric::DRRTstarFN::setPlannerData(
     const ompl::base::PlannerData& data) {
   DynamicPlanner::setPlannerData(data);
-  std::function<bool(Motion*)> isMajorTree;
-  isMajorTree = [&](Motion* m) -> bool {
-
-    if (m == nullptr) return true;
-
-    if (m->parent == nullptr && m->nodeType == NORMAL)
-      return true;
-    else if (m->nodeType == ORPHANED)
-      return false;
-    else
-      return isMajorTree(m->parent);
-  };
-
   std::vector<Motion*> motions;
 
-  data.getStartVertex(0);
-
-  for (std::size_t i = 0; i != data.numVertices(); ++i) {
+  for (unsigned int i = 0; i != data.numVertices(); ++i) {
     ompl::base::PlannerDataVertex v = data.getVertex(i);
     Motion* m = new Motion(si_);
     si_->copyState(m->state, v.getState());
@@ -794,7 +779,7 @@ void ompl::geometric::DRRTstarFN::setPlannerData(
     }
   }
 
-  for (std::size_t i = 0; i != data.numEdges(); ++i) {
+  for (unsigned int i = 0; i != data.numEdges(); ++i) {
     std::vector<unsigned int> edgeList;
     data.getEdges(i, edgeList);
 
@@ -803,6 +788,11 @@ void ompl::geometric::DRRTstarFN::setPlannerData(
       motions[num]->parent = motions[i];
     }
   }
+
+  std::for_each(motions.begin(), motions.end(),
+                [&](Motion*& m) { nn_->add(m); });
+
+
 }
 //==============================================================================
 ompl::base::Cost ompl::geometric::DRRTstarFN::costToGo(
@@ -830,7 +820,7 @@ void ompl::geometric::DRRTstarFN::restoreTree(const char* filename) {
   pdstorage.load(filename, pdat);
 
   // find a root node of the tree and add nodes to the tree accordingly
-  for (size_t i(0); i < pdat.numVertices(); ++i) {
+  for (unsigned int i = 0; i != pdat.numVertices(); ++i) {
     if (pdat.isStartVertex(i)) {
       traverseTree(i, pdat);
       break;
@@ -1026,7 +1016,7 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s) {
 //==============================================================================
 std::size_t ompl::geometric::DRRTstarFN::removeInvalidNodes() {
   const static int LIMIT_PATH = 2500;
-  int removed = 0;
+  std::size_t removed = 0;
   int error_removed = 0;
 
   if (goalMotions_.size() == 0) {
@@ -1101,7 +1091,7 @@ std::size_t ompl::geometric::DRRTstarFN::removeInvalidNodes() {
     if (!si_->isValid(node->state)) node->nodeType = INVALID;
   }
 
-  for (int i = sPath.size() - 1; i >= 0; --i) {
+  for (int i = static_cast<int>(sPath.size()) - 1; i >= 0; --i) {
     if (sPath[i]->nodeType == INVALID) {
       removeFromParent(sPath[i]);
       for (auto& child : sPath[i]->children) {
@@ -1196,9 +1186,9 @@ void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s) {
 
   for (auto m : motions) {
     if (!majorTree(m)) {
-      // if (!si_->equalStates(m->state, s)) {
-      rmBranch(m);
-      //}
+      if (!si_->equalStates(m->state, s)) {
+        rmBranch(m);
+      }
     }
   }
 }

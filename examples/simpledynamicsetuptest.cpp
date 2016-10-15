@@ -25,7 +25,7 @@ namespace og = ompl::geometric;
 
 constexpr double kMaxHeight = 1000;
 constexpr double kMaxWidth = 1000;
-constexpr char kPrecomputedDataFilename[] = "sss";
+constexpr char kPrecomputedDataFilename[] = "dynamicsimplesetup.dump";
 const std::string kPlaceholder = "data/obstacles/test.map";
 
 class DubinsCarEnvironment {
@@ -58,21 +58,26 @@ class DubinsCarEnvironment {
     si->setStateValidityCheckingResolution(0.01125);
     dss_->setDynamicPlanner(ob::DynamicPlannerPtr(planner));
 
-    ob::ScopedState<> start(dss_->getStateSpace());
-    start[0] = 80;
-    start[1] = 80;
-    ob::ScopedState<> goal(dss_->getStateSpace());
-    goal[0] = 700;
-    goal[1] = 700;
-    dss_->setStartAndGoalStates(start, goal);
-
     planner->setGoalBias(0.0015);
+
+    if (hasPrecomputedData_) {
+      std::ifstream precompDataFileStream(kPrecomputedDataFilename);
+      if (precompDataFileStream)
+        dss_->readPrecomputedData(precompDataFileStream);
+    } else {
+        ob::ScopedState<> start(dss_->getStateSpace());
+        start[0] = 80;
+        start[1] = 80;
+        ob::ScopedState<> goal(dss_->getStateSpace());
+        goal[0] = 700;
+        goal[1] = 700;
+        dss_->setStartAndGoalStates(start, goal);
+    }
 
     std::function<bool(void)> dummyLambda = []() -> bool { return true; };
     dss_->setSolutionValidityFunction(dummyLambda);
 
-    std::ifstream precompDataFileStream(kPrecomputedDataFilename);
-    dss_->readPrecomputedData(precompDataFileStream);
+    dss_->enableKeepComputedData();
   }
 
   void launch() {
@@ -89,6 +94,8 @@ class DubinsCarEnvironment {
 
   std::string prefix_;
   std::shared_ptr<Model> pModel_;
+
+  bool hasPrecomputedData_ = true;
 };
 
 int main() {
