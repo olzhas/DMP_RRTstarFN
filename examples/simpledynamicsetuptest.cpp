@@ -65,19 +65,19 @@ class DubinsCarEnvironment {
       if (precompDataFileStream)
         dss_->readPrecomputedData(precompDataFileStream);
     } else {
-        ob::ScopedState<> start(dss_->getStateSpace());
-        start[0] = 80;
-        start[1] = 80;
-        ob::ScopedState<> goal(dss_->getStateSpace());
-        goal[0] = 700;
-        goal[1] = 700;
-        dss_->setStartAndGoalStates(start, goal);
+      ob::ScopedState<> start(dss_->getStateSpace());
+      start[0] = 80;
+      start[1] = 80;
+      ob::ScopedState<> goal(dss_->getStateSpace());
+      goal[0] = 700;
+      goal[1] = 700;
+      dss_->setStartAndGoalStates(start, goal);
     }
 
     std::function<bool(void)> dummyLambda = []() -> bool { return true; };
     dss_->setSolutionValidityFunction(dummyLambda);
-
     dss_->enableKeepComputedData();
+    dss_->setUpdateEnvironmentFn(dummyLambda);
   }
 
   void launch() {

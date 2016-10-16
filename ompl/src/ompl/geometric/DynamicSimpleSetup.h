@@ -241,6 +241,9 @@ class DynamicSimpleSetup {
   std::chrono::milliseconds getTimestep() const;
   void setTimestep(const std::chrono::milliseconds &timestep);
 
+  std::function<void ()> getUpdateEnvironmentFn() const;
+  void setUpdateEnvironmentFn(const std::function<void ()> &value);
+
 private:
   /** \brief time step between regular obstacle collision routine in
    * milliseconds */

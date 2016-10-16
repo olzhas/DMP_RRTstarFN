@@ -19,10 +19,7 @@ DynamicSimpleSetup::DynamicSimpleSetup(const base::SpaceInformationPtr &si)
 }
 
 DynamicSimpleSetup::DynamicSimpleSetup(const base::StateSpacePtr &space)
-    : configured_(false), lastStatus_(base::PlannerStatus::UNKNOWN) {
-  si_.reset(new base::SpaceInformation(space));
-  pdef_.reset(new base::ProblemDefinition(si_));
-}
+    : DynamicSimpleSetup(std::make_shared<base::SpaceInformation>(space)) {}
 
 void ompl::geometric::DynamicSimpleSetup::setup() {
   if (!configured_ || !si_->isSetup() || !planner_->isSetup()) {
@@ -94,14 +91,24 @@ bool DynamicSimpleSetup::runSolutionLoop() {
   return true;
 }
 
-bool DynamicSimpleSetup::validSolution() {
-  if (!planner_) {
-    OMPL_ERROR("planner is not set, run setup() first");
-    std::terminate();
-  }
+std::function<void ()> DynamicSimpleSetup::getUpdateEnvironmentFn() const
+{
+    return updateEnvironmentFn;
+}
 
-  if (!validSolutionFn_) {
-    OMPL_ERROR("solution validity checker is not defined");
+void DynamicSimpleSetup::setUpdateEnvironmentFn(const std::function<void ()> &value)
+{
+    updateEnvironmentFn = value;
+}
+
+bool DynamicSimpleSetup::validSolution() {
+    if (!planner_) {
+        OMPL_ERROR("planner is not set, run setup() first");
+        std::terminate();
+    }
+
+    if (!validSolutionFn_) {
+        OMPL_ERROR("solution validity checker is not defined");
     assert(validSolutionFn_);
     return false;
   }
@@ -402,14 +409,13 @@ void DynamicSimpleSetup::preplan() {
   }
 }
 
-std::chrono::milliseconds DynamicSimpleSetup::getTimestep() const
-{
-    return timestep_;
+std::chrono::milliseconds DynamicSimpleSetup::getTimestep() const {
+  return timestep_;
 }
 
-void DynamicSimpleSetup::setTimestep(const std::chrono::milliseconds &timestep)
-{
-    timestep_ = timestep;
+void DynamicSimpleSetup::setTimestep(
+    const std::chrono::milliseconds &timestep) {
+  timestep_ = timestep;
 }
 
 }  // geometric
