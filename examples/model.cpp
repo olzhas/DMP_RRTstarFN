@@ -82,8 +82,6 @@ void Model::loadTemporalData(const std::string& fname) {
   }
 }
 
-void Model::updateEnvironment() { ++dynamicObstaclesState_; }
-
 Model::CircularObstacle* Model::createCircularObstacle(
     const std::string& to_parse) {
   double x, y, r;
@@ -166,9 +164,11 @@ void Model::loadObstacles(const std::string& fname,
 }
 
 void Model::updateObstacles() {
+  const std::size_t& ind = dynamicObstaclesState_;
   dynamicCircle_[0]->move(
-      Eigen::Vector2d(futurePosition_[0], futurePosition_[1]),
-      futurePosition_[2]);
+      Eigen::Vector2d(futurePosition_[ind][0], futurePosition_[ind][1]),
+      futurePosition_[ind][2]);
+  ++dynamicObstaclesState_;
 }
 
 bool Model::isStateValid(const ob::State* state) {
@@ -216,10 +216,10 @@ void Model::setDynamicObstaclesFile(std::string& filename) {
   fout.open("dynamic_after.gnu");
   assert(!fout.fail() && "cannot open file");
 
-  fin >> x >> y >> r;
-  futurePosition_.push_back(x);
-  futurePosition_.push_back(y);
-  futurePosition_.push_back(r);
+  while (!fin.eof()) {
+    fin >> x >> y >> r;
+    futurePosition_.push_back({x, y, r});
+  }
 
   fout << "set object " << 8000 << " circle at " << x << "," << y << " size "
        << r << " fc rgb \"#FF4444\" front\n";

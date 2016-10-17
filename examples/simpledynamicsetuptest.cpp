@@ -17,8 +17,11 @@ namespace og = ompl::geometric;
 
 constexpr double kMaxHeight = 1000;
 constexpr double kMaxWidth = 1000;
+constexpr double minimumRadius = 5;
+
 constexpr char kPrecomputedDataFilename[] = "dynamicsimplesetup.dump";
 const std::string kPlaceholder = "data/obstacles/test.map";
+const std::string kDynamicInformationFile = "data/obstacles/dynamic_first.txt";
 
 class DubinsCarEnvironment {
  public:
@@ -26,7 +29,7 @@ class DubinsCarEnvironment {
       : maxWidth_(kMaxWidth),
         maxHeight_(kMaxHeight),
         pModel_(new Model(kPlaceholder)) {
-    ob::StateSpacePtr space(new ob::DubinsStateSpace(5));
+    ob::StateSpacePtr space(new ob::DubinsStateSpace(minimumRadius));
 
     dss_.reset(new og::DynamicSimpleSetup(space));
 
@@ -74,7 +77,7 @@ class DubinsCarEnvironment {
     std::function<bool(void)> dummyLambda = []() -> bool { return true; };
     dss_->setSolutionValidityFunction(dummyLambda);
     dss_->enableKeepComputedData();
-    dss_->setUpdateEnvironmentFn(dummyLambda);
+    dss_->setUpdateEnvironmentFn(std::bind(&Model::updateObstacles, pModel_));
   }
 
   void launch() {

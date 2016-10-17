@@ -325,7 +325,7 @@ class Model {
   std::string mapFilename_;
 
   std::vector<CircularObstacle*> dynamicCircle_;
-  std::vector<double> futurePosition_;
+  std::vector<std::array<double,3>> futurePosition_;
 };
 
 #endif  // MODEL_H
