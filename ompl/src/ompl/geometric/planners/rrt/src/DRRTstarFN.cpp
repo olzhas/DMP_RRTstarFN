@@ -1,100 +1,34 @@
-/*********************************************************************
- * Software License Agreement (BSD License)
- *
- *  Copyright (c) 2011, Rice University
- *  All rights reserved.
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of the Rice University nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
-
-/* Authors: Alejandro Perez, Sertac Karaman, Ryan Luna, Luis G. Torres, Ioan
- * Sucan, Javier V Gomez */
-
-#include "ompl/base/goals/GoalSampleableRegion.h"
-#include "ompl/tools/config/SelfConfig.h"
-#include "ompl/base/objectives/PathLengthOptimizationObjective.h"
+#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
+#include "ompl/base/DelayedTerminationCondition.h"
 #include "ompl/base/PlannerData.h"
 #include "ompl/base/PlannerDataStorage.h"
-#include "ompl/base/DelayedTerminationCondition.h"
-#include "ompl/geometric/planners/rrt/RRTstarFND.h"
+#include "ompl/base/goals/GoalSampleableRegion.h"
+#include "ompl/base/objectives/PathLengthOptimizationObjective.h"
+#include "ompl/tools/config/SelfConfig.h"
 
 #include <algorithm>
-#include <limits>
-#include <iostream>
 #include <fstream>
+#include <future>
+#include <iostream>
+#include <limits>
 
 // boost
-#include <boost/math/constants/constants.hpp>
-#include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
-#include <boost/serialization/vector.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/math/constants/constants.hpp>
 #include <boost/serialization/utility.hpp>
+#include <boost/serialization/vector.hpp>
 
-#define DEFAULT_MAXNODES 30000
+constexpr std::size_t kDefaultMaxNodes{30000};
 
 ompl::geometric::DRRTstarFN::DRRTstarFN(const base::SpaceInformationPtr& si)
-    : base::Planner(si, "DRRTstarFN"),
-      goalBias_(0.05),
-      maxDistance_(0.0),
-      delayCC_(true),
-      lastGoalMotion_(nullptr),
-      iterations_(0),
-      bestCost_(std::numeric_limits<double>::quiet_NaN()),
-      maxNodes_(DEFAULT_MAXNODES),
-      localPlanning_(0) {
-  specs_.approximateSolutions = true;
-  specs_.optimizingPaths = true;
-  specs_.canReportIntermediateSolutions = true;
-
-  Planner::declareParam<double>("range", this, &DRRTstarFN::setRange,
-                                &DRRTstarFN::getRange, "0.:1.:10000.");
-  Planner::declareParam<double>("goal_bias", this, &DRRTstarFN::setGoalBias,
-                                &DRRTstarFN::getGoalBias, "0.:.05:1.");
-  Planner::declareParam<bool>("delay_collision_checking", this,
-                              &DRRTstarFN::setDelayCC, &DRRTstarFN::getDelayCC,
-                              "0,1");
-  Planner::declareParam<unsigned int>("maxNodes", this,
-                                      &DRRTstarFN::setMaxNodes,
-                                      &DRRTstarFN::getMaxNodes, "100:1:100000");
-  Planner::declareParam<bool>("dynamic", this, &DRRTstarFN::setDynamic,
-                              &DRRTstarFN::getDynamic, "0,1");
-
-  addPlannerProgressProperty("iterations INTEGER",
-                             std::bind(&DRRTstarFN::getIterationCount, this));
-  addPlannerProgressProperty("best cost REAL",
-                             std::bind(&DRRTstarFN::getBestCost, this));
-}
+    : DynamicPlanner(si, "DRRTstarFN") {}
 
 ompl::geometric::DRRTstarFN::~DRRTstarFN() { freeMemory(); }
 
 void ompl::geometric::DRRTstarFN::setup() {
-  Planner::setup();
-  tools::SelfConfig sc(si_, getName());
+  DynamicPlanner::setup();
+  tools::SelfConfig sc(getSpaceInformation(), getName());
   sc.configurePlannerRange(maxDistance_);
   if (!si_->getStateSpace()->hasSymmetricDistance() ||
       !si_->getStateSpace()->hasSymmetricInterpolate()) {
@@ -107,7 +41,8 @@ void ompl::geometric::DRRTstarFN::setup() {
   if (!nn_) {
     // TODO implement equal sized grid to map the state space
     nn_.reset(new NearestNeighborsLinear<Motion*>());
-    // nn_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(si_->getStateSpace()));
+    //
+    nn_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(this));
   }
   nn_->setDistanceFunction(std::bind(&DRRTstarFN::distanceFunction, this,
                                      std::placeholders::_1,
@@ -161,13 +96,22 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
   bool symCost = opt_->isSymmetric();
 
+  // here we define a starting point in the tree
   if (!localPlanning_) {
+    std::vector<Motion*> motions;
+    nn_->list(motions);
     while (const base::State* st = pis_.nextStart()) {
-      Motion* motion = new Motion(si_);
-      si_->copyState(motion->state, st);
-      motion->cost = opt_->identityCost();
-      nn_->add(motion);
-      startMotion_ = motion;
+      auto it = std::find_if(motions.begin(), motions.end(), [&](Motion* m) {
+        return si_->equalStates(m->state, st);
+      });
+      // skip if the start state is already in the tree
+      if (it == motions.end()) {
+        Motion* motion = new Motion(si_);
+        si_->copyState(motion->state, st);
+        motion->cost = opt_->identityCost();
+        nn_->add(motion);
+        startMotion_ = motion;
+      }
     }
   }
 
@@ -661,7 +605,7 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
   delete rmotion;
 
   OMPL_INFORM(
-      "%s: Created %u new states. Checked %u rewire options. %u goal states in "
+      "%s: Created %u new states. Checked %u rewire options. %u goal states in"
       "tree.",
       getName().c_str(), statesGenerated, rewireTest, goalMotions_.size());
 
@@ -822,6 +766,149 @@ void ompl::geometric::DRRTstarFN::getPlannerData(
     }
   }
 }
+
+void ompl::geometric::DRRTstarFN::setPlannerData(
+    const ompl::base::PlannerData& data) {
+  DynamicPlanner::setPlannerData(data);
+  std::vector<Motion*> motions;
+
+  for (unsigned int i = 0; i != data.numVertices(); ++i) {
+    ompl::base::PlannerDataVertex v = data.getVertex(i);
+    Motion* m = new Motion(si_);
+    si_->copyState(m->state, v.getState());
+    m->parent = nullptr;
+    motions.push_back(m);
+
+    if (data.isStartVertex(i)) {
+      pdef_->setStartAndGoalStates(v.getState(), v.getState());
+      OMPL_INFORM(">>> there is a start state in the tree");
+    }
+
+    if (data.isGoalVertex(i)) {
+      OMPL_INFORM(">>> there is a goal state in the tree");
+      pdef_->setGoalState(v.getState());
+    }
+  }
+
+  for (unsigned int i = 0; i != data.numEdges(); ++i) {
+    std::vector<unsigned int> edgeList;
+    data.getEdges(i, edgeList);
+
+    for (const auto& num : edgeList) {
+      motions[i]->children.push_back(motions[num]);
+      motions[num]->parent = motions[i];
+    }
+  }
+
+  std::for_each(motions.begin(), motions.end(),
+                [&](Motion*& m) { nn_->add(m); });
+
+  base::Goal* goal = pdef_->getGoal().get();
+  // Add the new motion to the goalMotion_ list, if it satisfies the goal
+  double distanceFromGoal;
+
+  bool checkForSolution = false;
+  // TODO adapt this for the place here.
+/*
+  std::for_each(motions.begin(), motions.end(), [&](Motion* motion) {
+
+    // \TODO Make this variable unnecessary, or at least have it
+    // persist across solve runs
+    base::Cost bestCost = opt_->infiniteCost();
+
+    bestCost_ = opt_->infiniteCost();
+
+    if (goal->isSatisfied(motion->state, &distanceFromGoal)) {
+      goalMotions_.push_back(motion);
+      checkForSolution = true;
+    }
+
+    // Checking for solution or iterative improvement
+    if (checkForSolution) {
+      bool updatedSolution = false;
+      for (size_t i = 0; i < goalMotions_.size(); ++i) {
+        if (opt_->isCostBetterThan(goalMotions_[i]->cost, bestCost)) {
+          bestCost = goalMotions_[i]->cost;
+          bestCost_ = bestCost;
+          updatedSolution = true;
+        }
+
+        sufficientlyShort = opt_->isSatisfied(goalMotions_[i]->cost);
+        if (sufficientlyShort) {
+          solution = goalMotions_[i];
+          break;
+        } else if (!solution ||
+                   opt_->isCostBetterThan(goalMotions_[i]->cost,
+                                          solution->cost)) {
+          solution = goalMotions_[i];
+          updatedSolution = true;
+        }
+      }
+
+      if (updatedSolution) {
+        if (intermediateSolutionCallback) {
+          std::vector<const base::State*> spath;
+          Motion* intermediate_solution =
+              solution->parent;  // Do not include goal state to simplify
+          code.
+
+              do {
+            spath.push_back(intermediate_solution->state);
+            intermediate_solution = intermediate_solution->parent;
+          }
+          while (intermediate_solution->parent != 0)
+            ;  // Do not include the start state.
+
+          intermediateSolutionCallback(this, spath, bestCost_);
+        }
+
+        approximate = (solution == nullptr);
+        addedSolution = false;
+        if (approximate)
+          solution = approximation;
+        else
+          lastGoalMotion_ = solution;
+
+        if (solution != nullptr) {
+          ptc.terminate();
+          // construct the solution path
+          std::vector<Motion*> mpath;
+          while (solution != nullptr) {
+            std::vector<Motion*>::iterator it;
+            it = find(mpath.begin(), mpath.end(), solution);
+            if (mpath.end() != it) {
+              OMPL_WARN("cycle detected, this solution may be invalid");
+              break;
+            }
+            mpath.push_back(solution);
+            if (solution == solution->parent) {
+              OMPL_WARN("the solution is in the orphaned branch");
+            }
+            solution = solution->parent;
+          }
+
+          // set the solution path
+          PathGeometric* geoPath = new PathGeometric(si_);
+          for (int i = mpath.size() - 1; i >= 0; --i)
+            geoPath->append(mpath[i]->state);
+
+          base::PathPtr path(geoPath);
+          // Add the solution path.
+          base::PlannerSolution psol(path);
+          psol.setPlannerName(getName());
+          if (approximate) psol.setApproximate(approximatedist);
+          // Does the solution satisfy the optimization objective?
+          psol.setOptimized(opt_, bestCost, sufficientlyShort);
+          pdef_->addSolutionPath(psol);
+
+          addedSolution = true;
+        }
+      }
+    }
+
+  });
+  */
+}
 //==============================================================================
 ompl::base::Cost ompl::geometric::DRRTstarFN::costToGo(
     const Motion* motion, const bool shortest) const {
@@ -848,7 +935,7 @@ void ompl::geometric::DRRTstarFN::restoreTree(const char* filename) {
   pdstorage.load(filename, pdat);
 
   // find a root node of the tree and add nodes to the tree accordingly
-  for (size_t i(0); i < pdat.numVertices(); ++i) {
+  for (unsigned int i = 0; i != pdat.numVertices(); ++i) {
     if (pdat.isStartVertex(i)) {
       traverseTree(i, pdat);
       break;
@@ -1010,7 +1097,9 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s) {
   nn_->list(tree);
 
   subTreeNN_.reset(new NearestNeighborsLinear<Motion*>());
-  // subTreeNN_.reset(tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(si_->getStateSpace()));
+  //
+  subTreeNN_.reset(
+      tools::SelfConfig::getDefaultNearestNeighbors<Motion*>(this));
 
   subTreeNN_->setDistanceFunction(std::bind(&DRRTstarFN::distanceFunction, this,
                                             std::placeholders::_1,
@@ -1026,8 +1115,8 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s) {
       subTreeNN_->add(m);
       // m->nodeType = NEW_ORPHANED;
       for (auto child : m->children) {
-        // std::future<void> f = std::async(std::launch::async, markNewOrphaned,
-        // child);
+        //        std::future<void> f =
+        //            std::async(std::launch::async, markNewOrphaned, child);
         setSubTree(child);
       }
     };
@@ -1042,7 +1131,7 @@ void ompl::geometric::DRRTstarFN::selectBranch(ompl::base::State* s) {
 //==============================================================================
 std::size_t ompl::geometric::DRRTstarFN::removeInvalidNodes() {
   const static int LIMIT_PATH = 2500;
-  int removed = 0;
+  std::size_t removed = 0;
   int error_removed = 0;
 
   if (goalMotions_.size() == 0) {
@@ -1117,7 +1206,7 @@ std::size_t ompl::geometric::DRRTstarFN::removeInvalidNodes() {
     if (!si_->isValid(node->state)) node->nodeType = INVALID;
   }
 
-  for (int i = sPath.size() - 1; i >= 0; --i) {
+  for (int i = static_cast<int>(sPath.size()) - 1; i >= 0; --i) {
     if (sPath[i]->nodeType == INVALID) {
       removeFromParent(sPath[i]);
       for (auto& child : sPath[i]->children) {
@@ -1141,7 +1230,7 @@ std::size_t ompl::geometric::DRRTstarFN::removeInvalidNodes() {
 
     // removeAssistanceCallback();
     /*
-for (auto& motion : motions) {
+ for (auto& motion : motions) {
     const ompl::base::SE2StateSpace::StateType* s1
         = motion->state->as<ompl::base::SE2StateSpace::StateType>();
     const ompl::base::SE2StateSpace::StateType* s2
@@ -1212,9 +1301,9 @@ void ompl::geometric::DRRTstarFN::nodeCleanUp(ompl::base::State* s) {
 
   for (auto m : motions) {
     if (!majorTree(m)) {
-      // if (!si_->equalStates(m->state, s)) {
-      rmBranch(m);
-      //}
+      if (!si_->equalStates(m->state, s)) {
+        rmBranch(m);
+      }
     }
   }
 }

@@ -35,20 +35,16 @@
 /* Authors: Alejandro Perez, Sertac Karaman, Ryan Luna, Luis G. Torres, Ioan
  * Sucan, Javier V Gomez */
 
-#ifndef OMPL_GEOMETRIC_PLANNERS_RRT_RRTSTARFND_
-#define OMPL_GEOMETRIC_PLANNERS_RRT_RRTSTARFND_
+#ifndef OMPL_GEOMETRIC_PLANNERS_RRT_RRTSTARFN_
+#define OMPL_GEOMETRIC_PLANNERS_RRT_RRTSTARFN_
 
-#include <ompl/geometric/planners/PlannerIncludes.h>
-#include <ompl/base/OptimizationObjective.h>
-#include <ompl/datastructures/NearestNeighbors.h>
-#include <ompl/base/goals/GoalState.h>
+#include "ompl/base/OptimizationObjective.h"
+#include "ompl/datastructures/NearestNeighbors.h"
+#include "ompl/geometric/planners/PlannerIncludes.h"
 
 #include <limits>
-#include <vector>
-#include <list>
 #include <utility>
-#include <future>
-#include <tuple>
+#include <vector>
 
 namespace ompl {
 
@@ -57,18 +53,16 @@ namespace geometric {
 // based on RRTstar.h
 
 /** \brief Optimal Rapidly-exploring Random Trees */
-class DRRTstarFN : public base::Planner {
-  friend class boost::serialization::access;
-
+class RRTstarFN : public base::Planner {
  public:
-  DRRTstarFN(const base::SpaceInformationPtr& si);
+  RRTstarFN(const base::SpaceInformationPtr &si);
 
-  virtual ~DRRTstarFN();
+  virtual ~RRTstarFN();
 
-  virtual void getPlannerData(base::PlannerData& data) const;
+  virtual void getPlannerData(base::PlannerData &data) const;
 
   virtual base::PlannerStatus solve(
-      const base::PlannerTerminationCondition& ptc);
+      const base::PlannerTerminationCondition &ptc);
 
   virtual void clear();
 
@@ -86,12 +80,6 @@ class DRRTstarFN : public base::Planner {
   /** \brief Get the goal bias the planner is using */
   double getGoalBias() const { return goalBias_; }
 
-  /** \brief fraction of the time in the dynamic part of
-   * the motion planning will be biased with the following variable */
-  void setOrphanedBias(double orphanedBias) { orphanedBias_ = orphanedBias; }
-  /** \brief  get the biasing factor for orphaned nodes*/
-  double getOrphanedBias() { return orphanedBias_; }
-
   /** \brief Set the range the planner is supposed to use.
 
     This parameter greatly influences the runtime of the
@@ -105,11 +93,7 @@ class DRRTstarFN : public base::Planner {
   /** \brief Set a different nearest neighbors datastructure */
   template <template <typename T> class NN>
   void setNearestNeighbors() {
-    nn_.reset(new NN<Motion*>());
-  }
-  template <typename T>
-  void setNN(NearestNeighbors<T*> nearestNeighbors) {
-    nn_.reset(nearestNeighbors);
+    nn_.reset(new NN<Motion *>());
   }
 
   /** \brief Option that delays collision checking procedures.
@@ -125,9 +109,23 @@ class DRRTstarFN : public base::Planner {
   /** \brief Get the state of the delayed collision checking option */
   bool getDelayCC() const { return delayCC_; }
 
-  void setPreviousPath(std::vector<ompl::base::State*> stateList,
-                       int stateIndex);
-  void nodeCleanUp(ompl::base::State* s);
+  /** \brief Controls whether the tree is pruned during the search. */
+  void setPrune(const bool prune) { prune_ = prune; }
+
+  /** \brief Get the state of the pruning option. */
+  bool getPrune() const { return prune_; }
+
+  /** \brief Set the percentage threshold (between 0 and 1) for pruning the
+    tree. If the new tree has removed
+    at least this percentage of states, the tree will be finally pruned. */
+  void setPruneStatesImprovementThreshold(const double pp) {
+    pruneStatesThreshold_ = pp;
+  }
+
+  /** \brief Get the current prune states percentage threshold parameter. */
+  double getPruneStatesImprovementThreshold() const {
+    return pruneStatesThreshold_;
+  }
 
   virtual void setup();
 
@@ -140,58 +138,19 @@ class DRRTstarFN : public base::Planner {
     return boost::lexical_cast<std::string>(bestCost_);
   }
 
-  void setMaxNodes(unsigned int nodesNum) { maxNodes_ = nodesNum; }
+  ///
+  /// \brief setMaxNodes
+  /// setting the limit for the number of nodes in the tree
+  /// \param nodesNum
+  ///
+  void setMaxNodes(const std::size_t &nodesNum) { maxNodes_ = nodesNum; }
 
-  unsigned int getMaxNodes() const { return maxNodes_; }
-
-  void setLocalPlanning(bool set) { localPlanning_ = set; }
-  /** \brief Set sampling radius around interim state */
-  bool isLocalPlanning() { return localPlanning_; }
-
-  /** \brief Set the interim state */
-  void setInterimState(base::State* state) { interimState_ = state; }
-
-  /** \brief Set sampling radius around the interim state */
-  void setSampleRadius(double r) { sampleRadius_ = r; }
-
-  /** \brief Remove the states from the tree */
-
-  std::size_t removeInvalidNodes();
-
-  bool getDynamic() const { return dynamicMode_; }
-  void setDynamic(bool d) { dynamicMode_ = d; }
-
-  void prepareDynamic(std::size_t from);
-
-  void evaluateSolutionPath();
-
-  /** \brief interpolates the detached solution path and adds nodes in between
-   * to the tree */
-  void populateDetachedPath();
-
-  /** \brief remove orphaned nodes from the tree */
-
-  void removeOrphaned();
-
-  /** \brief reconnect orphaned nodes to the tree */
-  bool reconnect();
-
-  /** \brief selects the branch */
-  void selectBranch(ompl::base::State* s);
-
-  void swapNN();
-
-  /** \brief Save the state of the tree */
-  void restoreTree(const std::string& filename);
-
-  /** \brief Save the state of the tree */
-  void restoreTree(const char* filename);
-
-  /** \brief Load the state of the tree */
-
-  // void loadTree(const char *filename);
-
-  enum NodeType : char { NORMAL = 0, ORPHANED = 1, INVALID = 2 };
+  ///
+  /// \brief getMaxNodes
+  /// getting the limit for the number of nodes in the tree
+  /// \return
+  ///
+  std::size_t getMaxNodes() const { return maxNodes_; }
 
  protected:
   /** \brief Representation of a motion */
@@ -199,18 +158,16 @@ class DRRTstarFN : public base::Planner {
    public:
     /** \brief Constructor that allocates memory for the state. This constructor
      * automatically allocates memory for \e state, \e cost, and \e incCost */
-    Motion(const base::SpaceInformationPtr& si)
-        : state(si->allocState()),
-          parent(nullptr),
-          nodeType(NodeType::NORMAL) {}
+    Motion(const base::SpaceInformationPtr &si)
+        : state(si->allocState()), parent(NULL) {}
 
-    ~Motion() { ; }
+    ~Motion() {}
 
     /** \brief The state contained by the motion */
-    base::State* state;
+    base::State *state;
 
     /** \brief The parent motion in the exploration tree */
-    Motion* parent;
+    Motion *parent;
 
     /** \brief The cost up to this motion */
     base::Cost cost;
@@ -221,10 +178,7 @@ class DRRTstarFN : public base::Planner {
     base::Cost incCost;
 
     /** \brief The set of motions descending from the current motion */
-    std::vector<Motion*> children;
-
-    /** \brief removed */
-    NodeType nodeType;
+    std::vector<Motion *> children;
   };
 
   /** \brief Free the memory allocated by this planner */
@@ -232,42 +186,37 @@ class DRRTstarFN : public base::Planner {
 
   // For sorting a list of costs and getting only their sorted indices
   struct CostIndexCompare {
-    CostIndexCompare(const std::vector<base::Cost>& costs,
-                     const base::OptimizationObjective& opt)
+    CostIndexCompare(const std::vector<base::Cost> &costs,
+                     const base::OptimizationObjective &opt)
         : costs_(costs), opt_(opt) {}
     bool operator()(unsigned i, unsigned j) {
       return opt_.isCostBetterThan(costs_[i], costs_[j]);
     }
-    const std::vector<base::Cost>& costs_;
-    const base::OptimizationObjective& opt_;
+    const std::vector<base::Cost> &costs_;
+    const base::OptimizationObjective &opt_;
   };
 
   /** \brief Compute distance between motions (actually distance between
    * contained states) */
-  double distanceFunction(const Motion* a, const Motion* b) const {
+  double distanceFunction(const Motion *a, const Motion *b) const {
     return si_->distance(a->state, b->state);
   }
 
   /** \brief Removes the given motion from the parent's child list */
-  void removeFromParent(Motion* m);
+  void removeFromParent(Motion *m);
 
   /** \brief Updates the cost of the children of this node if the cost up to
    * this node has changed */
-  void updateChildCosts(Motion* m);
+  void updateChildCosts(Motion *m);
 
   /** \brief Prunes all those states which estimated total cost is higher than
     pruneTreeCost.
     Returns the number of motions pruned. Depends on the parameter set by
     setPruneStatesImprovementThreshold() */
-  // int pruneTree(const base::Cost pruneTreeCost);
+  int pruneTree(const base::Cost pruneTreeCost);
 
-  void verifyTree();
-
-  bool switchToDynamic();
-
-  /** \brief this function is used for reconstruction of the tree from the file
-   */
-  bool traverseTree(const unsigned int n, const ompl::base::PlannerData& pdat);
+  /** \brief Deletes (frees memory) the motion and its children motions. */
+  void deleteBranch(Motion *motion);
 
   /** \brief Computes the Cost To Go heuristically as the cost to come from
     start to motion plus
@@ -275,27 +224,17 @@ class DRRTstarFN : public base::Planner {
     cost to come
     start-motion is given. Otherwise, this cost to come is the current motion
     cost. */
-  base::Cost costToGo(const Motion* motion, const bool shortest = true) const;
+  base::Cost costToGo(const Motion *motion, const bool shortest = true) const;
 
   /** \brief State sampler */
   base::StateSamplerPtr sampler_;
 
   /** \brief A nearest-neighbors datastructure containing the tree of motions */
-  std::shared_ptr<NearestNeighbors<Motion*> > nn_;
-
-  /** \brief A nearest-neighbors datastructure containing the subtree of motions
-   */
-
-  std::shared_ptr<NearestNeighbors<Motion*> > subTreeNN_;
-  std::shared_ptr<NearestNeighbors<Motion*> > bakNN_;
+  std::shared_ptr<NearestNeighbors<Motion *> > nn_;
 
   /** \brief The fraction of time the goal is picked as the state to expand
    * towards (if such a state is available) */
   double goalBias_;
-
-  /** \brief The fraction of time the goal is picked as the state to expand
-   * towards (if such a state is available) */
-  double orphanedBias_;
 
   /** \brief The maximum length of a motion to be added to a tree */
   double maxDistance_;
@@ -306,25 +245,28 @@ class DRRTstarFN : public base::Planner {
   /** \brief Option to delay and reduce collision checking within iterations */
   bool delayCC_;
 
-  bool dynamicMode_;
-
   /** \brief Objective we're optimizing */
   base::OptimizationObjectivePtr opt_;
 
   /** \brief The most recent goal motion.  Used for PlannerData computation */
-  Motion* lastGoalMotion_;
+  Motion *lastGoalMotion_;
 
   /** \brief A list of states in the tree that satisfy the goal condition */
-  std::vector<Motion*> goalMotions_;
+  std::vector<Motion *> goalMotions_;
 
   /** \brief If this value is set to true, tree pruning will be enabled. */
-  // bool                                           prune_;
+  bool prune_;
+
+  /** \brief The tree is only pruned is the percentage of states to prune is
+   * above this threshold (between 0 and 1). */
+  double pruneStatesThreshold_;
+
+  struct PruneScratchSpace {
+    std::vector<Motion *> newTree, toBePruned, candidates;
+  } pruneScratchSpace_;
 
   /** \brief Stores the Motion containing the last added initial start state. */
-  Motion* startMotion_;
-
-  std::vector<ompl::base::State*> orphanedBiasNodes_;
-  std::vector<Motion*> detachedPathNodes_;
+  Motion *startMotion_;
 
   //////////////////////////////
   // Planner progress properties
@@ -333,14 +275,13 @@ class DRRTstarFN : public base::Planner {
   /** \brief Best cost found so far by algorithm */
   base::Cost bestCost_;
 
-  unsigned int maxNodes_;
-
-  bool localPlanning_;
-
-  base::State* interimState_;
-  double sampleRadius_;
+  ///
+  /// \brief maxNodes_
+  ///
+  std::size_t maxNodes_;
 };
-}
-}
+
+}  // namespace geometric
+}  // namespace ompl
 
 #endif

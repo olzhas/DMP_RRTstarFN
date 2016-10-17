@@ -10,13 +10,18 @@
 
 namespace ob = ompl::base;
 
+/**
+ * \brief The Model class provides the collision detection model Circles, AABB,
+ * OBB (not implemented yet)
+ */
 class Model {
  public:
-  /** \brief */
+  /** \brief the synonym type to describe the point in 2D space  */
   typedef Eigen::Vector2d Point;
 
-  /** \brief */
-
+  /**
+ * \brief The Line class used to represent a line in 2D space
+ */
   class Line {
     Point _head;
     Point _tail;
@@ -42,6 +47,9 @@ class Model {
     }
   };
 
+  /**
+   * \brief The Obstacle class
+   */
   class Obstacle {
    private:
     std::string _name;
@@ -50,7 +58,7 @@ class Model {
     Obstacle() { ; }
     virtual ~Obstacle() { ; }
 
-    virtual bool detectCollision(Obstacle* target) { return true; }
+    virtual bool detectCollision(const Obstacle* target) const { return true; }
 
     std::string getName() const { return _name; }
 
@@ -60,6 +68,9 @@ class Model {
   // TODO switch to smart pointer in C++11
   typedef std::shared_ptr<Obstacle> ObstaclePtr;
 
+  /**
+   * \brief The CircularObstacle class
+   */
   class CircularObstacle : public Obstacle {
    private:
     Point pos;
@@ -69,8 +80,8 @@ class Model {
    public:
     CircularObstacle() : radius_(0), radiusSquare_(0) { ; }
 
-    bool detectCollision(Obstacle* target) {
-      ObbObstacle* obb = static_cast<ObbObstacle*>(target);
+    virtual bool detectCollision(const Obstacle* target) const {
+      const ObbObstacle* obb = static_cast<const ObbObstacle*>(target);
 
       Eigen::Vector2d diff = (obb->getPos() - pos);
       double squareDistance = diff.dot(diff);
@@ -87,12 +98,15 @@ class Model {
       radiusSquare_ = r * r;
     }
 
+    // getters
     Point getPos() const { return pos; }
-
     double getRadius() const { return radius_; }
   };
 
-  /** \brief */
+  /**
+   * \brief The ObbObstacle class, oriented bounding box, however at this moment
+   * it is AABB
+   */
   class ObbObstacle : public Obstacle {
    public:
     Eigen::MatrixXd::Index maxX, minX;
@@ -114,9 +128,12 @@ class Model {
       update();
     }
 
-    /** \brief */
-    bool detectCollision(Obstacle* target);
-    /** \brief */
+    /**
+     * \brief this method implements check for collision
+     * \param target
+     * \return
+     */
+    virtual bool detectCollision(const Obstacle* target) const;
     void calcSquareDiag() { squareDiag = width * width + height * height; }
 
     double getSquareDiag() const {
@@ -124,42 +141,56 @@ class Model {
       return factorOfSafety * squareDiag;
     }
 
-    /** \brief */
+    // getter
     Eigen::Vector2d getPos() const { return pos; }
 
-    /** \brief */
+    // setter
     void setPos(const Eigen::Vector2d& position) { pos = position; }
 
-    /** \brief */
+    /**
+     * @brief move this methods used to move the object from place to place
+     * (orientation is considered)
+     * @param position in 2D space
+     * @param y - yaw in radians
+     */
     void move(const Eigen::Vector2d& position, const double y) {
       pos = position;
       yaw = y;
       update();
     }
 
-    /** \brief */
+    /**
+     * \brief setWidth this method sets the width of the box
+     * \param w - width of the object
+     */
     void setWidth(const double& w) {
       width = w;
       calcSquareDiag();
       update();
     }
 
-    /** \brief */
+    /**
+     * @brief setHeight this method set the height of the box
+     * @param h - height of the object
+     */
     void setHeight(const double& h) {
       height = h;
       calcSquareDiag();
       update();
     }
 
+    /**
+     * \brief update this method is used to calculate the internal data
+     */
     void update() {
       // ugly initialization
       Eigen::MatrixXd temp(2, 4);
 
-      /*
-3---0
-|   |
-2---1
-*/
+      // the order of the initialization of vertices
+      // 3---0
+      // |   |
+      // 2---1
+
       temp << width / 2.0 * cos(yaw) - height / 2.0 * sin(yaw),
           width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw),
           -width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw),
@@ -204,6 +235,19 @@ class Model {
     double squareDiag;
   };
 
+  class AABBObstacle : public Obstacle {
+    virtual bool detectCollision(const Obstacle* object) const;
+
+   private:
+    Eigen::Vector2d pos;
+
+    double width;
+    double height;
+  };
+
+  /**
+   * @brief The ObstacleCollection class
+   */
   class ObstacleCollection {
    private:
     std::vector<Obstacle*> data_;
@@ -221,7 +265,8 @@ class Model {
     void add(Obstacle* a) { data_.push_back(a); }
   };
 
-  Model(const std::string& filename) {
+  // ctor
+  Model(const std::string& filename) : dynamicObstaclesState_(0) {
     mapFilename_ = filename;
     loadSimpleWorld();
   }
@@ -234,20 +279,39 @@ class Model {
   void setSpaceInformation(const ob::SpaceInformationPtr& si) { si_ = si; }
 
   void loadObstacles(const std::string& fname, ObstacleCollection& collection);
+  void loadDynamicObstacles(const std::string& filename,
+                            ObstacleCollection& collection);
 
-  /** \brief */
+  /**
+   * @brief createCircularObstacle
+   * @param to_parse
+   * @return
+   */
   CircularObstacle* createCircularObstacle(const std::string& to_parse);
 
-  /** \brief */
+  /**
+   * @brief createAABBObstacle
+   * @param to_parse
+   * @return
+   */
+  ObbObstacle* createAABBObstacle(const std::string& to_parse);
+
+  /**
+   * @brief createObbObstacle
+   * @param to_parse
+   * @return
+   */
   ObbObstacle* createObbObstacle(const std::string& to_parse);
 
-  /** \brief */
-  ObbObstacle* createObbObstacle2(const std::string& to_parse);
-
-  /** \brief */
+  /**
+   * @brief loadTemporalData
+   * @param fname
+   */
   void loadTemporalData(const std::string& fname);
 
-  /** \brief */
+  /**
+   * @brief updateEnvironment
+   */
   void updateEnvironment();
 
  private:
@@ -261,7 +325,7 @@ class Model {
   std::string mapFilename_;
 
   std::vector<CircularObstacle*> dynamicCircle_;
-  std::vector<double> futurePosition_;
+  std::vector<std::array<double,3>> futurePosition_;
 };
 
 #endif  // MODEL_H
