@@ -1,15 +1,7 @@
-#include <dart/common/common.h>
-#include <Eigen/Eigen>
-
-#include <ompl/base/PlannerDataStorage.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
-#include <ompl/base/spaces/RealVectorBounds.h>
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
 #include <ompl/config.h>
 #include <ompl/util/Exception.h>
-
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include <fstream>
 #include <functional>

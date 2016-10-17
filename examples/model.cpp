@@ -82,10 +82,7 @@ void Model::loadTemporalData(const std::string& fname) {
   }
 }
 
-void Model::updateEnvironment() {
-  static std::size_t incrementalState = 0;
-  ++incrementalState;
-}
+void Model::updateEnvironment() { ++dynamicObstaclesState_; }
 
 Model::CircularObstacle* Model::createCircularObstacle(
     const std::string& to_parse) {

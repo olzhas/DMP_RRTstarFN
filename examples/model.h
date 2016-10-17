@@ -11,7 +11,8 @@
 namespace ob = ompl::base;
 
 /**
- * \brief The Model class
+ * \brief The Model class provides the collision detection model Circles, AABB,
+ * OBB (not implemented yet)
  */
 class Model {
  public:
@@ -19,7 +20,7 @@ class Model {
   typedef Eigen::Vector2d Point;
 
   /**
- * \brief The Line class
+ * \brief The Line class used to represent a line in 2D space
  */
   class Line {
     Point _head;
@@ -97,13 +98,14 @@ class Model {
       radiusSquare_ = r * r;
     }
 
+    // getters
     Point getPos() const { return pos; }
-
     double getRadius() const { return radius_; }
   };
 
   /**
-   * \brief The ObbObstacle class, oriented bounding box, however at this moment it is AABB
+   * \brief The ObbObstacle class, oriented bounding box, however at this moment
+   * it is AABB
    */
   class ObbObstacle : public Obstacle {
    public:
@@ -126,9 +128,12 @@ class Model {
       update();
     }
 
-    /** \brief */
+    /**
+     * \brief this method implements check for collision
+     * \param target
+     * \return
+     */
     virtual bool detectCollision(const Obstacle* target) const;
-    /** \brief */
     void calcSquareDiag() { squareDiag = width * width + height * height; }
 
     double getSquareDiag() const {
@@ -136,42 +141,56 @@ class Model {
       return factorOfSafety * squareDiag;
     }
 
-    /** \brief */
+    // getter
     Eigen::Vector2d getPos() const { return pos; }
 
-    /** \brief */
+    // setter
     void setPos(const Eigen::Vector2d& position) { pos = position; }
 
-    /** \brief */
+    /**
+     * @brief move this methods used to move the object from place to place
+     * (orientation is considered)
+     * @param position in 2D space
+     * @param y - yaw in radians
+     */
     void move(const Eigen::Vector2d& position, const double y) {
       pos = position;
       yaw = y;
       update();
     }
 
-    /** \brief */
+    /**
+     * \brief setWidth this method sets the width of the box
+     * \param w - width of the object
+     */
     void setWidth(const double& w) {
       width = w;
       calcSquareDiag();
       update();
     }
 
-    /** \brief */
+    /**
+     * @brief setHeight this method set the height of the box
+     * @param h - height of the object
+     */
     void setHeight(const double& h) {
       height = h;
       calcSquareDiag();
       update();
     }
 
+    /**
+     * \brief update this method is used to calculate the internal data
+     */
     void update() {
       // ugly initialization
       Eigen::MatrixXd temp(2, 4);
 
-      /*
-3---0
-|   |
-2---1
-*/
+      // the order of the initialization of vertices
+      // 3---0
+      // |   |
+      // 2---1
+
       temp << width / 2.0 * cos(yaw) - height / 2.0 * sin(yaw),
           width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw),
           -width / 2.0 * cos(yaw) + height / 2.0 * sin(yaw),
@@ -246,7 +265,8 @@ class Model {
     void add(Obstacle* a) { data_.push_back(a); }
   };
 
-  Model(const std::string& filename) {
+  // ctor
+  Model(const std::string& filename) : dynamicObstaclesState_(0) {
     mapFilename_ = filename;
     loadSimpleWorld();
   }
@@ -262,19 +282,36 @@ class Model {
   void loadDynamicObstacles(const std::string& filename,
                             ObstacleCollection& collection);
 
-  /** \brief */
+  /**
+   * @brief createCircularObstacle
+   * @param to_parse
+   * @return
+   */
   CircularObstacle* createCircularObstacle(const std::string& to_parse);
 
-  /** \brief */
+  /**
+   * @brief createAABBObstacle
+   * @param to_parse
+   * @return
+   */
   ObbObstacle* createAABBObstacle(const std::string& to_parse);
 
-  /** \brief */
+  /**
+   * @brief createObbObstacle
+   * @param to_parse
+   * @return
+   */
   ObbObstacle* createObbObstacle(const std::string& to_parse);
 
-  /** \brief */
+  /**
+   * @brief loadTemporalData
+   * @param fname
+   */
   void loadTemporalData(const std::string& fname);
 
-  /** \brief */
+  /**
+   * @brief updateEnvironment
+   */
   void updateEnvironment();
 
  private:
