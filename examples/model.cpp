@@ -168,7 +168,7 @@ void Model::updateObstacles() {
   dynamicCircle_[0]->move(
       Eigen::Vector2d(futurePosition_[ind][0], futurePosition_[ind][1]),
       futurePosition_[ind][2]);
-  ++dynamicObstaclesState_;
+  if (futurePosition_.size() > dynamicObstaclesState_) ++dynamicObstaclesState_;
 }
 
 bool Model::isStateValid(const ob::State* state) {
