@@ -91,24 +91,23 @@ bool DynamicSimpleSetup::runSolutionLoop() {
   return true;
 }
 
-std::function<void ()> DynamicSimpleSetup::getUpdateEnvironmentFn() const
-{
-    return updateEnvironmentFn;
+std::function<void()> DynamicSimpleSetup::getUpdateEnvironmentFn() const {
+  return updateEnvironmentFn;
 }
 
-void DynamicSimpleSetup::setUpdateEnvironmentFn(const std::function<void ()> &value)
-{
-    updateEnvironmentFn = value;
+void DynamicSimpleSetup::setUpdateEnvironmentFn(
+    const std::function<void()> &value) {
+  updateEnvironmentFn = value;
 }
 
 bool DynamicSimpleSetup::validSolution() {
-    if (!planner_) {
-        OMPL_ERROR("planner is not set, run setup() first");
-        std::terminate();
-    }
+  if (!planner_) {
+    OMPL_ERROR("planner is not set, run setup() first");
+    std::terminate();
+  }
 
-    if (!validSolutionFn_) {
-        OMPL_ERROR("solution validity checker is not defined");
+  if (!validSolutionFn_) {
+    OMPL_ERROR("solution validity checker is not defined");
     assert(validSolutionFn_);
     return false;
   }
@@ -127,9 +126,9 @@ bool DynamicSimpleSetup::move() {
       step_++;
       return true;
     }
+  } else {
+    OMPL_ERROR("No solution, can't move...");
   }
-
-  OMPL_ERROR("No solution, can't move...");
 
   return false;
 }
@@ -386,7 +385,7 @@ void DynamicSimpleSetup::preplan() {
     OMPL_INFORM(
         "No precomputed data, preparing the dynamic planner for navigation");
 
-    // here we look for the solution.
+    // here look for the solution.
     ompl::base::PlannerTerminationCondition ptc(
         ompl::base::exactSolnPlannerTerminationCondition(
             getProblemDefinition()));
@@ -397,6 +396,7 @@ void DynamicSimpleSetup::preplan() {
       PathGeometric &p = getSolutionPath();
       p.interpolate();
       pathLength_ = p.getStateCount();
+      pSolutionPath = std::make_shared<PathGeometric>(p);
     } catch (ompl::Exception e) {
       OMPL_ERROR("No solution, man!");
       OMPL_ERROR(e.what());

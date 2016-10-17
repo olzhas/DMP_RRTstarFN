@@ -1,6 +1,6 @@
 #include "model.h"
 
-Model::ObbObstacle* Model::createObbObstacle(const std::string& to_parse) {
+Model::ObbObstacle* Model::createAABBObstacle(const std::string& to_parse) {
   double x, y;
   double width, height;
   std::string name;
@@ -18,6 +18,24 @@ Model::ObbObstacle* Model::createObbObstacle(const std::string& to_parse) {
   return object;
 }
 
+Model::ObbObstacle* Model::createObbObstacle(const std::string& to_parse) {
+  double x, y;
+  double width, height, yaw;
+  std::string name;
+
+  std::istringstream iss(to_parse);
+
+  iss >> x >> y >> width >> height >> yaw >> name;
+
+  ObbObstacle* object = new ObbObstacle;
+
+  object->setWidth(width);
+  object->setHeight(height);
+  object->move(Eigen::Vector2d(x, y), yaw);
+  object->setName(name);
+  return object;
+}
+
 void Model::loadTemporalData(const std::string& fname) {
   Obstacle* obs;
   std::string str;
@@ -26,7 +44,7 @@ void Model::loadTemporalData(const std::string& fname) {
 
   if (fin) {
     while (!fin.eof()) {
-      int index;
+      std::size_t index;
       fin >> index;
       while (dynamicObstacles_.size() <= index) {
         dynamicObstacles_.push_back(nullptr);
@@ -44,46 +62,29 @@ void Model::loadTemporalData(const std::string& fname) {
             break;
           case 'r':
           case 'R':
-            obs = createObbObstacle(str);
+            obs = createAABBObstacle(str);
             break;
           case 'b':
           case 'B':
-            obs = createObbObstacle2(str);
+            obs = createObbObstacle(str);
             break;
           default:
             obs = nullptr;
             break;
         }
 
-        if (obs != nullptr) dynamicObstacles_[index]->add(obs);
+        if (obs) dynamicObstacles_[index]->add(obs);
       }
     }
   } else {
     std::cerr << "could not open file " << fname << std::endl;
+    std::terminate();
   }
 }
 
 void Model::updateEnvironment() {
   static std::size_t incrementalState = 0;
   ++incrementalState;
-}
-
-Model::ObbObstacle* Model::createObbObstacle2(const std::string& to_parse) {
-  double x, y;
-  double width, height, yaw;
-  std::string name;
-
-  std::istringstream iss(to_parse);
-
-  iss >> x >> y >> width >> height >> yaw >> name;
-
-  ObbObstacle* object = new ObbObstacle;
-
-  object->setWidth(width);
-  object->setHeight(height);
-  object->move(Eigen::Vector2d(x, y), yaw);
-  object->setName(name);
-  return object;
 }
 
 Model::CircularObstacle* Model::createCircularObstacle(
@@ -133,7 +134,7 @@ void Model::loadObstacles(const std::string& fname,
           break;
         case 'r':
         case 'R':
-          obs = createObbObstacle(str);
+          obs = createAABBObstacle(str);
           fout << "set object " << ++i << " ";
           fout << "rect from " << static_cast<ObbObstacle*>(obs)->vertices(0, 2)
                << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 2)
@@ -145,7 +146,7 @@ void Model::loadObstacles(const std::string& fname,
           break;
         case 'b':
         case 'B':
-          obs = createObbObstacle2(str);
+          obs = createObbObstacle(str);
           fout << "set object " << ++i << " ";
           fout << "rect from " << static_cast<ObbObstacle*>(obs)->vertices(0, 2)
                << "," << static_cast<ObbObstacle*>(obs)->vertices(1, 2)
@@ -232,14 +233,14 @@ void Model::setDynamicObstaclesFile(std::string& filename) {
 }
 
 /** \brief */
-bool Model::ObbObstacle::detectCollision(Obstacle* target) {
+bool Model::ObbObstacle::detectCollision(const Obstacle* target) const {
   bool intersectX = false, intersectY = false;
-  ObbObstacle* obb = static_cast<ObbObstacle*>(target);
+  const ObbObstacle* obb = static_cast<const ObbObstacle*>(target);
   // Eigen::Vector2d diff = pos - obb->getPos();
   // double squareDistance = diff.dot(diff);
 
-  ObbObstacle* left = pos[0] > obb->getPos()[0] ? obb : this;
-  ObbObstacle* right = pos[0] > obb->getPos()[0] ? this : obb;
+  const ObbObstacle* left = pos[0] > obb->getPos()[0] ? obb : this;
+  const ObbObstacle* right = pos[0] > obb->getPos()[0] ? this : obb;
 
   double leftX =
       left->vertices(0, static_cast<long>(left->maxX)) - left->getPos()[0];
@@ -252,8 +253,8 @@ bool Model::ObbObstacle::detectCollision(Obstacle* target) {
     intersectX = true;
   }
 
-  ObbObstacle* down = pos[1] > obb->getPos()[1] ? obb : this;
-  ObbObstacle* up = pos[1] > obb->getPos()[1] ? this : obb;
+  const ObbObstacle* down = pos[1] > obb->getPos()[1] ? obb : this;
+  const ObbObstacle* up = pos[1] > obb->getPos()[1] ? this : obb;
 
   double downY =
       down->vertices(1, static_cast<long>(down->maxY)) - down->getPos()[1];
@@ -266,4 +267,45 @@ bool Model::ObbObstacle::detectCollision(Obstacle* target) {
   }
 
   return intersectX & intersectY;
+}
+
+// TODO implement this
+bool Model::AABBObstacle::detectCollision(const Obstacle* target) const {
+  OMPL_ERROR("not implemented");
+  /*
+  bool intersectX = false, intersectY = false;
+  const ObbObstacle* obb = static_cast<const ObbObstacle*>(target);
+  // Eigen::Vector2d diff = pos - obb->getPos();
+  // double squareDistance = diff.dot(diff);
+
+  const AABBObstacle* left = pos[0] > obb->getPos()[0] ? obb : this;
+  const AABBObstacle* right = pos[0] > obb->getPos()[0] ? this : obb;
+
+  double leftX =
+      left->vertices(0, static_cast<long>(left->maxX)) - left->getPos()[0];
+  double rightX =
+      right->getPos()[0] - right->vertices(0, static_cast<long>(right->minX));
+
+  double x = right->getPos()[0] - left->getPos()[0];
+
+  if (x < leftX + rightX) {
+    intersectX = true;
+  }
+
+  const ObbObstacle* down = pos[1] > obb->getPos()[1] ? obb : this;
+  const ObbObstacle* up = pos[1] > obb->getPos()[1] ? this : obb;
+
+  double downY =
+      down->vertices(1, static_cast<long>(down->maxY)) - down->getPos()[1];
+  double upY = up->getPos()[1] - up->vertices(1, static_cast<long>(up->minY));
+
+  double y = up->getPos()[1] - down->getPos()[1];
+
+  if (y < downY + upY) {
+    intersectY = true;
+  }
+
+  return intersectX & intersectY;
+  */
+  return true;
 }

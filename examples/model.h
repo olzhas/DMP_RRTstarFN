@@ -10,13 +10,17 @@
 
 namespace ob = ompl::base;
 
+/**
+ * \brief The Model class
+ */
 class Model {
  public:
-  /** \brief */
+  /** \brief the synonym type to describe the point in 2D space  */
   typedef Eigen::Vector2d Point;
 
-  /** \brief */
-
+  /**
+ * \brief The Line class
+ */
   class Line {
     Point _head;
     Point _tail;
@@ -42,6 +46,9 @@ class Model {
     }
   };
 
+  /**
+   * \brief The Obstacle class
+   */
   class Obstacle {
    private:
     std::string _name;
@@ -50,7 +57,7 @@ class Model {
     Obstacle() { ; }
     virtual ~Obstacle() { ; }
 
-    virtual bool detectCollision(Obstacle* target) { return true; }
+    virtual bool detectCollision(const Obstacle* target) const { return true; }
 
     std::string getName() const { return _name; }
 
@@ -60,6 +67,9 @@ class Model {
   // TODO switch to smart pointer in C++11
   typedef std::shared_ptr<Obstacle> ObstaclePtr;
 
+  /**
+   * \brief The CircularObstacle class
+   */
   class CircularObstacle : public Obstacle {
    private:
     Point pos;
@@ -69,8 +79,8 @@ class Model {
    public:
     CircularObstacle() : radius_(0), radiusSquare_(0) { ; }
 
-    bool detectCollision(Obstacle* target) {
-      ObbObstacle* obb = static_cast<ObbObstacle*>(target);
+    virtual bool detectCollision(const Obstacle* target) const {
+      const ObbObstacle* obb = static_cast<const ObbObstacle*>(target);
 
       Eigen::Vector2d diff = (obb->getPos() - pos);
       double squareDistance = diff.dot(diff);
@@ -92,7 +102,9 @@ class Model {
     double getRadius() const { return radius_; }
   };
 
-  /** \brief */
+  /**
+   * \brief The ObbObstacle class, oriented bounding box, however at this moment it is AABB
+   */
   class ObbObstacle : public Obstacle {
    public:
     Eigen::MatrixXd::Index maxX, minX;
@@ -115,7 +127,7 @@ class Model {
     }
 
     /** \brief */
-    bool detectCollision(Obstacle* target);
+    virtual bool detectCollision(const Obstacle* target) const;
     /** \brief */
     void calcSquareDiag() { squareDiag = width * width + height * height; }
 
@@ -204,6 +216,19 @@ class Model {
     double squareDiag;
   };
 
+  class AABBObstacle : public Obstacle {
+    virtual bool detectCollision(const Obstacle* object) const;
+
+   private:
+    Eigen::Vector2d pos;
+
+    double width;
+    double height;
+  };
+
+  /**
+   * @brief The ObstacleCollection class
+   */
   class ObstacleCollection {
    private:
     std::vector<Obstacle*> data_;
@@ -234,15 +259,17 @@ class Model {
   void setSpaceInformation(const ob::SpaceInformationPtr& si) { si_ = si; }
 
   void loadObstacles(const std::string& fname, ObstacleCollection& collection);
+  void loadDynamicObstacles(const std::string& filename,
+                            ObstacleCollection& collection);
 
   /** \brief */
   CircularObstacle* createCircularObstacle(const std::string& to_parse);
 
   /** \brief */
-  ObbObstacle* createObbObstacle(const std::string& to_parse);
+  ObbObstacle* createAABBObstacle(const std::string& to_parse);
 
   /** \brief */
-  ObbObstacle* createObbObstacle2(const std::string& to_parse);
+  ObbObstacle* createObbObstacle(const std::string& to_parse);
 
   /** \brief */
   void loadTemporalData(const std::string& fname);

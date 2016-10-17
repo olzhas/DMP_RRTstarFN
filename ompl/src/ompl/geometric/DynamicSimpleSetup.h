@@ -20,6 +20,10 @@ namespace geometric {
 
 OMPL_CLASS_FORWARD(DynamicSimpleSetup);
 
+/**
+ * \brief The DynamicSimpleSetup class
+ * We assume that robot perfectly follows the trajectory
+ */
 class DynamicSimpleSetup {
  public:
   /** \brief Constructor needs the state space used for planning. */

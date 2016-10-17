@@ -20,12 +20,9 @@ void DynamicPlanner::postMove() { ; }
 void DynamicPlanner::react() { ; }
 
 void DynamicPlanner::setPlannerData(const ompl::base::PlannerData &data) {
-  // for (const auto &pair : data.properties) {
-  //  plannerProgressProperties_[pair.first] = pair.second;
-  // plannerProgressProperties_.emplace(std::make_pair(pair.first,
-  // pair.second));
-  //}
-  OMPL_WARN("setPlannerData nothing is implemented...");
+  pdef_->clearStartStates();
+  pdef_->clearGoal();
+  pdef_->clearSolutionPaths();
 }
 
 }  // base

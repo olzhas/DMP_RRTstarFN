@@ -60,11 +60,16 @@ class DubinsCarEnvironment {
 
     planner->setGoalBias(0.0015);
 
+    bool failedToLoad = false;
     if (hasPrecomputedData_) {
       std::ifstream precompDataFileStream(kPrecomputedDataFilename);
-      if (precompDataFileStream)
+      if (precompDataFileStream) {
         dss_->readPrecomputedData(precompDataFileStream);
-    } else {
+      } else {
+        failedToLoad = true;
+      }
+    }
+    if (failedToLoad) {
       ob::ScopedState<> start(dss_->getStateSpace());
       start[0] = 80;
       start[1] = 80;

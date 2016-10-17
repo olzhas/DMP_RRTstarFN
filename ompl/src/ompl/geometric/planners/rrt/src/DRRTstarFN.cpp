@@ -96,13 +96,22 @@ ompl::base::PlannerStatus ompl::geometric::DRRTstarFN::solve(
 
   bool symCost = opt_->isSymmetric();
 
+  // here we define a starting point in the tree
   if (!localPlanning_) {
+    std::vector<Motion*> motions;
+    nn_->list(motions);
     while (const base::State* st = pis_.nextStart()) {
-      Motion* motion = new Motion(si_);
-      si_->copyState(motion->state, st);
-      motion->cost = opt_->identityCost();
-      nn_->add(motion);
-      startMotion_ = motion;
+      auto it = std::find_if(motions.begin(), motions.end(), [&](Motion* m) {
+        return si_->equalStates(m->state, st);
+      });
+      // skip if the start state is already in the tree
+      if (it == motions.end()) {
+        Motion* motion = new Motion(si_);
+        si_->copyState(motion->state, st);
+        motion->cost = opt_->identityCost();
+        nn_->add(motion);
+        startMotion_ = motion;
+      }
     }
   }
 
@@ -772,9 +781,11 @@ void ompl::geometric::DRRTstarFN::setPlannerData(
 
     if (data.isStartVertex(i)) {
       pdef_->setStartAndGoalStates(v.getState(), v.getState());
+      OMPL_INFORM(">>> there is a start state in the tree");
     }
 
     if (data.isGoalVertex(i)) {
+      OMPL_INFORM(">>> there is a goal state in the tree");
       pdef_->setGoalState(v.getState());
     }
   }
@@ -792,7 +803,111 @@ void ompl::geometric::DRRTstarFN::setPlannerData(
   std::for_each(motions.begin(), motions.end(),
                 [&](Motion*& m) { nn_->add(m); });
 
+  base::Goal* goal = pdef_->getGoal().get();
+  // Add the new motion to the goalMotion_ list, if it satisfies the goal
+  double distanceFromGoal;
 
+  bool checkForSolution = false;
+  // TODO adapt this for the place here.
+/*
+  std::for_each(motions.begin(), motions.end(), [&](Motion* motion) {
+
+    // \TODO Make this variable unnecessary, or at least have it
+    // persist across solve runs
+    base::Cost bestCost = opt_->infiniteCost();
+
+    bestCost_ = opt_->infiniteCost();
+
+    if (goal->isSatisfied(motion->state, &distanceFromGoal)) {
+      goalMotions_.push_back(motion);
+      checkForSolution = true;
+    }
+
+    // Checking for solution or iterative improvement
+    if (checkForSolution) {
+      bool updatedSolution = false;
+      for (size_t i = 0; i < goalMotions_.size(); ++i) {
+        if (opt_->isCostBetterThan(goalMotions_[i]->cost, bestCost)) {
+          bestCost = goalMotions_[i]->cost;
+          bestCost_ = bestCost;
+          updatedSolution = true;
+        }
+
+        sufficientlyShort = opt_->isSatisfied(goalMotions_[i]->cost);
+        if (sufficientlyShort) {
+          solution = goalMotions_[i];
+          break;
+        } else if (!solution ||
+                   opt_->isCostBetterThan(goalMotions_[i]->cost,
+                                          solution->cost)) {
+          solution = goalMotions_[i];
+          updatedSolution = true;
+        }
+      }
+
+      if (updatedSolution) {
+        if (intermediateSolutionCallback) {
+          std::vector<const base::State*> spath;
+          Motion* intermediate_solution =
+              solution->parent;  // Do not include goal state to simplify
+          code.
+
+              do {
+            spath.push_back(intermediate_solution->state);
+            intermediate_solution = intermediate_solution->parent;
+          }
+          while (intermediate_solution->parent != 0)
+            ;  // Do not include the start state.
+
+          intermediateSolutionCallback(this, spath, bestCost_);
+        }
+
+        approximate = (solution == nullptr);
+        addedSolution = false;
+        if (approximate)
+          solution = approximation;
+        else
+          lastGoalMotion_ = solution;
+
+        if (solution != nullptr) {
+          ptc.terminate();
+          // construct the solution path
+          std::vector<Motion*> mpath;
+          while (solution != nullptr) {
+            std::vector<Motion*>::iterator it;
+            it = find(mpath.begin(), mpath.end(), solution);
+            if (mpath.end() != it) {
+              OMPL_WARN("cycle detected, this solution may be invalid");
+              break;
+            }
+            mpath.push_back(solution);
+            if (solution == solution->parent) {
+              OMPL_WARN("the solution is in the orphaned branch");
+            }
+            solution = solution->parent;
+          }
+
+          // set the solution path
+          PathGeometric* geoPath = new PathGeometric(si_);
+          for (int i = mpath.size() - 1; i >= 0; --i)
+            geoPath->append(mpath[i]->state);
+
+          base::PathPtr path(geoPath);
+          // Add the solution path.
+          base::PlannerSolution psol(path);
+          psol.setPlannerName(getName());
+          if (approximate) psol.setApproximate(approximatedist);
+          // Does the solution satisfy the optimization objective?
+          psol.setOptimized(opt_, bestCost, sufficientlyShort);
+          pdef_->addSolutionPath(psol);
+
+          addedSolution = true;
+        }
+      }
+    }
+
+  });
+  */
 }
 //==============================================================================
 ompl::base::Cost ompl::geometric::DRRTstarFN::costToGo(
