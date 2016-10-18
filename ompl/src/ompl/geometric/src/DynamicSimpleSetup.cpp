@@ -179,11 +179,7 @@ void DynamicSimpleSetup::react() {
 
   // TODO rewrite in more generic way
   getDynamicPlanner()->preReact();
-  //  std::size_t nodesRemoved =
-  //      ss_->getPlanner()->as<DRRTstarFN>()->removeInvalidNodes();
-  //    OMPL_INFORM("Nodes removed during clean-up phase: %d", nodesRemoved);
-  //
-  // ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
+
   getDynamicPlanner()->react();
 
   getDynamicPlanner()->postReact();

@@ -30,7 +30,7 @@ class DRRTstarFN : public base::DynamicPlanner {
   virtual void react() { OMPL_WARN("reacting...\nstub call"); }
   virtual void prePause() { ; }
   virtual void postPause() { ; }
-  virtual void preReact() { ; }
+  virtual void preReact() ;
   virtual void postReact() {}
   virtual void preMove() { ; }
   virtual void postMove() { ; }
