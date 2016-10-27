@@ -27,7 +27,7 @@ class DRRTstarFN : public base::DynamicPlanner {
   virtual ~DRRTstarFN();
 
   virtual void prepare() { ; }
-  virtual void react() { OMPL_WARN("reacting...\nstub call"); }
+  virtual void react();
   virtual void prePause() { ; }
   virtual void postPause() { ; }
   virtual void preReact() ;
@@ -35,6 +35,10 @@ class DRRTstarFN : public base::DynamicPlanner {
   virtual void preMove() { ; }
   virtual void postMove() { ; }
 
+  /**
+   * @brief getPlannerData
+   * @param data
+   */
   virtual void getPlannerData(base::PlannerData& data) const;
 
   /**
@@ -43,8 +47,16 @@ class DRRTstarFN : public base::DynamicPlanner {
    */
   virtual void setPlannerData(const base::PlannerData& data);
 
+  /**
+   * @brief clear
+   */
   virtual void clear();
 
+  /**
+   * @brief solve
+   * @param ptc
+   * @return
+   */
   virtual base::PlannerStatus solve(
       const base::PlannerTerminationCondition& ptc);
 

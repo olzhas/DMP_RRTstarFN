@@ -265,20 +265,56 @@ class Model {
     void add(Obstacle* a) { data_.push_back(a); }
   };
 
-  // ctor
+  /**
+   * @brief Model
+   * @param filename
+   */
   Model(const std::string& filename) : dynamicObstaclesState_(0) {
     mapFilename_ = filename;
     loadSimpleWorld();
   }
 
+  /**
+   * @brief setDynamicObstaclesFile
+   * @param filename
+   */
   void setDynamicObstaclesFile(std::string& filename);
+
+  /**
+   * @brief loadSimpleWorld
+   */
   void loadSimpleWorld();
+
+  /**
+   * @brief isStateValid
+   * @param state
+   * @return
+   */
   bool isStateValid(const ob::State* state);
 
+  /**
+   * @brief updateObstacles
+   */
   void updateObstacles();
+
+  /**
+   * @brief setSpaceInformation
+   * @param si
+   */
   void setSpaceInformation(const ob::SpaceInformationPtr& si) { si_ = si; }
 
+  /**
+   * @brief loadObstacles
+   * @param fname
+   * @param collection
+   */
   void loadObstacles(const std::string& fname, ObstacleCollection& collection);
+
+  /**
+   * @brief loadDynamicObstacles
+   * @param filename
+   * @param collection
+   */
   void loadDynamicObstacles(const std::string& filename,
                             ObstacleCollection& collection);
 
@@ -310,7 +346,8 @@ class Model {
   void loadTemporalData(const std::string& fname);
 
   /**
-   * @brief updateEnvironment
+   * @brief updateEnvironment updates the environment information i.e.
+   * information of obstacles
    */
   void updateEnvironment();
 
@@ -325,7 +362,7 @@ class Model {
   std::string mapFilename_;
 
   std::vector<CircularObstacle*> dynamicCircle_;
-  std::vector<std::array<double,3>> futurePosition_;
+  std::vector<std::array<double, 3>> futurePosition_;
 };
 
 #endif  // MODEL_H

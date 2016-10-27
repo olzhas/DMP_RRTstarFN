@@ -17,15 +17,43 @@ class DynamicPlanner : public base::Planner {
 
   virtual ~DynamicPlanner() { ; }
 
+  /**
+   * @brief prepare
+   */
   virtual void prepare();
+  /**
+   * @brief react
+   */
   virtual void react();
+  /**
+   * @brief prePause
+   */
   virtual void prePause();
+  /**
+   * @brief postPause
+   */
   virtual void postPause();
+  /**
+   * @brief preReact
+   */
   virtual void preReact();
+  /**
+   * @brief postReact
+   */
   virtual void postReact();
+  /**
+   * @brief preMove
+   */
   virtual void preMove();
+  /**
+   * @brief postMove
+   */
   virtual void postMove();
 
+  /**
+   * @brief setPlannerData
+   * @param data
+   */
   virtual void setPlannerData(const ompl::base::PlannerData &data);
 };
 

@@ -433,24 +433,23 @@ ompl::base::PlannerStatus ompl::geometric::RRTstarFN::solve(
         // OMPL_INFORM("%d > %d", statesGenerated, maxNodes_);
         std::vector<Motion *> motions;
         nn_->list(motions);
-        std::vector<int> childlessNodes;
+        std::vector<std::size_t> childlessNodes;
         for (std::size_t i = 0; i < motions.size(); ++i) {
           if (motions[i]->children.size() == 0) childlessNodes.push_back(i);
         }
-        int rmNode = rng_.uniformInt(0, childlessNodes.size() - 1);
 
         if (childlessNodes.size() > 0) {
+          std::size_t rmNode = rng_.uniformInt(0, childlessNodes.size() - 1);
           OMPL_INFORM("childless %d", childlessNodes.size());
-          for (std::vector<Motion *>::iterator it =
-                   motions[childlessNodes[rmNode]]->parent->children.begin();
-               it != motions[childlessNodes[rmNode]]->parent->children.end();
-               ++it) {
-            if (*it == motions[childlessNodes[rmNode]]) {
-              motions[childlessNodes[rmNode]]->parent->children.erase(it);
-              break;
-            }
+          std::size_t &ind = childlessNodes[rmNode];
+          std::vector<Motion *> &childVec = motions[ind]->parent->children;
+
+          auto it = std::find(childVec.begin(), childVec.end(), motions[ind]);
+          if (it != childVec.end()) {
+            childVec.erase(it);
           }
-          int rmResult = nn_->remove(motions[childlessNodes[rmNode]]);
+
+          bool rmResult = nn_->remove(motions[childlessNodes[rmNode]]);
           if (rmResult == false) OMPL_WARN("cannot remove the node");
         } else
           OMPL_WARN("zero childless nodes");
