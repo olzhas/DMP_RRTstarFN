@@ -31,9 +31,13 @@ class DelayedTerminationCondition {
   operator PlannerTerminationCondition();
 
 private:
+  /// \brief
   int timesCalled_;
+  /// \brief
   int percentDelay_;
+  /// \brief
   int delayedCalls_;
+  /// \brief
   mutable bool isDelay_;
 };
 }

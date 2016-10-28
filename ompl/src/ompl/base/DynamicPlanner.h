@@ -13,8 +13,11 @@ class DynamicPlanner : public base::Planner {
   // non-copyable
   DynamicPlanner(const DynamicPlanner &) = delete;
   DynamicPlanner &operator=(const DynamicPlanner &) = delete;
+
+  /// \brief Constructor
   DynamicPlanner(const SpaceInformationPtr &si, const std::string &name);
 
+  /// \brief Desctructor
   virtual ~DynamicPlanner() { ; }
 
   /**

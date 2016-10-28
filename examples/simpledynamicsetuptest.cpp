@@ -1,12 +1,15 @@
-#include <ompl/base/spaces/DubinsStateSpace.h>
-#include <ompl/base/spaces/ReedsSheppStateSpace.h>
-#include <ompl/config.h>
-#include <ompl/util/Exception.h>
+/**
+  */
 
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <memory>
+
+#include <ompl/base/spaces/DubinsStateSpace.h>
+#include <ompl/base/spaces/ReedsSheppStateSpace.h>
+#include <ompl/config.h>
+#include <ompl/util/Exception.h>
 
 #include "model.h"
 #include "ompl/geometric/DynamicSimpleSetup.h"
