@@ -1,16 +1,19 @@
-#include <ompl/base/spaces/DubinsStateSpace.h>
-#include <ompl/base/spaces/ReedsSheppStateSpace.h>
-#include <ompl/config.h>
-#include <ompl/util/Exception.h>
+/**
+  */
 
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <memory>
 
+#include <ompl/base/spaces/DubinsStateSpace.h>
+#include <ompl/base/spaces/ReedsSheppStateSpace.h>
+#include <ompl/config.h>
+#include <ompl/util/Exception.h>
+
 #include "model.h"
 #include "ompl/geometric/DynamicSimpleSetup.h"
-#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
+#include "ompl/geometric/planners/rrt/RRTstarFND.h"
 
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
@@ -47,7 +50,7 @@ class DubinsCarEnvironment {
         std::bind(&Model::isStateValid, pModel_, std::placeholders::_1));
     space->setup();
 
-    auto planner = std::make_shared<og::DRRTstarFN>(si);
+    auto planner = std::make_shared<og::RRTstarFND>(si);
     planner->setRange(35.0);
     planner->setMaxNodes(15000);
     si->setStateValidityCheckingResolution(0.01125);

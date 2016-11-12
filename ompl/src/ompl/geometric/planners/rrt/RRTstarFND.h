@@ -1,5 +1,5 @@
-#ifndef OMPL_GEOMETRIC_PLANNERS_RRT_DRRTSTARFN_
-#define OMPL_GEOMETRIC_PLANNERS_RRT_DRRTSTARFN_
+#ifndef OMPL_GEOMETRIC_PLANNERS_RRT_RRTSTARFND_
+#define OMPL_GEOMETRIC_PLANNERS_RRT_RRTSTARFND_
 
 #include "ompl/base/DynamicPlanner.h"
 #include "ompl/base/OptimizationObjective.h"
@@ -18,23 +18,40 @@ namespace ompl {
 namespace geometric {
 
 /** \brief Optimal Rapidly-exploring Random Trees */
-class DRRTstarFN : public base::DynamicPlanner {
+class RRTstarFND : public base::DynamicPlanner {
   friend class boost::serialization::access;
 
  public:
-  DRRTstarFN(const base::SpaceInformationPtr& si);
+  ///
+  /// \brief constructor
+  /// \param si
+  ///
+  RRTstarFND(const base::SpaceInformationPtr& si);
 
-  virtual ~DRRTstarFN();
+  /// \brief destructor
+  virtual ~RRTstarFND();
 
+  /// \brief
   virtual void prepare() { ; }
-  virtual void react() { OMPL_WARN("reacting...\nstub call"); }
+  /// \brief
+  virtual void react();
+  /// \brief
   virtual void prePause() { ; }
+  /// \brief
   virtual void postPause() { ; }
-  virtual void preReact() { ; }
-  virtual void postReact() {}
+  /// \brief
+  virtual void preReact();
+  /// \brief
+  virtual void postReact() { ; }
+  /// \brief
   virtual void preMove() { ; }
+  /// \brief
   virtual void postMove() { ; }
 
+  /**
+   * @brief getPlannerData
+   * @param data
+   */
   virtual void getPlannerData(base::PlannerData& data) const;
 
   /**
@@ -43,8 +60,16 @@ class DRRTstarFN : public base::DynamicPlanner {
    */
   virtual void setPlannerData(const base::PlannerData& data);
 
+  /**
+   * @brief clear
+   */
   virtual void clear();
 
+  /**
+   * @brief solve
+   * @param ptc
+   * @return
+   */
   virtual base::PlannerStatus solve(
       const base::PlannerTerminationCondition& ptc);
 
@@ -79,10 +104,22 @@ class DRRTstarFN : public base::DynamicPlanner {
   /** \brief Get the range the planner is using */
   double getRange() const { return maxDistance_; }
 
+  ///
+  /// \brief setPreviousPath
+  /// \param stateList
+  /// \param stateIndex
+  ///
   void setPreviousPath(std::vector<ompl::base::State*> stateList,
                        int stateIndex);
+  ///
+  /// \brief nodeCleanUp
+  /// \param s
+  ///
   void nodeCleanUp(ompl::base::State* s);
 
+  ///
+  /// \brief setup
+  ///
   virtual void setup();
 
   ///////////////////////////////////////
@@ -106,23 +143,25 @@ class DRRTstarFN : public base::DynamicPlanner {
   ///
   std::size_t getMaxNodes() const { return maxNodes_; }
 
+  /// \brief
   void setLocalPlanning(bool set) { localPlanning_ = set; }
 
-  /** \brief Set sampling radius around interim state */
+  /// \brief Set sampling radius around interim state
   bool isLocalPlanning() { return localPlanning_; }
 
-  /** \brief Set the interim state */
+  /// \brief Set the interim state
   void setInterimState(base::State* state) { interimState_ = state; }
 
-  /** \brief Set sampling radius around the interim state */
+  /// \brief Set sampling radius around the interim state
   void setSampleRadius(double r) { sampleRadius_ = r; }
 
-  /** \brief Remove the states from the tree */
-
+  /// \brief Remove the states from the tree
   std::size_t removeInvalidNodes();
 
+  /// \brief
   void prepareDynamic(std::size_t from);
 
+  /// \brief
   void evaluateSolutionPath();
 
   /** \brief interpolates the detached solution path and adds nodes in between
@@ -130,7 +169,6 @@ class DRRTstarFN : public base::DynamicPlanner {
   void populateDetachedPath();
 
   /** \brief remove orphaned nodes from the tree */
-
   void removeOrphaned();
 
   /** \brief reconnect orphaned nodes to the tree */
@@ -139,6 +177,7 @@ class DRRTstarFN : public base::DynamicPlanner {
   /** \brief selects the branch */
   void selectBranch(ompl::base::State* s);
 
+  /// \brief
   void swapNN();
 
   /** \brief Save the state of the tree */
@@ -147,8 +186,7 @@ class DRRTstarFN : public base::DynamicPlanner {
   /** \brief Save the state of the tree */
   void restoreTree(const char* filename);
 
-  /** \brief Load the state of the tree */
-
+  // /** \brief Load the state of the tree */
   // void loadTree(const char *filename);
 
   enum NodeType : char { NORMAL = 0, ORPHANED = 1, INVALID = 2 };
@@ -219,16 +257,10 @@ class DRRTstarFN : public base::DynamicPlanner {
    * this node has changed */
   void updateChildCosts(Motion* m);
 
-  /** \brief Prunes all those states which estimated total cost is higher
-  than
-    pruneTreeCost.
-    Returns the number of motions pruned. Depends on the parameter set by
-    setPruneStatesImprovementThreshold() */
-  // int pruneTree(const base::Cost pruneTreeCost);
-
+  /// \brief
   void verifyTree();
 
-  bool switchToDynamic();
+  //  bool switchToDynamic();
 
   /** \brief this function is used for reconstruction of the tree from the
   file
@@ -255,8 +287,9 @@ class DRRTstarFN : public base::DynamicPlanner {
   /** \brief A nearest-neighbors datastructure containing the subtree of
   motions
    */
-
   std::shared_ptr<NearestNeighbors<Motion*> > subTreeNN_;
+
+  /// \brief
   std::shared_ptr<NearestNeighbors<Motion*> > bakNN_;
 
   /** \brief The fraction of time the goal is picked as the state to expand
@@ -277,6 +310,7 @@ class DRRTstarFN : public base::DynamicPlanner {
   */
   bool delayCC_;
 
+  /// \brief
   bool dynamicMode_;
 
   /** \brief Objective we're optimizing */
@@ -289,14 +323,13 @@ class DRRTstarFN : public base::DynamicPlanner {
   /** \brief A list of states in the tree that satisfy the goal condition */
   std::vector<Motion*> goalMotions_;
 
-  /** \brief If this value is set to true, tree pruning will be enabled. */
-  // bool                                           prune_;
-
   /** \brief Stores the Motion containing the last added initial start
   state. */
   Motion* startMotion_;
 
+  /// \brief
   std::vector<ompl::base::State*> orphanedBiasNodes_;
+  /// \brief
   std::vector<Motion*> detachedPathNodes_;
 
   //////////////////////////////
@@ -306,16 +339,19 @@ class DRRTstarFN : public base::DynamicPlanner {
   /** \brief Best cost found so far by algorithm */
   base::Cost bestCost_;
 
+  /// \brief
   std::size_t maxNodes_;
 
-  ///
   /// \brief localPlanning_
-  ///
   bool localPlanning_;
 
+  /// \brief
   base::State* interimState_;
+
+  /// \brief
   double sampleRadius_;
 };
+
 }  // geometric
 }  // ompl
 

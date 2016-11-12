@@ -1,5 +1,5 @@
 #include "ompl/geometric/DynamicSimpleSetup.h"
-#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
+#include "ompl/geometric/planners/rrt/RRTstarFND.h"
 #include "ompl/tools/config/SelfConfig.h"
 #include "ompl/util/Exception.h"
 
@@ -8,7 +8,7 @@ namespace geometric {
 
 base::DynamicPlannerPtr getDefaultDynamicPlanner(const base::GoalPtr &goal) {
   // TODO create a SelfConfig for Dynamic Planners
-  return std::make_shared<ompl::geometric::DRRTstarFN>(
+  return std::make_shared<ompl::geometric::RRTstarFND>(
       goal->getSpaceInformation());
 }
 
@@ -169,34 +169,17 @@ void DynamicSimpleSetup::pause() {
 void DynamicSimpleSetup::react() {
   if (!getDynamicPlanner()) {
     OMPL_ERROR("motion planner is not assigned");
-    return;
+    std::terminate();
   }
   OMPL_INFORM("initiating a reaction routine...");
   if (getDynamicPlanner() &&
       !getDynamicPlanner()->params().hasParam("dynamic")) {
     OMPL_ERROR("Planner does not contain dynamic parameter");
   }
-
   // TODO rewrite in more generic way
   getDynamicPlanner()->preReact();
-  //  std::size_t nodesRemoved =
-  //      ss_->getPlanner()->as<DRRTstarFN>()->removeInvalidNodes();
-  //    OMPL_INFORM("Nodes removed during clean-up phase: %d", nodesRemoved);
-  //
-  // ss_->getSpaceInformation()->setStateValidityCheckingResolution(0.01125);
   getDynamicPlanner()->react();
-
   getDynamicPlanner()->postReact();
-  // ss_->getProblemDefinition()->clearSolutionPaths();
-  // ss_->getPlanner()->as<DRRTstarFN>()->evaluateSolutionPath();
-
-  //    if (!is_reconnected) {
-  //      ompl::base::PlannerTerminationCondition ptc(
-  //          ompl::base::exactSolnPlannerTerminationCondition(
-  //              ss_->getProblemDefinition()));
-  //      ss_->solve(ptc);
-  //    }
-
   OMPL_WARN("completed a reaction routine.");
 }
 
@@ -205,8 +188,6 @@ void DynamicSimpleSetup::updateEnvironment() {
 }
 
 void DynamicSimpleSetup::startLoggerThread() {
-  //    logPlannerDataThread_ =
-  //    std::thread(std::bind(&DynamicSimpleSetup::recordSolution, this));
   dumpMotionProgress_ = true;
   loggerThread_ = std::thread([this] { recordSolution(); });
 }

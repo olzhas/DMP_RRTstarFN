@@ -9,22 +9,35 @@ class DelayedTerminationCondition {
  public:
   DelayedTerminationCondition();
 
-  /** \brief */
+  /**
+   * @brief eval
+   * @return
+   */
   bool eval();
 
-  /** \brief */
+  /**
+   * @brief signal is used to inform that
+   */
   void signal();
 
-  /** \brief */
+  /**
+   * @brief terminate
+   */
   void terminate();
 
-  /** \brief */
+  /**
+   * @brief operator PlannerTerminationCondition
+   */
   operator PlannerTerminationCondition();
 
 private:
+  /// \brief
   int timesCalled_;
+  /// \brief
   int percentDelay_;
+  /// \brief
   int delayedCalls_;
+  /// \brief
   mutable bool isDelay_;
 };
 }

@@ -32,6 +32,7 @@ class DynamicSimpleSetup {
   /** \brief Constructor needs the state space used for planning. */
   explicit DynamicSimpleSetup(const base::StateSpacePtr &space);
 
+  /// \brief Destructor
   virtual ~DynamicSimpleSetup() { ; }
 
   /** \brief Get the current instance of the space information */
@@ -210,15 +211,31 @@ class DynamicSimpleSetup {
   /** \brief this method implements the solution loop with reactive planning */
   bool runSolutionLoop();
 
-  /** \brief user supplied prepeartion routine*/
+  /// \brief prepareUser
   std::function<void()> prepareUser;
+  /// \brief reactUser
   std::function<void()> reactUser;
+  /// \brief clearUser
   std::function<void()> clearUser;
+  /// \brief updateEnvironmentFn
   std::function<void()> updateEnvironmentFn;
 
+  ///
+  /// \brief setSolutionValidityFunction
+  /// \param fn
+  ///
   void setSolutionValidityFunction(std::function<bool(void)> &fn);
+
+  ///
+  /// \brief setIterationRoutine
+  /// \param fn
+  ///
   void setIterationRoutine(std::function<bool(void)> &fn);
 
+  ///
+  /// \brief loadPrecomputedData
+  /// \param is
+  ///
   void loadPrecomputedData(std::istream &is) {
     ompl::base::PlannerData pd(si_);
     ompl::base::PlannerDataStorage pdstorage;
@@ -227,7 +244,10 @@ class DynamicSimpleSetup {
     setPlannerData(pd);
   }
 
-  //==============================================================================
+  ///
+  /// \brief saveComputedData
+  /// \param os
+  ///
   void saveComputedData(std::ostream &os) {
     // Get the planner data to visualize the vertices and the edges
     ompl::base::PlannerData pd(si_);
@@ -242,18 +262,37 @@ class DynamicSimpleSetup {
    */
   void preplan();
 
+  ///
+  /// \brief getTimestep
+  /// \return
+  ///
   std::chrono::milliseconds getTimestep() const;
+
+  ///
+  /// \brief setTimestep
+  /// \param timestep
+  ///
   void setTimestep(const std::chrono::milliseconds &timestep);
 
-  std::function<void ()> getUpdateEnvironmentFn() const;
-  void setUpdateEnvironmentFn(const std::function<void ()> &value);
+  ///
+  /// \brief getUpdateEnvironmentFn
+  /// \return
+  ///
+  std::function<void()> getUpdateEnvironmentFn() const;
 
-private:
+  ///
+  /// \brief setUpdateEnvironmentFn
+  /// \param value
+  ///
+  void setUpdateEnvironmentFn(const std::function<void()> &value);
+
+ private:
   /** \brief time step between regular obstacle collision routine in
    * milliseconds */
 
   ompl::base::DynamicPlannerPtr dynamicPlanner_ = nullptr;
 
+  /// \brief timestep_
   std::chrono::milliseconds timestep_ = std::chrono::milliseconds(30);  // dt
 
   /** \brief reaction routine */
@@ -315,12 +354,16 @@ private:
   /** \brief dump motion progress phase data to file */
   bool dumpMotionProgress_ = false;
 
+  /// \brief
   std::thread loggerThread_;
 
+  /// \brief
   std::shared_ptr<ompl::geometric::PathGeometric> pSolutionPath;
 
+  /// \brief solution validity checker function
   std::function<bool(void)> validSolutionFn_;
 
+  /// \brief
   std::function<void(void)> iterationRoutine_;
 
  protected:
