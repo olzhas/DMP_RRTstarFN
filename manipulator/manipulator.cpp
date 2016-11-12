@@ -1,7 +1,7 @@
 #include "manipulator.h"
 #include "manipulatormotionvalidator.h"
 
-#include "config/obstacle_config_blue.h"
+#include "../config/obstacle_config_blue.h"
 
 #include "solutionpath.h"
 
@@ -85,7 +85,7 @@ void Manipulator::init(ConfigurationPtr& config)
             ob::MotionValidatorPtr(
                 new ManipulatorMotionValidator(ss_->getSpaceInformation(), cfg)));
 
-    ss_->setPlanner(ob::PlannerPtr(new og::DRRTstarFN(ss_->getSpaceInformation())));
+ //   ss_->setPlanner(ob::PlannerPtr(new og::RRTstarFND(ss_->getSpaceInformation())));
 
     ss_->getProblemDefinition()
         ->setOptimizationObjective(
@@ -177,7 +177,7 @@ bool Manipulator::plan()
 
     const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
     OMPL_INFORM("Found %d solutions", (int)ns);
-    std::string bestCost = ss_->getPlanner()->as<og::DRRTstarFN>()->getBestCost();
+    std::string bestCost = ss_->getPlanner()->as<og::RRTstarFND>()->getBestCost();
     OMPL_INFORM("Best cost: %s", bestCost.c_str());
 
     SolutionPath* sp = new SolutionPath("main");
@@ -200,10 +200,10 @@ bool Manipulator::plan()
 //==============================================================================
 void Manipulator::configurePlanner()
 {
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setMaxNodes(cfg->maxNumberNodes);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setDelayCC(true); // delay collision detection
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setRange(cfg->rangeRad);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setGoalBias(cfg->goalBias);
+    ss_->getPlanner()->as<og::RRTstarFND>()->setMaxNodes(cfg->maxNumberNodes);
+    //ss_->getPlanner()->as<og::RRTstarFND>()->setDelayCC(true); // delay collision detection
+    ss_->getPlanner()->as<og::RRTstarFND>()->setRange(cfg->rangeRad);
+    ss_->getPlanner()->as<og::RRTstarFND>()->setGoalBias(cfg->goalBias);
 }
 //==============================================================================
 bool Manipulator::replan()
@@ -227,25 +227,25 @@ bool Manipulator::newReplan()
                                ->cloneState(p.getState(from));
     std::vector<ompl::base::State*> pathArray = p.getStates();
 
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setPreviousPath(pathArray, from);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->selectBranch(s);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setSampleRadius(cfg->orphanedSampleRadius.getRadians());
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setOrphanedBias(cfg->orphanedBias);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->setLocalPlanning(true);
-    ss_->getPlanner()->as<og::DRRTstarFN>()->swapNN();
+    //ss_->getPlanner()->as<og::RRTstarFND>()->setPreviousPath(pathArray, from);
+   // ss_->getPlanner()->as<og::RRTstarFND>()->selectBranch(s);
+    ss_->getPlanner()->as<og::RRTstarFND>()->setSampleRadius(cfg->orphanedSampleRadius.getRadians());
+    ss_->getPlanner()->as<og::RRTstarFND>()->setOrphanedBias(cfg->orphanedBias);
+    ss_->getPlanner()->as<og::RRTstarFND>()->setLocalPlanning(true);
+    //ss_->getPlanner()->as<og::RRTstarFND>()->swapNN();
 
-    dart::common::Timer t1("removal");
-    t1.start();
-    int removed = ss_->getPlanner()->as<og::DRRTstarFN>()->removeInvalidNodes();
-    t1.stop();
-    t1.print();
-    OMPL_INFORM("removed nodes from the sub tree is %d", removed);
+    //dart::common::Timer t1("removal");
+    //t1.start();
+    //int removed = ss_->getPlanner()->as<og::RRTstarFND>()->removeInvalidNodes();
+    //t1.stop();
+    //t1.print();
+    //OMPL_INFORM("removed nodes from the sub tree is %d", removed);
 
     ss_->getProblemDefinition()->clearSolutionPaths();
     ss_->solve(cfg->dynamicPlanningTime);
 
     ss_->getProblemDefinition()->clearSolutionPaths();
-    ss_->getPlanner()->as<og::DRRTstarFN>()->evaluateSolutionPath();
+    //ss_->getPlanner()->as<og::RRTstarFND>()->evaluateSolutionPath();
 
     OMPL_INFORM("Dynamic planning completed");
     cfg->dynamicReplanning = true;
@@ -346,7 +346,7 @@ void Manipulator::load(const char* filename)
 
     ss_->setStartAndGoalStates(start, goal);
     configurePlanner();
-    ss_->getPlanner()->as<og::DRRTstarFN>()->restoreTree(cfg->loadDataFile.c_str());
+    //ss_->getPlanner()->as<og::RRTstarFND>()->restoreTree(cfg->loadDataFile.c_str());
 
     SolutionPath* sp = new SolutionPath("main");
     try {

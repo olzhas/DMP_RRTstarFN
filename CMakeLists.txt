@@ -1,7 +1,7 @@
 project(staubli_dart)
 cmake_minimum_required(VERSION 2.8)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native -mtune=native -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native -mtune=native -g -Og")
 
 find_package(Threads REQUIRED)
 find_package(DART REQUIRED)
@@ -26,6 +26,7 @@ include_directories(${RRTFND_INCLUDE_DIR})
 
 add_subdirectory(ompl)
 add_subdirectory(examples)
+add_subdirectory(manipulator)
 
 aux_source_directory(. SRC_LIST)
 

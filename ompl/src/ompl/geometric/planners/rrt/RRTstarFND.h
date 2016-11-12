@@ -1,5 +1,5 @@
-#ifndef OMPL_GEOMETRIC_PLANNERS_RRT_DRRTSTARFN_
-#define OMPL_GEOMETRIC_PLANNERS_RRT_DRRTSTARFN_
+#ifndef OMPL_GEOMETRIC_PLANNERS_RRT_RRTSTARFND_
+#define OMPL_GEOMETRIC_PLANNERS_RRT_RRTSTARFND_
 
 #include "ompl/base/DynamicPlanner.h"
 #include "ompl/base/OptimizationObjective.h"
@@ -18,7 +18,7 @@ namespace ompl {
 namespace geometric {
 
 /** \brief Optimal Rapidly-exploring Random Trees */
-class DRRTstarFN : public base::DynamicPlanner {
+class RRTstarFND : public base::DynamicPlanner {
   friend class boost::serialization::access;
 
  public:
@@ -26,10 +26,10 @@ class DRRTstarFN : public base::DynamicPlanner {
   /// \brief constructor
   /// \param si
   ///
-  DRRTstarFN(const base::SpaceInformationPtr& si);
+  RRTstarFND(const base::SpaceInformationPtr& si);
 
   /// \brief destructor
-  virtual ~DRRTstarFN();
+  virtual ~RRTstarFND();
 
   /// \brief
   virtual void prepare() { ; }
@@ -42,7 +42,7 @@ class DRRTstarFN : public base::DynamicPlanner {
   /// \brief
   virtual void preReact();
   /// \brief
-  virtual void postReact() {}
+  virtual void postReact() { ; }
   /// \brief
   virtual void preMove() { ; }
   /// \brief
@@ -351,6 +351,7 @@ class DRRTstarFN : public base::DynamicPlanner {
   /// \brief
   double sampleRadius_;
 };
+
 }  // geometric
 }  // ompl
 

@@ -292,9 +292,7 @@ class DynamicSimpleSetup {
 
   ompl::base::DynamicPlannerPtr dynamicPlanner_ = nullptr;
 
-  ///
   /// \brief timestep_
-  ///
   std::chrono::milliseconds timestep_ = std::chrono::milliseconds(30);  // dt
 
   /** \brief reaction routine */
@@ -356,16 +354,16 @@ class DynamicSimpleSetup {
   /** \brief dump motion progress phase data to file */
   bool dumpMotionProgress_ = false;
 
-  ///
+  /// \brief
   std::thread loggerThread_;
 
-  ///
+  /// \brief
   std::shared_ptr<ompl::geometric::PathGeometric> pSolutionPath;
 
-  /// solution validity checker function
+  /// \brief solution validity checker function
   std::function<bool(void)> validSolutionFn_;
 
-  ///
+  /// \brief
   std::function<void(void)> iterationRoutine_;
 
  protected:

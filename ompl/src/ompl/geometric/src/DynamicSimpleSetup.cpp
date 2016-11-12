@@ -1,5 +1,5 @@
 #include "ompl/geometric/DynamicSimpleSetup.h"
-#include "ompl/geometric/planners/rrt/DRRTstarFN.h"
+#include "ompl/geometric/planners/rrt/RRTstarFND.h"
 #include "ompl/tools/config/SelfConfig.h"
 #include "ompl/util/Exception.h"
 
@@ -8,7 +8,7 @@ namespace geometric {
 
 base::DynamicPlannerPtr getDefaultDynamicPlanner(const base::GoalPtr &goal) {
   // TODO create a SelfConfig for Dynamic Planners
-  return std::make_shared<ompl::geometric::DRRTstarFN>(
+  return std::make_shared<ompl::geometric::RRTstarFND>(
       goal->getSpaceInformation());
 }
 
